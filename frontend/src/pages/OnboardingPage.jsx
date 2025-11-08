@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { completeOnboarding } from "../lib/api";
 import {
+  CameraIcon,
   LoaderIcon,
   MapPinIcon,
   ShipWheelIcon,
   ShuffleIcon,
+  UploadIcon,
 } from "lucide-react";
 import { LANGUAGES } from "../constants";
 
@@ -23,6 +25,8 @@ const OnboardingPage = () => {
     location: authUser?.location || "",
     profilePic: authUser?.profilePic || "",
   });
+
+  const fileInputRef = useRef(null);
 
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
@@ -48,6 +52,34 @@ const OnboardingPage = () => {
 
     setFormState({ ...formState, profilePic: randomAvatar });
     toast.success("Random profile picture generated!");
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleProfilePicUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 100 * 1024) {
+      toast.error("Payload must be under 100 KB");
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormState((prev) => ({ ...prev, profilePic: reader.result }));
+      toast.success("Profile picture updated!");
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -77,7 +109,7 @@ const OnboardingPage = () => {
               </div>
 
               {/* Generate Random Avatar BTN */}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={handleRandomAvatar}
@@ -86,6 +118,21 @@ const OnboardingPage = () => {
                   <ShuffleIcon className="size-4 mr-2" />
                   Generate Random Avatar
                 </button>
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="btn btn-outline"
+                >
+                  <UploadIcon className="size-4 mr-2" />
+                  Upload Photo
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleProfilePicUpload}
+                  className="hidden"
+                />
               </div>
             </div>
 
