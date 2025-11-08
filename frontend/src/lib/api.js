@@ -65,3 +65,8 @@ export async function getStreamToken() {
   const response = await axiosInstance.get("/chat/token");
   return response.data;
 }
+
+export async function getTarotReading(payload) {
+  const response = await axiosInstance.post("/tarot/reading", payload);
+  return response.data;
+}
