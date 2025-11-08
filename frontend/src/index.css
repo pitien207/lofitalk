@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-color: #ff5e5e;
+  --brand-color-hover: #ff7c7c;
+}
+
 .str-chat__channel {
   display: flex;
   align-items: center;
@@ -31,4 +36,35 @@
 
 .str-chat__message-input {
   border-top: 1px solid #ddd;
+}
+
+.btn-primary,
+.btn-primary:focus-visible {
+  background-color: var(--brand-color);
+  border-color: var(--brand-color);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: var(--brand-color-hover);
+  border-color: var(--brand-color-hover);
+}
+
+.text-primary {
+  color: var(--brand-color) !important;
+}
+
+.bg-primary\/10 {
+  background-color: rgb(255 94 94 / 0.1) !important;
+}
+
+.btn-brand {
+  background-color: var(--brand-color);
+  border-color: var(--brand-color);
+  color: #fff;
+}
+
+.btn-brand:hover {
+  background-color: var(--brand-color-hover);
+  border-color: var(--brand-color-hover);
 }

@@ -13,7 +13,7 @@ const Sidebar = () => {
       <div className="p-5 border-b border-base-300">
         <Link to="/" className="flex items-center gap-2.5">
           <img src={logo} alt="LofiTalk logo" className="w-10 h-10 rounded-full object-cover" />
-          <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
+          <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
             LofiTalk
           </span>
         </Link>
