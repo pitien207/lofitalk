@@ -4,6 +4,7 @@ import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
   LogOutIcon,
+  InfoIcon,
   LanguagesIcon,
   PaletteIcon,
   ShipWheelIcon,
@@ -52,7 +53,11 @@ const Navbar = () => {
             </Link>
           </div>
 
-          <div className="dropdown dropdown-end">
+          <div
+            className={`dropdown dropdown-end ${
+              settingsOpen ? "dropdown-open" : ""
+            }`}
+          >
             <button
               tabIndex={0}
               className="btn btn-ghost btn-circle"
@@ -67,7 +72,7 @@ const Navbar = () => {
             </button>
             <div
               tabIndex={0}
-              onBlur={() => {
+              onMouseLeave={() => {
                 setSettingsOpen(false);
                 setActiveSetting(null);
               }}
@@ -118,6 +123,35 @@ const Navbar = () => {
                         {lang}
                       </button>
                     ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <button
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-base-content/5"
+                  onClick={() =>
+                    setActiveSetting((prev) =>
+                      prev === "about" ? null : "about"
+                    )
+                  }
+                >
+                  <InfoIcon className="size-4 text-info" />
+                  <span className="text-sm font-semibold">About</span>
+                </button>
+                {activeSetting === "about" && (
+                  <div className="mt-2 border border-base-content/10 rounded-xl p-3 text-sm space-y-1 bg-base-100">
+                    <div className="flex justify-between">
+                      <span className="opacity-70">Version</span>
+                      <span className="font-medium">v1.0.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="opacity-70">Developer</span>
+                      <span className="font-medium">Nghia Pham</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="opacity-70">Inspired by</span>
+                      <span className="font-medium">Codesistency</span>
+                    </div>
                   </div>
                 )}
               </div>
