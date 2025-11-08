@@ -1,5 +1,75 @@
 import "dotenv/config";
 
+const ENERGY_COST = 7;
+
+export function getEnergyStatus(req, res) {
+  res.status(200).json({
+    energy: req.user.energy,
+    max: ENERGY_COST,
+    lastRefill: req.user.lastEnergyRefill,
+  });
+}
+
+export async function consumeTarotEnergy(req, res) {
+  try {
+    if (req.user.energy < ENERGY_COST) {
+      return res.status(400).json({
+        message: `Bạn cần ${ENERGY_COST} năng lượng để bốc bài.`,
+      });
+    }
+
+    req.user.energy = 0;
+    req.user.lastEnergyRefill = new Date();
+    await req.user.save();
+
+    res.status(200).json({
+      success: true,
+      energy: req.user.energy,
+      max: ENERGY_COST,
+      lastRefill: req.user.lastEnergyRefill,
+    });
+  } catch (error) {
+    console.error("Error in consumeTarotEnergy:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function refillTarotEnergy(req, res) {
+  try {
+    req.user.energy = ENERGY_COST;
+    req.user.lastEnergyRefill = new Date();
+    await req.user.save();
+
+    res.status(200).json({
+      success: true,
+      energy: req.user.energy,
+      max: ENERGY_COST,
+      lastRefill: req.user.lastEnergyRefill,
+    });
+  } catch (error) {
+    console.error("Error in refillTarotEnergy:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export function getLastTarotReading(req, res) {
+  res.status(200).json({
+    success: true,
+    reading: req.user.lastTarotReading ?? null,
+  });
+}
+
+export async function clearLastTarotReading(req, res) {
+  try {
+    req.user.lastTarotReading = undefined;
+    await req.user.save();
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error in clearLastTarotReading:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export async function getTarotReading(req, res) {
   try {
     const { questions, cards } = req.body || {};
@@ -18,7 +88,9 @@ export async function getTarotReading(req, res) {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ message: "Missing OPENAI_API_KEY on server" });
+      return res
+        .status(500)
+        .json({ message: "Missing OPENAI_API_KEY on server" });
     }
 
     const system =
@@ -72,7 +144,9 @@ Messages should be 2-4 sentences each, actionable and encouraging. If a card is 
 
     if (!resp.ok) {
       const text = await resp.text();
-      return res.status(500).json({ message: "OpenAI request failed", detail: text });
+      return res
+        .status(500)
+        .json({ message: "OpenAI request failed", detail: text });
     }
 
     const data = await resp.json();
@@ -84,6 +158,14 @@ Messages should be 2-4 sentences each, actionable and encouraging. If a card is 
     } catch (e) {
       parsed = { raw: content };
     }
+
+    req.user.lastTarotReading = {
+      questions,
+      cards,
+      result: parsed,
+      createdAt: new Date(),
+    };
+    await req.user.save();
 
     res.status(200).json({ success: true, result: parsed });
   } catch (error) {

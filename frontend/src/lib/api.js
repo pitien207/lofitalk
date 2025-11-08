@@ -70,3 +70,28 @@ export async function getTarotReading(payload) {
   const response = await axiosInstance.post("/tarot/reading", payload);
   return response.data;
 }
+
+export async function getTarotEnergy() {
+  const response = await axiosInstance.get("/tarot/energy");
+  return response.data;
+}
+
+export async function consumeTarotEnergy() {
+  const response = await axiosInstance.post("/tarot/consume");
+  return response.data;
+}
+
+export async function refillTarotEnergy() {
+  const response = await axiosInstance.post("/tarot/refill");
+  return response.data;
+}
+
+export async function getTarotLatest() {
+  const response = await axiosInstance.get("/tarot/latest");
+  return response.data;
+}
+
+export async function clearTarotLatest() {
+  const response = await axiosInstance.delete("/tarot/latest");
+  return response.data;
+}

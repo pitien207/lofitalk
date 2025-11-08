@@ -47,6 +47,39 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    energy: {
+      type: Number,
+      min: 0,
+      max: 7,
+      default: 7,
+    },
+    lastEnergyRefill: {
+      type: Date,
+      default: () => new Date(),
+    },
+    lastTarotReading: {
+      questions: {
+        type: [String],
+        default: undefined,
+      },
+      cards: {
+        type: [
+          {
+            name: String,
+            reversed: Boolean,
+          },
+        ],
+        default: undefined,
+      },
+      result: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
+      },
+      createdAt: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   { timestamps: true }
 );
