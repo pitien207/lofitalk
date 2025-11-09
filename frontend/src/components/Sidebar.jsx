@@ -2,11 +2,13 @@ import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { BellIcon, HomeIcon, UsersIcon, ShuffleIcon } from "lucide-react";
 import logo from "../pictures/others/LofiTalk_logo.png";
+import { useTranslation } from "../i18n/useTranslation";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useTranslation();
 
   return (
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
@@ -27,7 +29,7 @@ const Sidebar = () => {
           }`}
         >
           <HomeIcon className="size-5 text-base-content opacity-70" />
-          <span>Home</span>
+          <span>{t("sidebar.home")}</span>
         </Link>
 
         <Link
@@ -37,7 +39,7 @@ const Sidebar = () => {
           }`}
         >
           <UsersIcon className="size-5 text-base-content opacity-70" />
-          <span>Friends</span>
+          <span>{t("sidebar.friends")}</span>
         </Link>
 
         <Link
@@ -47,7 +49,7 @@ const Sidebar = () => {
           }`}
         >
           <BellIcon className="size-5 text-base-content opacity-70" />
-          <span>Notifications</span>
+          <span>{t("sidebar.notifications")}</span>
         </Link>
 
         <Link
@@ -57,7 +59,7 @@ const Sidebar = () => {
           }`}
         >
           <ShuffleIcon className="size-5 text-base-content opacity-70" />
-          <span>Tarot</span>
+          <span>{t("sidebar.tarot")}</span>
         </Link>
       </nav>
 

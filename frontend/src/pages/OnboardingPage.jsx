@@ -3,6 +3,7 @@ import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { completeOnboarding } from "../lib/api";
+import { useTranslation } from "../i18n/useTranslation";
 import {
   CameraIcon,
   LoaderIcon,
@@ -27,6 +28,7 @@ const OnboardingPage = () => {
   });
 
   const fileInputRef = useRef(null);
+  const { t } = useTranslation();
 
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
@@ -51,7 +53,7 @@ const OnboardingPage = () => {
     const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
 
     setFormState({ ...formState, profilePic: randomAvatar });
-    toast.success("Random profile picture generated!");
+    toast.success(t("language.randomAvatarToast"));
   };
 
   const handleUploadClick = () => {
@@ -63,13 +65,13 @@ const OnboardingPage = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
+      toast.error(t("language.uploadError"));
       event.target.value = "";
       return;
     }
 
     if (file.size > 100 * 1024) {
-      toast.error("Payload must be under 100 KB");
+      toast.error(t("language.uploadSizeError"));
       event.target.value = "";
       return;
     }
@@ -77,7 +79,7 @@ const OnboardingPage = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormState((prev) => ({ ...prev, profilePic: reader.result }));
-      toast.success("Profile picture updated!");
+      toast.success(t("language.uploadSuccess"));
     };
     reader.readAsDataURL(file);
   };
@@ -87,7 +89,7 @@ const OnboardingPage = () => {
       <div className="card bg-base-200 w-full max-w-3xl shadow-xl">
         <div className="card-body p-6 sm:p-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-            Complete Your Profile
+            {t("onboarding.title")}
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -98,7 +100,7 @@ const OnboardingPage = () => {
                 {formState.profilePic ? (
                   <img
                     src={formState.profilePic}
-                    alt="Profile Preview"
+                    alt={t("onboarding.profilePlaceholder")}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -116,7 +118,7 @@ const OnboardingPage = () => {
                   className="btn btn-accent"
                 >
                   <ShuffleIcon className="size-4 mr-2" />
-                  Generate Random Avatar
+                  {t("onboarding.randomAvatar")}
                 </button>
                 <button
                   type="button"
@@ -124,7 +126,7 @@ const OnboardingPage = () => {
                   className="btn btn-outline"
                 >
                   <UploadIcon className="size-4 mr-2" />
-                  Upload Photo
+                  {t("onboarding.uploadPhoto")}
                 </button>
                 <input
                   type="file"
@@ -139,7 +141,7 @@ const OnboardingPage = () => {
             {/* FULL NAME */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Full Name</span>
+                <span className="label-text">{t("onboarding.fullName")}</span>
               </label>
               <input
                 type="text"
@@ -156,7 +158,7 @@ const OnboardingPage = () => {
             {/* BIO */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Bio</span>
+                <span className="label-text">{t("onboarding.bio")}</span>
               </label>
               <textarea
                 name="bio"
@@ -165,7 +167,7 @@ const OnboardingPage = () => {
                   setFormState({ ...formState, bio: e.target.value })
                 }
                 className="textarea textarea-bordered h-24"
-                placeholder="Tell others about yourself and your language learning goals"
+                placeholder={t("onboarding.bioPlaceholder")}
               />
             </div>
 
@@ -174,7 +176,9 @@ const OnboardingPage = () => {
               {/* NATIVE LANGUAGE */}
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Native Language</span>
+                  <span className="label-text">
+                    {t("onboarding.nativeLanguage")}
+                  </span>
                 </label>
                 <select
                   name="nativeLanguage"
@@ -199,7 +203,9 @@ const OnboardingPage = () => {
               {/* LEARNING LANGUAGE */}
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Learning Language</span>
+                  <span className="label-text">
+                    {t("onboarding.learningLanguage")}
+                  </span>
                 </label>
                 <select
                   name="learningLanguage"
@@ -225,7 +231,7 @@ const OnboardingPage = () => {
             {/* LOCATION */}
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Location</span>
+                <span className="label-text">{t("onboarding.location")}</span>
               </label>
               <div className="relative">
                 <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-5 text-base-content opacity-70" />
@@ -237,7 +243,7 @@ const OnboardingPage = () => {
                     setFormState({ ...formState, location: e.target.value })
                   }
                   className="input input-bordered w-full pl-10"
-                  placeholder="City, Country"
+                  placeholder={t("onboarding.locationPlaceholder")}
                 />
               </div>
             </div>
@@ -252,12 +258,12 @@ const OnboardingPage = () => {
               {!isPending ? (
                 <>
                   <ShipWheelIcon className="size-5 mr-2" />
-                  Complete Onboarding
+                  {t("onboarding.completeButton")}
                 </>
               ) : (
                 <>
                   <LoaderIcon className="animate-spin size-5 mr-2" />
-                  Onboarding...
+                  {t("onboarding.completing")}
                 </>
               )}
             </button>

@@ -18,9 +18,11 @@ import { capitialize } from "../lib/utils";
 
 import FriendCard, { getLanguageFlag } from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
+import { useTranslation } from "../i18n/useTranslation";
 
 const FriendsPage = () => {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
@@ -59,11 +61,11 @@ const FriendsPage = () => {
       <div className="container mx-auto space-y-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Your Friends
+            {t("home.yourFriends")}
           </h2>
           <Link to="/notifications" className="btn btn-outline btn-sm">
             <UsersIcon className="mr-2 size-4" />
-            Friend Requests
+            {t("home.friendRequests")}
           </Link>
         </div>
 
@@ -86,11 +88,10 @@ const FriendsPage = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                  Meet New Learners
+                  {t("home.meetTitle")}
                 </h2>
                 <p className="opacity-70">
-                  Discover perfect language exchange partners based on your
-                  profile
+                  {t("home.meetSubtitle")}
                 </p>
               </div>
             </div>
@@ -103,10 +104,10 @@ const FriendsPage = () => {
           ) : recommendedUsers.length === 0 ? (
             <div className="card bg-base-200 p-6 text-center">
               <h3 className="font-semibold text-lg mb-2">
-                No recommendations available
+                {t("home.noRecommendations")}
               </h3>
               <p className="text-base-content opacity-70">
-                Check back later for new language partners!
+                {t("home.checkLater")}
               </p>
             </div>
           ) : (
@@ -142,11 +143,13 @@ const FriendsPage = () => {
                       <div className="flex flex-wrap gap-1.5">
                         <span className="badge badge-secondary">
                           {getLanguageFlag(user.nativeLanguage)}
-                          Native: {capitialize(user.nativeLanguage)}
+                          {t("home.nativeLabel")}:{" "}
+                          {capitialize(user.nativeLanguage)}
                         </span>
                         <span className="badge badge-outline">
                           {getLanguageFlag(user.learningLanguage)}
-                          Learning: {capitialize(user.learningLanguage)}
+                          {t("home.learningLabel")}:{" "}
+                          {capitialize(user.learningLanguage)}
                         </span>
                       </div>
 
@@ -165,12 +168,12 @@ const FriendsPage = () => {
                         {hasRequestBeenSent ? (
                           <>
                             <CheckCircleIcon className="size-4 mr-2" />
-                            Request Sent
+                            {t("home.requestSent")}
                           </>
                         ) : (
                           <>
                             <UserPlusIcon className="size-4 mr-2" />
-                            Send Friend Request
+                            {t("home.sendRequest")}
                           </>
                         )}
                       </button>
@@ -187,4 +190,3 @@ const FriendsPage = () => {
 };
 
 export default FriendsPage;
-

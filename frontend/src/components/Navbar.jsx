@@ -7,25 +7,21 @@ import {
   InfoIcon,
   LanguagesIcon,
   PaletteIcon,
-  ShipWheelIcon,
   Settings2Icon,
 } from "lucide-react";
-import ThemeSelector from "./ThemeSelector";
+import navLogo from "../pictures/others/LofiTalk_logo.png";
 import useLogout from "../hooks/useLogout";
+import ThemeSelector from "./ThemeSelector";
+import { AVAILABLE_LANGUAGES } from "../i18n/translations";
+import { useTranslation } from "../i18n/useTranslation";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const isChatPage = location.pathname?.startsWith("/chat");
   const [activeSetting, setActiveSetting] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  // const queryClient = useQueryClient();
-  // const { mutate: logoutMutation } = useMutation({
-  //   mutationFn: logout,
-  //   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-  // });
+  const { t, language, setLanguage } = useTranslation();
 
   const { logoutMutation } = useLogout();
 
@@ -37,7 +33,11 @@ const Navbar = () => {
           {isChatPage && (
             <div className="pl-5">
               <Link to="/" className="flex items-center gap-2.5">
-                <ShipWheelIcon className="size-9 text-primary" />
+                <img
+                  src={navLogo}
+                  alt="LofiTalk logo"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
                 <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
                   LofiTalk
                 </span>
@@ -47,7 +47,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
-              <button className="btn btn-ghost btn-circle">
+              <button className="btn btn-ghost btn-circle" title={t("nav.notifications")}>
                 <BellIcon className="h-6 w-6 text-base-content opacity-70" />
               </button>
             </Link>
@@ -88,7 +88,9 @@ const Navbar = () => {
                   }
                 >
                   <PaletteIcon className="size-4 text-primary" />
-                  <span className="text-sm font-semibold">Theme</span>
+                  <span className="text-sm font-semibold">
+                    {t("nav.theme")}
+                  </span>
                 </button>
                 {activeSetting === "theme" && (
                   <div className="mt-2 border border-base-content/10 rounded-xl p-2 max-h-72 overflow-y-auto">
@@ -106,21 +108,23 @@ const Navbar = () => {
                   }
                 >
                   <LanguagesIcon className="size-4 text-secondary" />
-                  <span className="text-sm font-semibold">Language</span>
+                  <span className="text-sm font-semibold">
+                    {t("nav.language")}
+                  </span>
                 </button>
                 {activeSetting === "language" && (
                   <div className="mt-2 border border-base-content/10 rounded-xl p-2 space-y-2">
-                    {["Vietnamese", "English", "German"].map((lang) => (
+                    {AVAILABLE_LANGUAGES.map((lang) => (
                       <button
-                        key={lang}
+                        key={lang.value}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm ${
-                          selectedLanguage === lang
+                          language === lang.value
                             ? "bg-secondary/10 text-secondary"
                             : "hover:bg-base-content/5"
                         }`}
-                        onClick={() => setSelectedLanguage(lang)}
+                        onClick={() => setLanguage(lang.value)}
                       >
-                        {lang}
+                        {lang.label}
                       </button>
                     ))}
                   </div>
@@ -136,20 +140,24 @@ const Navbar = () => {
                   }
                 >
                   <InfoIcon className="size-4 text-info" />
-                  <span className="text-sm font-semibold">About</span>
+                  <span className="text-sm font-semibold">
+                    {t("nav.about")}
+                  </span>
                 </button>
                 {activeSetting === "about" && (
                   <div className="mt-2 border border-base-content/10 rounded-xl p-3 text-sm space-y-1 bg-base-100">
                     <div className="flex justify-between">
-                      <span className="opacity-70">Version</span>
+                      <span className="opacity-70">{t("nav.version")}</span>
                       <span className="font-medium">v1.0.0</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="opacity-70">Developer</span>
+                      <span className="opacity-70">{t("nav.developer")}</span>
                       <span className="font-medium">Nghia Pham</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="opacity-70">Inspired by</span>
+                      <span className="opacity-70">
+                        {t("nav.inspiredBy")}
+                      </span>
                       <span className="font-medium">Codesistency</span>
                     </div>
                   </div>

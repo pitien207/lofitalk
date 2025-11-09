@@ -3,6 +3,7 @@ import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 
 import useSignUp from "../hooks/useSignup.js";
+import { useTranslation } from "../i18n/useTranslation";
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -24,6 +25,7 @@ const SignUpPage = () => {
 
   // This is how we did it using our custom hook - optimized version
   const { isPending, error, signupMutation } = useSignUp();
+  const { t } = useTranslation();
 
   const handleSignup = (e) => {
     e.preventDefault();
@@ -45,6 +47,7 @@ const SignUpPage = () => {
               LofiTalk
             </span>
           </div>
+          <p className="text-sm opacity-70">{t("auth.signupLogoTagline")}</p>
 
           {/* ERROR MESSAGE IF ANY */}
           {error && (
@@ -57,9 +60,11 @@ const SignUpPage = () => {
             <form onSubmit={handleSignup}>
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Create an Account</h2>
+                  <h2 className="text-xl font-semibold">
+                    {t("auth.signupTitle")}
+                  </h2>
                   <p className="text-sm opacity-70">
-                    Join LofiTalk and start your language learning adventure!
+                    {t("auth.signupSubtitle")}
                   </p>
                 </div>
 
@@ -67,7 +72,7 @@ const SignUpPage = () => {
                   {/* FULLNAME */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text">Full Name</span>
+                      <span className="label-text">{t("auth.fullName")}</span>
                     </label>
                     <input
                       type="text"
@@ -86,7 +91,7 @@ const SignUpPage = () => {
                   {/* EMAIL */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text">Email</span>
+                      <span className="label-text">{t("auth.email")}</span>
                     </label>
                     <input
                       type="email"
@@ -102,7 +107,7 @@ const SignUpPage = () => {
                   {/* PASSWORD */}
                   <div className="form-control w-full">
                     <label className="label">
-                      <span className="label-text">Password</span>
+                      <span className="label-text">{t("auth.password")}</span>
                     </label>
                     <input
                       type="password"
@@ -118,7 +123,7 @@ const SignUpPage = () => {
                       required
                     />
                     <p className="text-xs opacity-70 mt-1">
-                      Password must be at least 6 characters long
+                      {t("auth.passwordHint")}
                     </p>
                   </div>
 
@@ -130,13 +135,13 @@ const SignUpPage = () => {
                         required
                       />
                       <span className="text-xs leading-tight">
-                        I agree to the{" "}
+                        {t("auth.termsPrefix")}{" "}
                         <span className="text-primary hover:underline">
-                          terms of service
+                          {t("auth.termsOfService")}
                         </span>{" "}
-                        and{" "}
+                        {t("auth.and")}{" "}
                         <span className="text-primary hover:underline">
-                          privacy policy
+                          {t("auth.privacyPolicy")}
                         </span>
                       </span>
                     </label>
@@ -147,18 +152,18 @@ const SignUpPage = () => {
                   {isPending ? (
                     <>
                       <span className="loading loading-spinner loading-xs"></span>
-                      Loading...
+                      {t("common.loading")}
                     </>
                   ) : (
-                    "Create Account"
+                    t("auth.createAccount")
                   )}
                 </button>
 
                 <div className="text-center mt-4">
                   <p className="text-sm">
-                    Already have an account?{" "}
+                    {t("auth.alreadyHaveAccount")}
                     <Link to="/login" className="text-primary hover:underline">
-                      Sign in
+                      {t("auth.signIn")}
                     </Link>
                   </p>
                 </div>
@@ -181,12 +186,9 @@ const SignUpPage = () => {
 
             <div className="text-center space-y-3 mt-6">
               <h2 className="text-xl font-semibold">
-                Connect with language partners worldwide
+                {t("auth.signupIllustrationTitle")}
               </h2>
-              <p className="opacity-70">
-                Practice conversations, make friends, and improve your language
-                skills together
-              </p>
+              <p className="opacity-70">{t("auth.signupIllustrationSubtitle")}</p>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
+import { useTranslation } from "../i18n/useTranslation";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
@@ -10,6 +11,7 @@ const LoginPage = () => {
   });
 
   const { isPending, error, loginMutation } = useLogin();
+  const { t } = useTranslation();
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -43,16 +45,18 @@ const LoginPage = () => {
             <form onSubmit={handleLogin}>
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Welcome Back</h2>
+                  <h2 className="text-xl font-semibold">
+                    {t("auth.loginTitle")}
+                  </h2>
                   <p className="text-sm opacity-70">
-                    Sign in to your account to continue your language journey
+                    {t("auth.loginSubtitle")}
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3">
                   <div className="form-control w-full space-y-2">
                     <label className="label">
-                      <span className="label-text">Email</span>
+                      <span className="label-text">{t("auth.email")}</span>
                     </label>
                     <input
                       type="email"
@@ -68,7 +72,7 @@ const LoginPage = () => {
 
                   <div className="form-control w-full space-y-2">
                     <label className="label">
-                      <span className="label-text">Password</span>
+                      <span className="label-text">{t("auth.password")}</span>
                     </label>
                     <input
                       type="password"
@@ -90,21 +94,21 @@ const LoginPage = () => {
                     {isPending ? (
                       <>
                         <span className="loading loading-spinner loading-xs"></span>
-                        Signing in...
+                        {t("common.loading")}
                       </>
                     ) : (
-                      "Sign In"
+                      t("auth.signInButton")
                     )}
                   </button>
 
                   <div className="text-center mt-4">
                     <p className="text-sm">
-                      Don't have an account?{" "}
+                      {t("auth.dontHaveAccount")}
                       <Link
                         to="/signup"
                         className="text-primary hover:underline"
                       >
-                        Create one
+                        {t("auth.createOne")}
                       </Link>
                     </p>
                   </div>
@@ -128,11 +132,10 @@ const LoginPage = () => {
 
             <div className="text-center space-y-3 mt-6">
               <h2 className="text-xl font-semibold">
-                Connect with language partners worldwide
+                {t("auth.signupIllustrationTitle")}
               </h2>
               <p className="opacity-70">
-                Practice conversations, make friends, and improve your language
-                skills together
+                {t("auth.signupIllustrationSubtitle")}
               </p>
             </div>
           </div>

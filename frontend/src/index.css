@@ -38,6 +38,16 @@
   border-top: 1px solid #ddd;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background-color: var(--fallback-b1, #030712);
+}
+
 .btn-primary,
 .btn-primary:focus-visible {
   background-color: var(--brand-color);
