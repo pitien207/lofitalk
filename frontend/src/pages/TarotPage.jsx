@@ -16,6 +16,7 @@ import {
 } from "../lib/api";
 import cardBackImg from "../pictures/cards/CardBacks.png";
 import "../tarot.css";
+import { useTranslation } from "../i18n/useTranslation";
 
 const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
 const ENERGY_MAX = 7;
@@ -39,6 +40,7 @@ const TarotPage = () => {
   const animationTimeoutRef = useRef(null);
   const hasHydratedFromServer = useRef(false);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const {
     data: energyData,
@@ -56,6 +58,14 @@ const TarotPage = () => {
   const energy = energyData?.energy ?? 0;
   const normalizedEnergy = Math.max(0, Math.min(energy, ENERGY_MAX));
   const lastRefill = energyData?.lastRefill;
+  const lastRefillLabel = lastRefill
+    ? new Date(lastRefill).toLocaleDateString()
+    : t("tarot.energy.pendingDate");
+  const energySummary = t("tarot.energy.summary", {
+    current: isLoadingEnergy ? "..." : energy,
+    max: ENERGY_MAX,
+  });
+  const regenHint = t("tarot.energy.regenHint", { date: lastRefillLabel });
 
   const { mutateAsync: consumeEnergy, isPending: isConsuming } = useMutation({
     mutationFn: consumeTarotEnergy,
@@ -129,24 +139,24 @@ const TarotPage = () => {
     setErrorMsg("");
 
     if (questions.some((question) => !question.trim())) {
-      setErrorMsg("Hãy nhập đủ 3 câu hỏi trước khi bốc bài.");
+      setErrorMsg(t("tarot.errors.needQuestionsBeforeDraw"));
       return;
     }
 
     if (isLoadingEnergy) {
-      setErrorMsg("Đang tải trạng thái năng lượng...");
+      setErrorMsg(t("tarot.errors.loadingEnergy"));
       return;
     }
 
     if (energy < ENERGY_MAX) {
       setErrorMsg(
-        `Bạn cần ${ENERGY_MAX} năng lượng để bốc bài (hiện có ${energy}/${ENERGY_MAX}).`
+        t("tarot.errors.needEnergy", { required: ENERGY_MAX, current: energy })
       );
       return;
     }
 
     if (!deck.length) {
-      setErrorMsg("Không tìm thấy bộ bài.");
+      setErrorMsg(t("tarot.errors.noDeck"));
       return;
     }
 
@@ -154,7 +164,7 @@ const TarotPage = () => {
       await consumeEnergy();
     } catch (err) {
       setErrorMsg(
-        err?.response?.data?.message || "Không thể tiêu hao năng lượng."
+        err?.response?.data?.message || t("tarot.errors.consumeFailed")
       );
       return;
     }
@@ -170,7 +180,7 @@ const TarotPage = () => {
     }
 
     if (picks.length !== 3) {
-      setErrorMsg("Không đủ lá bài để bốc.");
+      setErrorMsg(t("tarot.errors.notEnoughCards"));
       return;
     }
 
@@ -183,12 +193,12 @@ const TarotPage = () => {
     setErrorMsg("");
 
     if (questions.some((question) => !question.trim())) {
-      setErrorMsg("Hãy nhập đủ 3 câu hỏi.");
+      setErrorMsg(t("tarot.errors.needQuestions"));
       return;
     }
 
     if (drawnCards.some((card) => !card)) {
-      setErrorMsg("Hãy bốc đủ 3 lá bài trước.");
+      setErrorMsg(t("tarot.errors.needDrawnCards"));
       return;
     }
 
@@ -213,7 +223,7 @@ const TarotPage = () => {
     refillEnergyMutation(undefined, {
       onError: (err) =>
         setErrorMsg(
-          err?.response?.data?.message || "Không thể refill năng lượng."
+          err?.response?.data?.message || t("tarot.errors.refillFailed")
         ),
     });
   };
@@ -258,17 +268,14 @@ const TarotPage = () => {
           <div className="card-body space-y-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold">Tarot Reading</h1>
+                <h1 className="text-2xl font-bold">{t("tarot.title")}</h1>
                 <p className="text-sm opacity-70">
-                  Cần tích lũy đủ {ENERGY_MAX} năng lượng (mỗi ngày +1) để bốc bài.
+                  {t("tarot.subtitle", { required: ENERGY_MAX })}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <div className="text-sm font-semibold">
-                  Năng lượng:{" "}
-                  {isLoadingEnergy ? "..." : `${energy}/${ENERGY_MAX}`}
-                </div>
+                <div className="text-sm font-semibold">{energySummary}</div>
                 <div className="energy-bar">
                   <div
                     className="energy-bar__fill"
@@ -287,12 +294,7 @@ const TarotPage = () => {
                     ))}
                   </div>
                 </div>
-                <p className="text-[11px] opacity-60">
-                  +1 năng lượng mỗi ngày. Lần hồi gần nhất:{" "}
-                  {lastRefill
-                    ? new Date(lastRefill).toLocaleDateString()
-                    : "..."}
-                </p>
+                <p className="text-[11px] opacity-60">{regenHint}</p>
               </div>
             </div>
 
@@ -306,11 +308,11 @@ const TarotPage = () => {
                 {isConsuming ? (
                   <>
                     <LoaderIcon className="size-4 mr-2 animate-spin" />
-                    Đang tiêu hao...
+                    {t("tarot.buttons.consuming")}
                   </>
                 ) : (
                   <>
-                    <ShuffleIcon className="size-4 mr-2" /> Draw Cards
+                    <ShuffleIcon className="size-4 mr-2" /> {t("tarot.buttons.draw")}
                   </>
                 )}
               </button>
@@ -322,11 +324,12 @@ const TarotPage = () => {
               >
                 {isClearing ? (
                   <>
-                    <LoaderIcon className="size-4 mr-2 animate-spin" /> Clearing...
+                    <LoaderIcon className="size-4 mr-2 animate-spin" />
+                    {t("tarot.buttons.clearing")}
                   </>
                 ) : (
                   <>
-                    <RotateCcwIcon className="size-4 mr-2" /> Clear Table
+                    <RotateCcwIcon className="size-4 mr-2" /> {t("tarot.buttons.clear")}
                   </>
                 )}
               </button>
@@ -339,16 +342,16 @@ const TarotPage = () => {
                 {isRefilling ? (
                   <>
                     <LoaderIcon className="size-4 mr-2 animate-spin" />
-                    Refilling...
+                    {t("tarot.buttons.refilling")}
                   </>
                 ) : (
-                  "Refill Energy"
+                  t("tarot.buttons.refill")
                 )}
               </button>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold mb-3">Lá bài đã bốc</h2>
+              <h2 className="text-lg font-semibold mb-3">{t("tarot.cards.title")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {drawnCards.map((card, index) => (
                   <div key={index} className="tarot-card-slot">
@@ -359,7 +362,7 @@ const TarotPage = () => {
                     >
                       <img
                         src={card ? card.src : cardBackImg}
-                        alt={card ? card.name : "Card back"}
+                        alt={card ? card.name : t("tarot.cards.backAlt")}
                         className={`tarot-card__image ${
                           card?.reversed ? "rotate-180" : ""
                         }`}
@@ -369,10 +372,12 @@ const TarotPage = () => {
                       {card ? (
                         <>
                           {card.name}
-                          {card.reversed ? " (reversed)" : ""}
+                          {card.reversed ? t("tarot.cards.reversed") : ""}
                         </>
                       ) : (
-                        <span className="opacity-0">placeholder</span>
+                        <span className="opacity-0">
+                          {t("tarot.cards.placeholder")}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -383,21 +388,25 @@ const TarotPage = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <h2 className="text-lg font-semibold mb-2">
-                  Câu hỏi của bạn
+                  {t("tarot.questions.title")}
                 </h2>
                 <p className="text-xs opacity-70 mb-3">
-                  Thứ tự câu hỏi tương ứng với thứ tự lá bài (trái sang phải).
+                  {t("tarot.questions.instructions")}
                 </p>
                 <div className="space-y-3">
                   {[0, 1, 2].map((index) => (
                     <div key={index} className="form-control">
                       <label className="label">
-                        <span className="label-text">Question {index + 1}</span>
+                        <span className="label-text">
+                          {t("tarot.questions.label", { number: index + 1 })}
+                        </span>
                       </label>
                       <input
                         type="text"
                         className="input input-bordered"
-                        placeholder={`Nhập câu hỏi ${index + 1}`}
+                        placeholder={t("tarot.questions.placeholder", {
+                          number: index + 1,
+                        })}
                         value={questions[index]}
                         onChange={(event) => {
                           const next = [...questions];
@@ -417,10 +426,11 @@ const TarotPage = () => {
               >
                 {isReadingPending ? (
                   <>
-                    <LoaderIcon className="size-4 mr-2 animate-spin" /> Reading...
+                    <LoaderIcon className="size-4 mr-2 animate-spin" />{" "}
+                    {t("tarot.questions.submitting")}
                   </>
                 ) : (
-                  "Get Reading"
+                  t("tarot.questions.submit")
                 )}
               </button>
 
@@ -434,7 +444,7 @@ const TarotPage = () => {
                 <div className="alert alert-error">
                   <span>
                     {error?.response?.data?.message ||
-                      "Không thể lấy kết quả, thử lại."}
+                      t("tarot.errors.readingFailed")}
                   </span>
                 </div>
               )}
@@ -445,7 +455,7 @@ const TarotPage = () => {
         {readingResult && (
           <div className="card bg-base-200 shadow">
             <div className="card-body space-y-4">
-              <h2 className="text-xl font-semibold">Thông điệp dành cho bạn</h2>
+              <h2 className="text-xl font-semibold">{t("tarot.results.title")}</h2>
               {displayedReadings?.length ? (
                 <>
                   <div className="space-y-3">
@@ -478,14 +488,17 @@ const TarotPage = () => {
                             )}
                             <div>
                               <p className="text-sm opacity-70">
-                                Q{index + 1}: {item.question}
+                                {t("tarot.results.questionPrefix", {
+                                  index: index + 1,
+                                })}{" "}
+                                {item.question}
                               </p>
                               <p className="font-semibold mt-1">
-                                Card: {item.card}
+                                {t("tarot.results.cardLabel")}: {item.card}
                               </p>
                               <p className="mt-1">{item.message}</p>
                               <p className="mt-1 text-primary">
-                                Advice: {item.advice}
+                                {t("tarot.results.adviceLabel")}: {item.advice}
                               </p>
                             </div>
                           </div>
@@ -504,10 +517,8 @@ const TarotPage = () => {
                 fallbackText && (
                   <div className="alert alert-info">
                     <div>
-                      <p className="font-semibold">Thông điệp từ AI</p>
-                      <p className="text-sm whitespace-pre-line">
-                        {fallbackText}
-                      </p>
+                      <p className="font-semibold">{t("tarot.results.aiTitle")}</p>
+                      <p className="text-sm whitespace-pre-line">{fallbackText}</p>
                     </div>
                   </div>
                 )
