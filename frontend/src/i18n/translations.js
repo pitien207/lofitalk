@@ -83,8 +83,6 @@ export const translations = {
       checkLater: "Check back later for new language partners!",
       sendRequest: "Send Friend Request",
       requestSent: "Request Sent",
-      nativeLabel: "Native",
-      learningLabel: "Learning",
     },
     language: {
       randomAvatarToast: "Random profile picture generated!",
@@ -172,8 +170,6 @@ export const translations = {
       checkLater: "Quay lại sau để gặp thêm bạn mới!",
       sendRequest: "Kết bạn",
       requestSent: "Đã gửi",
-      nativeLabel: "Ngôn ngữ mẹ đẻ",
-      learningLabel: "Đang học",
     },
     language: {
       randomAvatarToast: "Đã tạo avatar ngẫu nhiên!",
@@ -257,8 +253,6 @@ export const translations = {
       checkLater: "Schau später noch einmal vorbei!",
       sendRequest: "Freundschaftsanfrage",
       requestSent: "Gesendet",
-      nativeLabel: "Muttersprache",
-      learningLabel: "Lernsprache",
     },
     language: {
       randomAvatarToast: "Zufälliger Avatar erstellt!",

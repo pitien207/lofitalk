@@ -71,14 +71,16 @@ const NotificationsPage = () => {
                               <h3 className="font-semibold">
                                 {request.sender.fullName}
                               </h3>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
-                                <span className="badge badge-secondary badge-sm">
-                                  {t("notifications.native")}: {request.sender.nativeLanguage}
-                                </span>
-                                <span className="badge badge-outline badge-sm">
-                                  {t("notifications.learning")}: {request.sender.learningLanguage}
-                                </span>
-                              </div>
+                              {request.sender.city && (
+                                <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
+                                  <ClockIcon className="h-3 w-3" />
+                                  <span>
+                                    {[request.sender.city, request.sender.country]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
 

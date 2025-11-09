@@ -14,9 +14,7 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-import { capitialize } from "../lib/utils";
-
-import FriendCard, { getLanguageFlag } from "../components/FriendCard";
+import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 import { useTranslation } from "../languages/useTranslation";
 
@@ -137,20 +135,6 @@ const FriendsPage = () => {
                             </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Languages with flags */}
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="badge badge-secondary">
-                          {getLanguageFlag(user.nativeLanguage)}
-                          {t("home.nativeLabel")}:{" "}
-                          {capitialize(user.nativeLanguage)}
-                        </span>
-                        <span className="badge badge-outline">
-                          {getLanguageFlag(user.learningLanguage)}
-                          {t("home.learningLabel")}:{" "}
-                          {capitialize(user.learningLanguage)}
-                        </span>
                       </div>
 
                       {user.bio && (

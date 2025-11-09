@@ -21,6 +21,41 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    gender: {
+      type: String,
+      default: "",
+    },
+    birthDate: {
+      type: Date,
+    },
+    country: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "",
+    },
+    height: {
+      type: String,
+      default: "",
+    },
+    education: {
+      type: String,
+      default: "",
+    },
+    datingGoal: {
+      type: String,
+      default: "",
+    },
+    hobbies: {
+      type: String,
+      default: "",
+    },
+    pets: {
+      type: String,
+      default: "",
+    },
     profilePic: {
       type: String,
       default: "",
@@ -34,14 +69,6 @@ const userSchema = new mongoose.Schema(
     },
     verificationCodeExpiresAt: {
       type: Date,
-    },
-    nativeLanguage: {
-      type: String,
-      default: "",
-    },
-    learningLanguage: {
-      type: String,
-      default: "",
     },
     location: {
       type: String,

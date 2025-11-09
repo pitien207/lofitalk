@@ -12,23 +12,44 @@ import {
   ShuffleIcon,
   UploadIcon,
 } from "lucide-react";
-import { LANGUAGES } from "../constants";
 
 const OnboardingPage = () => {
   const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  const parsedBirthDate = authUser?.birthDate
+    ? new Date(authUser.birthDate)
+    : null;
+  const initialBirthDate =
+    parsedBirthDate && !Number.isNaN(parsedBirthDate.getTime())
+      ? parsedBirthDate.toISOString().slice(0, 10)
+      : "";
 
   const [formState, setFormState] = useState({
     fullName: authUser?.fullName || "",
     bio: authUser?.bio || "",
-    nativeLanguage: authUser?.nativeLanguage || "",
-    learningLanguage: authUser?.learningLanguage || "",
-    location: authUser?.location || "",
+    gender: authUser?.gender || "",
+    birthDate: initialBirthDate,
+    country: authUser?.country || "",
+    city: authUser?.city || "",
+    height: authUser?.height || "",
+    education: authUser?.education || "",
+    datingGoal: authUser?.datingGoal || "",
+    hobbies: authUser?.hobbies || "",
+    pets: authUser?.pets || "",
     profilePic: authUser?.profilePic || "",
   });
 
+  const GENDER_OPTIONS = [
+    { value: "", label: t("onboarding.genderPlaceholder") },
+    { value: "female", label: t("onboarding.genderOptions.female") },
+    { value: "male", label: t("onboarding.genderOptions.male") },
+    { value: "non-binary", label: t("onboarding.genderOptions.nonBinary") },
+    { value: "prefer_not_say", label: t("onboarding.genderOptions.preferNot") },
+  ];
+
   const fileInputRef = useRef(null);
-  const { t } = useTranslation();
 
   const { mutate: onboardingMutation, isPending } = useMutation({
     mutationFn: completeOnboarding,
@@ -171,81 +192,192 @@ const OnboardingPage = () => {
               />
             </div>
 
-            {/* LANGUAGES */}
+            {/* CORE INFO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* NATIVE LANGUAGE */}
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">
-                    {t("onboarding.nativeLanguage")}
+                    {t("onboarding.gender")}
                   </span>
                 </label>
                 <select
-                  name="nativeLanguage"
-                  value={formState.nativeLanguage}
+                  name="gender"
+                  value={formState.gender}
                   onChange={(e) =>
                     setFormState({
                       ...formState,
-                      nativeLanguage: e.target.value,
+                      gender: e.target.value,
                     })
                   }
                   className="select select-bordered w-full"
                 >
-                  <option value="">Select your native language</option>
-                  {LANGUAGES.map((lang) => (
-                    <option key={`native-${lang}`} value={lang.toLowerCase()}>
-                      {lang}
+                  {GENDER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* LEARNING LANGUAGE */}
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">
-                    {t("onboarding.learningLanguage")}
-                  </span>
+                  <span className="label-text">{t("onboarding.birthDate")}</span>
                 </label>
-                <select
-                  name="learningLanguage"
-                  value={formState.learningLanguage}
+                <input
+                  type="date"
+                  name="birthDate"
+                  value={formState.birthDate}
                   onChange={(e) =>
-                    setFormState({
-                      ...formState,
-                      learningLanguage: e.target.value,
-                    })
+                    setFormState({ ...formState, birthDate: e.target.value })
                   }
-                  className="select select-bordered w-full"
-                >
-                  <option value="">Select language you're learning</option>
-                  {LANGUAGES.map((lang) => (
-                    <option key={`learning-${lang}`} value={lang.toLowerCase()}>
-                      {lang}
-                    </option>
-                  ))}
-                </select>
+                  className="input input-bordered w-full"
+                  max={new Date().toISOString().slice(0, 10)}
+                  required
+                />
               </div>
             </div>
 
-            {/* LOCATION */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">{t("onboarding.location")}</span>
-              </label>
-              <div className="relative">
-                <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-5 text-base-content opacity-70" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">{t("onboarding.country")}</span>
+                </label>
                 <input
                   type="text"
-                  name="location"
-                  value={formState.location}
+                  name="country"
+                  value={formState.country}
                   onChange={(e) =>
-                    setFormState({ ...formState, location: e.target.value })
+                    setFormState({ ...formState, country: e.target.value })
                   }
-                  className="input input-bordered w-full pl-10"
-                  placeholder={t("onboarding.locationPlaceholder")}
+                  className="input input-bordered w-full"
+                  placeholder={t("onboarding.countryPlaceholder")}
+                  required
                 />
               </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">{t("onboarding.city")}</span>
+                </label>
+                <div className="relative">
+                  <MapPinIcon className="absolute top-1/2 transform -translate-y-1/2 left-3 size-5 text-base-content opacity-70" />
+                  <input
+                    type="text"
+                    name="city"
+                    value={formState.city}
+                    onChange={(e) =>
+                      setFormState({ ...formState, city: e.target.value })
+                    }
+                    className="input input-bordered w-full pl-10"
+                    placeholder={t("onboarding.cityPlaceholder")}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.height")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="height"
+                  value={formState.height}
+                  onChange={(e) =>
+                    setFormState({ ...formState, height: e.target.value })
+                  }
+                  className="input input-bordered w-full"
+                  placeholder={t("onboarding.heightPlaceholder")}
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.education")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  name="education"
+                  value={formState.education}
+                  onChange={(e) =>
+                    setFormState({ ...formState, education: e.target.value })
+                  }
+                  className="input input-bordered w-full"
+                  placeholder={t("onboarding.educationPlaceholder")}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.datingGoal")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  name="datingGoal"
+                  value={formState.datingGoal}
+                  onChange={(e) =>
+                    setFormState({ ...formState, datingGoal: e.target.value })
+                  }
+                  className="textarea textarea-bordered h-24"
+                  placeholder={t("onboarding.datingGoalPlaceholder")}
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.hobbies")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  name="hobbies"
+                  value={formState.hobbies}
+                  onChange={(e) =>
+                    setFormState({ ...formState, hobbies: e.target.value })
+                  }
+                  className="textarea textarea-bordered h-24"
+                  placeholder={t("onboarding.hobbiesPlaceholder")}
+                />
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">
+                  {t("onboarding.pets")}{" "}
+                  <span className="text-xs opacity-60">
+                    ({t("onboarding.optional")})
+                  </span>
+                </span>
+              </label>
+              <input
+                type="text"
+                name="pets"
+                value={formState.pets}
+                onChange={(e) =>
+                  setFormState({ ...formState, pets: e.target.value })
+                }
+                className="input input-bordered w-full"
+                placeholder={t("onboarding.petsPlaceholder")}
+              />
             </div>
 
             {/* SUBMIT BUTTON */}

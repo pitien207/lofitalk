@@ -184,24 +184,35 @@ export async function onboard(req, res) {
   try {
     const userId = req.user._id;
 
-    const { fullName, bio, nativeLanguage, learningLanguage, location } =
-      req.body;
+    const {
+      fullName,
+      bio,
+      gender,
+      birthDate,
+      country,
+      city,
+      height,
+      education,
+      datingGoal,
+      hobbies,
+      pets,
+    } = req.body;
 
     if (
       !fullName ||
-      !bio ||
-      !nativeLanguage ||
-      !learningLanguage ||
-      !location
+      !gender ||
+      !birthDate ||
+      !country ||
+      !city
     ) {
       return res.status(400).json({
         message: "All fields are required",
         missingFields: [
           !fullName && "fullName",
-          !bio && "bio",
-          !nativeLanguage && "nativeLanguage",
-          !learningLanguage && "learningLanguage",
-          !location && "location",
+          !gender && "gender",
+          !birthDate && "birthDate",
+          !country && "country",
+          !city && "city",
         ].filter(Boolean),
       });
     }
@@ -209,7 +220,18 @@ export async function onboard(req, res) {
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        ...req.body,
+        fullName,
+        bio: bio || "",
+        gender,
+        birthDate: birthDate ? new Date(birthDate) : undefined,
+        country,
+        city,
+        height: height || "",
+        education: education || "",
+        datingGoal: datingGoal || "",
+        hobbies: hobbies || "",
+        pets: pets || "",
+        location: `${city}, ${country}`,
         isOnboarded: true,
       },
       { new: true }
