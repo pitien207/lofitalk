@@ -1,36 +1,527 @@
-import { Link } from "react-router";
-import { UsersIcon, BellIcon, MessageSquareIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import useAuthUser from "../hooks/useAuthUser";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { completeOnboarding } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
+import {
+  CameraIcon,
+  LoaderIcon,
+  MapPinIcon,
+  ShipWheelIcon,
+  ShuffleIcon,
+  UploadIcon,
+  CalendarIcon,
+  HeartIcon,
+  BookOpenIcon,
+  QuoteIcon,
+  PawPrintIcon,
+} from "lucide-react";
+
+const InfoBadge = ({ icon: Icon, label, value }) => {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-2xl border border-base-300 bg-base-100">
+      <div className="mt-0.5">
+        <Icon className="size-4 text-primary" />
+      </div>
+      <div>
+        <p className="text-xs uppercase opacity-60 tracking-wide">{label}</p>
+        <p className="font-medium text-sm">{value}</p>
+      </div>
+    </div>
+  );
+};
 
 const HomePage = () => {
+  const { authUser, isLoading } = useAuthUser();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const fileInputRef = useRef(null);
+
+  const [formState, setFormState] = useState({
+    fullName: "",
+    bio: "",
+    gender: "",
+    birthDate: "",
+    country: "",
+    city: "",
+    height: "",
+    education: "",
+    datingGoal: "",
+    hobbies: "",
+    pets: "",
+    profilePic: "",
+  });
+
+  useEffect(() => {
+    if (!authUser) return;
+    const parsedBirthDate = authUser.birthDate
+      ? new Date(authUser.birthDate)
+      : null;
+    setFormState({
+      fullName: authUser.fullName || "",
+      bio: authUser.bio || "",
+      gender: authUser.gender || "",
+      birthDate:
+        parsedBirthDate && !Number.isNaN(parsedBirthDate.getTime())
+          ? parsedBirthDate.toISOString().slice(0, 10)
+          : "",
+      country: authUser.country || "",
+      city: authUser.city || "",
+      height: authUser.height || "",
+      education: authUser.education || "",
+      datingGoal: authUser.datingGoal || "",
+      hobbies: authUser.hobbies || "",
+      pets: authUser.pets || "",
+      profilePic: authUser.profilePic || "",
+    });
+  }, [authUser]);
+
+  const genderOptions = useMemo(
+    () => [
+      { value: "", label: t("onboarding.genderPlaceholder") },
+      { value: "female", label: t("onboarding.genderOptions.female") },
+      { value: "male", label: t("onboarding.genderOptions.male") },
+      { value: "non-binary", label: t("onboarding.genderOptions.nonBinary") },
+      { value: "prefer_not_say", label: t("onboarding.genderOptions.preferNot") },
+    ],
+    [t]
+  );
+
+  const { mutate: saveProfile, isPending } = useMutation({
+    mutationFn: completeOnboarding,
+    onSuccess: () => {
+      toast.success(t("profile.updated"));
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Failed to update profile");
+    },
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    saveProfile(formState);
+  };
+
+  const handleRandomAvatar = () => {
+    const idx = Math.floor(Math.random() * 100) + 1;
+    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+    setFormState((prev) => ({ ...prev, profilePic: randomAvatar }));
+    toast.success(t("language.randomAvatarToast"));
+  };
+
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleProfilePicUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("language.uploadError"));
+      event.target.value = "";
+      return;
+    }
+    if (file.size > 100 * 1024) {
+      toast.error(t("language.uploadSizeError"));
+      event.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormState((prev) => ({ ...prev, profilePic: reader.result }));
+      toast.success(t("language.uploadSuccess"));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const age = authUser?.birthDate
+    ? Math.max(
+        18,
+        new Date(Date.now() - new Date(authUser.birthDate)).getUTCFullYear() -
+          1970
+      )
+    : null;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <LoaderIcon className="size-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 lg:p-10">
-      <div className="container mx-auto max-w-4xl">
-        <div className="card bg-base-200 shadow-md">
-          <div className="card-body space-y-4">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {t("home.welcomeTitle")}
-            </h1>
-            <p className="opacity-80">
-              {t("home.welcomeSubtitle")}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-              <Link to="/friends" className="btn btn-primary w-full">
-                <UsersIcon className="size-4 mr-2" />
-                {t("home.goFriends")}
-              </Link>
-              <Link to="/notifications" className="btn btn-outline w-full">
-                <BellIcon className="size-4 mr-2" />
-                {t("home.goNotifications")}
-              </Link>
-              <Link to="/friends" className="btn btn-ghost w-full">
-                <MessageSquareIcon className="size-4 mr-2" />
-                {t("home.startChat")}
-              </Link>
+    <div className="p-4 sm:p-6 lg:p-10">
+      <div className="container mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* LEFT: PROFILE SUMMARY */}
+        <div className="space-y-6">
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body space-y-4">
+              <div className="flex flex-col items-center text-center gap-4">
+                <div className="avatar">
+                  <div className="w-32 h-32 rounded-2xl ring ring-primary/40 ring-offset-2">
+                    <img src={formState.profilePic} alt={formState.fullName} />
+                  </div>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold">{formState.fullName}</h1>
+                  <div className="flex items-center justify-center gap-2 text-base-content/70 mt-1">
+                    <MapPinIcon className="size-4" />
+                    <span>
+                      {[formState.city, formState.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
+                  </div>
+                  {age && (
+                    <span className="badge badge-primary badge-outline mt-2">
+                      {age} {t("profile.yearsOld")}
+                    </span>
+                  )}
+                </div>
+                {formState.bio && (
+                  <p className="text-base-content/80 italic">
+                    “{formState.bio}”
+                  </p>
+                )}
+              </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <InfoBadge
+              icon={CalendarIcon}
+              label={t("profile.birthDate")}
+              value={
+                formState.birthDate
+                  ? new Date(formState.birthDate).toLocaleDateString()
+                  : null
+              }
+            />
+            <InfoBadge
+              icon={HeartIcon}
+              label={t("profile.datingGoal")}
+              value={formState.datingGoal}
+            />
+            <InfoBadge
+              icon={BookOpenIcon}
+              label={t("profile.education")}
+              value={formState.education}
+            />
+            <InfoBadge
+              icon={QuoteIcon}
+              label={t("profile.hobbies")}
+              value={formState.hobbies}
+            />
+            <InfoBadge
+              icon={PawPrintIcon}
+              label={t("profile.pets")}
+              value={formState.pets}
+            />
+            <InfoBadge
+              icon={MapPinIcon}
+              label={t("profile.height")}
+              value={formState.height}
+            />
+          </div>
+
+          <div className="card bg-base-200">
+            <div className="card-body">
+              <h2 className="font-semibold text-lg">
+                {t("profile.connections", {
+                  count: authUser?.friends?.length || 0,
+                })}
+              </h2>
+              <p className="text-sm opacity-70">
+                {t("profile.connectionHint")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT: EDIT FORM */}
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body space-y-5">
+            <div>
+              <h2 className="text-2xl font-semibold">
+                {t("profile.editTitle")}
+              </h2>
+              <p className="text-sm opacity-70">
+                {t("profile.editSubtitle")}
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRandomAvatar}
+                  className="btn btn-accent btn-sm"
+                >
+                  <ShuffleIcon className="size-4 mr-1.5" />
+                  {t("onboarding.randomAvatar")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUploadClick}
+                  className="btn btn-outline btn-sm"
+                >
+                  <UploadIcon className="size-4 mr-1.5" />
+                  {t("onboarding.uploadPhoto")}
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleProfilePicUpload}
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">{t("onboarding.fullName")}</span>
+                </label>
+                <input
+                  type="text"
+                  value={formState.fullName}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      fullName: e.target.value,
+                    }))
+                  }
+                  className="input input-bordered w-full"
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">{t("onboarding.bio")}</span>
+                </label>
+                <textarea
+                  value={formState.bio}
+                  onChange={(e) =>
+                    setFormState((prev) => ({ ...prev, bio: e.target.value }))
+                  }
+                  className="textarea textarea-bordered h-24"
+                  placeholder={t("onboarding.bioPlaceholder")}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">{t("onboarding.gender")}</span>
+                  </label>
+                  <select
+                    value={formState.gender}
+                    className="select select-bordered w-full"
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        gender: e.target.value,
+                      }))
+                    }
+                  >
+                    {genderOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("onboarding.birthDate")}
+                    </span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formState.birthDate}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        birthDate: e.target.value,
+                      }))
+                    }
+                    className="input input-bordered w-full"
+                    max={new Date().toISOString().slice(0, 10)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">{t("onboarding.country")}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formState.country}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        country: e.target.value,
+                      }))
+                    }
+                    className="input input-bordered w-full"
+                    placeholder={t("onboarding.countryPlaceholder")}
+                    required
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">{t("onboarding.city")}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formState.city}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        city: e.target.value,
+                      }))
+                    }
+                    className="input input-bordered w-full"
+                    placeholder={t("onboarding.cityPlaceholder")}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("onboarding.height")}{" "}
+                      <span className="text-xs opacity-60">
+                        ({t("onboarding.optional")})
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formState.height}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        height: e.target.value,
+                      }))
+                    }
+                    className="input input-bordered w-full"
+                    placeholder={t("onboarding.heightPlaceholder")}
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("onboarding.education")}{" "}
+                      <span className="text-xs opacity-60">
+                        ({t("onboarding.optional")})
+                      </span>
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formState.education}
+                    onChange={(e) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        education: e.target.value,
+                      }))
+                    }
+                    className="input input-bordered w-full"
+                    placeholder={t("onboarding.educationPlaceholder")}
+                  />
+                </div>
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.datingGoal")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  value={formState.datingGoal}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      datingGoal: e.target.value,
+                    }))
+                  }
+                  className="textarea textarea-bordered h-20"
+                  placeholder={t("onboarding.datingGoalPlaceholder")}
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.hobbies")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <textarea
+                  value={formState.hobbies}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      hobbies: e.target.value,
+                    }))
+                  }
+                  className="textarea textarea-bordered h-20"
+                  placeholder={t("onboarding.hobbiesPlaceholder")}
+                />
+              </div>
+
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.pets")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={formState.pets}
+                  onChange={(e) =>
+                    setFormState((prev) => ({ ...prev, pets: e.target.value }))
+                  }
+                  className="input input-bordered w-full"
+                  placeholder={t("onboarding.petsPlaceholder")}
+                />
+              </div>
+
+              <button
+                className="btn btn-primary w-full"
+                disabled={isPending}
+                type="submit"
+              >
+                {!isPending ? (
+                  <>
+                    <ShipWheelIcon className="size-5 mr-2" />
+                    {t("profile.saveButton")}
+                  </>
+                ) : (
+                  <>
+                    <LoaderIcon className="animate-spin size-5 mr-2" />
+                    {t("profile.saving")}
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       </div>

@@ -166,15 +166,15 @@ const Navbar = () => {
             </div>
           </div>
 
-          <div className="avatar">
-            <div className="w-9 rounded-full">
+          <Link to="/" className="avatar">
+            <div className="w-9 rounded-full ring ring-primary/20">
               <img
                 src={authUser?.profilePic}
                 alt="User Avatar"
                 rel="noreferrer"
               />
             </div>
-          </div>
+          </Link>
 
           {/* Logout button */}
           <button className="btn btn-ghost btn-circle" onClick={logoutMutation}>

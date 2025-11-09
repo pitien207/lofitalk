@@ -2,23 +2,28 @@ import { Link } from "react-router";
 import { MapPinIcon } from "lucide-react";
 
 const FriendCard = ({ friend }) => {
+  const locationText =
+    [friend.city, friend.country].filter(Boolean).join(", ") ||
+    friend.location ||
+    "";
   return (
     <div className="card bg-base-200 hover:shadow-md transition-shadow">
       <div className="card-body p-4">
         {/* USER INFO */}
-        <div className="flex items-center gap-3 mb-3">
+        <Link
+          to={`/profile/${friend._id}`}
+          className="flex items-center gap-3 mb-3 hover:text-primary transition-colors"
+        >
           <div className="avatar size-12">
             <img src={friend.profilePic} alt={friend.fullName} />
           </div>
           <h3 className="font-semibold truncate">{friend.fullName}</h3>
-        </div>
+        </Link>
 
-        {(friend.city || friend.country) && (
+        {locationText && (
           <div className="flex items-center gap-2 text-xs text-base-content/70 mb-3">
             <MapPinIcon className="size-3" />
-            <span>
-              {[friend.city, friend.country].filter(Boolean).join(", ")}
-            </span>
+            <span>{locationText}</span>
           </div>
         )}
 

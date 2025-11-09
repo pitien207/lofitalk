@@ -112,6 +112,10 @@ const FriendsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendedUsers.map((user) => {
                 const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
+                const locationText =
+                  [user.city, user.country].filter(Boolean).join(", ") ||
+                  user.location ||
+                  "";
 
                 return (
                   <div
@@ -119,8 +123,11 @@ const FriendsPage = () => {
                     className="card bg-base-200 hover:shadow-lg transition-all duration-300"
                   >
                     <div className="card-body p-5 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="avatar size-16 rounded-full">
+                      <Link
+                        to={`/profile/${user._id}`}
+                        className="flex items-center gap-3 hover:text-primary transition-colors"
+                      >
+                        <div className="avatar size-16 rounded-full ring ring-primary/20">
                           <img src={user.profilePic} alt={user.fullName} />
                         </div>
 
@@ -128,14 +135,14 @@ const FriendsPage = () => {
                           <h3 className="font-semibold text-lg">
                             {user.fullName}
                           </h3>
-                          {user.location && (
+                          {locationText && (
                             <div className="flex items-center text-xs opacity-70 mt-1">
                               <MapPinIcon className="size-3 mr-1" />
-                              {user.location}
+                              {locationText}
                             </div>
                           )}
                         </div>
-                      </div>
+                      </Link>
 
                       {user.bio && (
                         <p className="text-sm opacity-70">{user.bio}</p>

@@ -3,9 +3,11 @@ import { acceptFriendRequest, getFriendRequests } from "../lib/api";
 import {
   BellIcon,
   ClockIcon,
+  MapPinIcon,
   MessageSquareIcon,
   UserCheckIcon,
 } from "lucide-react";
+import { Link } from "react-router";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
 
@@ -61,23 +63,30 @@ const NotificationsPage = () => {
                       <div className="card-body p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="avatar w-14 h-14 rounded-full bg-base-300">
+                            <Link
+                              to={`/profile/${request.sender._id}`}
+                              className="avatar w-14 h-14 rounded-full bg-base-300 ring ring-primary/20"
+                            >
                               <img
                                 src={request.sender.profilePic}
                                 alt={request.sender.fullName}
                               />
-                            </div>
+                            </Link>
                             <div>
                               <h3 className="font-semibold">
                                 {request.sender.fullName}
                               </h3>
-                              {request.sender.city && (
+                              {([request.sender.city, request.sender.country]
+                                .filter(Boolean)
+                                .join(", ") ||
+                                request.sender.location) && (
                                 <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
-                                  <ClockIcon className="h-3 w-3" />
+                                  <MapPinIcon className="h-3 w-3" />
                                   <span>
                                     {[request.sender.city, request.sender.country]
                                       .filter(Boolean)
-                                      .join(", ")}
+                                      .join(", ") ||
+                                      request.sender.location}
                                   </span>
                                 </div>
                               )}
@@ -115,12 +124,15 @@ const NotificationsPage = () => {
                     >
                       <div className="card-body p-4">
                         <div className="flex items-start gap-3">
-                          <div className="avatar mt-1 size-10 rounded-full">
+                          <Link
+                            to={`/profile/${notification.recipient._id}`}
+                            className="avatar mt-1 size-10 rounded-full ring ring-primary/20"
+                          >
                             <img
                               src={notification.recipient.profilePic}
                               alt={notification.recipient.fullName}
                             />
-                          </div>
+                          </Link>
                           <div className="flex-1">
                             <h3 className="font-semibold">
                               {notification.recipient.fullName}

@@ -100,3 +100,8 @@ export async function clearTarotLatest() {
   const response = await axiosInstance.delete("/tarot/latest");
   return response.data;
 }
+
+export async function getUserProfile(userId) {
+  const response = await axiosInstance.get(`/users/profile/${userId}`);
+  return response.data;
+}
