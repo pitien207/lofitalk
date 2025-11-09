@@ -12,8 +12,8 @@ import {
 import navLogo from "../pictures/others/LofiTalk_logo.png";
 import useLogout from "../hooks/useLogout";
 import ThemeSelector from "./ThemeSelector";
-import { AVAILABLE_LANGUAGES } from "../i18n/translations";
-import { useTranslation } from "../i18n/useTranslation";
+import { AVAILABLE_LANGUAGES } from "../languages/translations";
+import { useTranslation } from "../languages/useTranslation";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();

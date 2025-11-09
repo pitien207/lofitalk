@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
-import { useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../languages/useTranslation";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { UsersIcon, BellIcon, MessageSquareIcon } from "lucide-react";
-import { useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../languages/useTranslation";
 
 const HomePage = () => {
   const { t } = useTranslation();

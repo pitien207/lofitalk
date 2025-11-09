@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { BellIcon, HomeIcon, UsersIcon, ShuffleIcon } from "lucide-react";
 import logo from "../pictures/others/LofiTalk_logo.png";
-import { useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../languages/useTranslation";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();

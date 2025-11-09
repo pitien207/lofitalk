@@ -16,7 +16,7 @@ import {
 } from "../lib/api";
 import cardBackImg from "../pictures/cards/CardBacks.png";
 import "../tarot.css";
-import { useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../languages/useTranslation";
 
 const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
 const ENERGY_MAX = 7;

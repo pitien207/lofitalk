@@ -18,7 +18,7 @@ import { capitialize } from "../lib/utils";
 
 import FriendCard, { getLanguageFlag } from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
-import { useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../languages/useTranslation";
 
 const FriendsPage = () => {
   const queryClient = useQueryClient();

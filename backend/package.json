@@ -20,6 +20,7 @@
     "jsonwebtoken": "^9.0.2",
     "lofitalk": "file:..",
     "mongoose": "^8.13.2",
+    "nodemailer": "^6.10.1",
     "stream-chat": "^8.60.0"
   },
   "devDependencies": {

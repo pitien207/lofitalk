@@ -25,6 +25,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationCode: {
+      type: String,
+    },
+    verificationCodeExpiresAt: {
+      type: Date,
+    },
     nativeLanguage: {
       type: String,
       default: "",
