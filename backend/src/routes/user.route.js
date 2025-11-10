@@ -2,6 +2,8 @@ import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import {
   acceptFriendRequest,
+  declineFriendRequest,
+  deleteFriendRequest,
   getFriendRequests,
   getMyFriends,
   getOutgoingFriendReqs,
@@ -20,9 +22,11 @@ router.get("/", getRecommendedUsers);
 router.get("/friends", getMyFriends);
 router.get("/profile/:id", getUserProfile);
 router.delete("/friends/:id", removeFriend);
+router.delete("/friend-request/:id", deleteFriendRequest);
 
 router.post("/friend-request/:id", sendFriendRequest);
 router.put("/friend-request/:id/accept", acceptFriendRequest);
+router.put("/friend-request/:id/decline", declineFriendRequest);
 
 router.get("/friend-requests", getFriendRequests);
 router.get("/outgoing-friend-requests", getOutgoingFriendReqs);

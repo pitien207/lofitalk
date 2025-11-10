@@ -1,13 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { acceptFriendRequest, getFriendRequests } from "../lib/api";
+import {
+  acceptFriendRequest,
+  declineFriendRequest,
+  deleteFriendRequest,
+  getFriendRequests,
+} from "../lib/api";
 import {
   BellIcon,
   ClockIcon,
   MapPinIcon,
   MessageSquareIcon,
   UserCheckIcon,
+  XCircleIcon,
+  XIcon,
 } from "lucide-react";
 import { Link } from "react-router";
+import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
 
@@ -28,8 +36,33 @@ const NotificationsPage = () => {
     },
   });
 
+  const { mutate: declineRequestMutation, isPending: isDeclining } =
+    useMutation({
+      mutationFn: declineFriendRequest,
+      onSuccess: () => {
+        toast.success(t("notifications.declined"));
+        queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || t("notifications.error"));
+      },
+    });
+
+  const { mutate: deleteNotificationMutation, isPending: isRemoving } =
+    useMutation({
+      mutationFn: deleteFriendRequest,
+      onSuccess: () => {
+        toast.success(t("notifications.deleted"));
+        queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      },
+      onError: (error) => {
+        toast.error(error.response?.data?.message || t("notifications.error"));
+      },
+    });
+
   const incomingRequests = friendRequests?.incomingReqs || [];
   const acceptedRequests = friendRequests?.acceptedReqs || [];
+  const declinedRequests = friendRequests?.declinedReqs || [];
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -61,7 +94,7 @@ const NotificationsPage = () => {
                       className="card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="card-body p-4">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <Link
                               to={`/profile/${request.sender._id}`}
@@ -74,8 +107,8 @@ const NotificationsPage = () => {
                             </Link>
                             <div>
                               <h3 className="font-semibold">
-                                {request.sender.fullName}
-                              </h3>
+                              {request.sender.fullName}
+                            </h3>
                               {([request.sender.city, request.sender.country]
                                 .filter(Boolean)
                                 .join(", ") ||
@@ -93,13 +126,34 @@ const NotificationsPage = () => {
                             </div>
                           </div>
 
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => acceptRequestMutation(request._id)}
-                            disabled={isPending}
-                          >
-                            {t("notifications.accept")}
-                          </button>
+                          {request.status === "pending" && (
+                            <div className="flex gap-2 items-center">
+                              <button
+                                className="btn btn-outline btn-sm"
+                                onClick={() =>
+                                  declineRequestMutation(request._id)
+                                }
+                                disabled={isDeclining}
+                              >
+                                {isDeclining ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : null}
+                                {t("notifications.decline")}
+                              </button>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() =>
+                                  acceptRequestMutation(request._id)
+                                }
+                                disabled={isPending}
+                              >
+                                {isPending ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : null}
+                                {t("notifications.accept")}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -151,6 +205,20 @@ const NotificationsPage = () => {
                             <MessageSquareIcon className="h-3 w-3 mr-1" />
                             {t("notifications.newFriend")}
                           </div>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() =>
+                              deleteNotificationMutation(notification._id)
+                            }
+                            disabled={isRemoving}
+                            title={t("notifications.delete")}
+                          >
+                            {isRemoving ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              <XIcon className="size-4" />
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -159,9 +227,72 @@ const NotificationsPage = () => {
               </section>
             )}
 
-            {incomingRequests.length === 0 && acceptedRequests.length === 0 && (
-              <NoNotificationsFound />
+            {declinedRequests.length > 0 && (
+              <section className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <XCircleIcon className="h-5 w-5 text-error" />
+                  {t("notifications.declinedSection")}
+                </h2>
+
+                <div className="space-y-3">
+                  {declinedRequests.map((notification) => (
+                    <div
+                      key={notification._id}
+                      className="card bg-base-200 shadow-sm"
+                    >
+                      <div className="card-body p-4">
+                        <div className="flex items-start gap-3">
+                          <Link
+                            to={`/profile/${notification.recipient._id}`}
+                            className="avatar mt-1 size-10 rounded-full ring ring-error/20"
+                          >
+                            <img
+                              src={notification.recipient.profilePic}
+                              alt={notification.recipient.fullName}
+                            />
+                          </Link>
+                          <div className="flex-1">
+                            <h3 className="font-semibold">
+                              {notification.recipient.fullName}
+                            </h3>
+                            <p className="text-sm my-1">
+                              {t("notifications.declinedText", {
+                                name: notification.recipient.fullName,
+                              })}
+                            </p>
+                            <p className="text-xs flex items-center opacity-70">
+                              <ClockIcon className="h-3 w-3 mr-1" />
+                              {t("notifications.recently")}
+                            </p>
+                          </div>
+                          <div className="badge badge-error">
+                            {t("notifications.declined")}
+                          </div>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() =>
+                              deleteNotificationMutation(notification._id)
+                            }
+                            disabled={isRemoving}
+                            title={t("notifications.delete")}
+                          >
+                            {isRemoving ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : (
+                              <XIcon className="size-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             )}
+
+            {incomingRequests.length === 0 &&
+              acceptedRequests.length === 0 &&
+              declinedRequests.length === 0 && <NoNotificationsFound />}
           </>
         )}
       </div>

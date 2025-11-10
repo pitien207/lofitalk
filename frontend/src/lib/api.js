@@ -115,3 +115,13 @@ export async function removeFriend(userId) {
   const response = await axiosInstance.delete(`/users/friends/${userId}`);
   return response.data;
 }
+
+export async function deleteFriendRequest(requestId) {
+  const response = await axiosInstance.delete(`/users/friend-request/${requestId}`);
+  return response.data;
+}
+
+export async function declineFriendRequest(requestId) {
+  const response = await axiosInstance.put(`/users/friend-request/${requestId}/decline`);
+  return response.data;
+}

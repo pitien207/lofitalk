@@ -63,6 +63,7 @@ export async function sendFriendRequest(req, res) {
         { sender: myId, recipient: recipientId },
         { sender: recipientId, recipient: myId },
       ],
+      status: "pending",
     });
 
     if (existingRequest) {
@@ -132,7 +133,12 @@ export async function getFriendRequests(req, res) {
       status: "accepted",
     }).populate("recipient", "fullName profilePic");
 
-    res.status(200).json({ incomingReqs, acceptedReqs });
+    const declinedReqs = await FriendRequest.find({
+      sender: req.user.id,
+      status: "declined",
+    }).populate("recipient", "fullName profilePic");
+
+    res.status(200).json({ incomingReqs, acceptedReqs, declinedReqs });
   } catch (error) {
     console.log("Error in getPendingFriendRequests controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -214,7 +220,6 @@ export async function removeFriend(req, res) {
         { sender: viewerId, recipient: targetId },
         { sender: targetId, recipient: viewerId },
       ],
-      status: { $ne: "accepted" },
     });
 
     res.status(200).json({ success: true, message: "Friend removed" });
@@ -223,3 +228,67 @@ export async function removeFriend(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+export async function deleteFriendRequest(req, res) {
+  try {
+    const userId = req.user.id;
+    const { id: requestId } = req.params;
+
+    const friendRequest = await FriendRequest.findById(requestId);
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    const isRecipient = friendRequest.recipient.toString() === userId;
+    const isSender = friendRequest.sender.toString() === userId;
+
+    if (!isRecipient && !isSender) {
+      return res
+        .status(403)
+        .json({ message: "You are not allowed to modify this request" });
+    }
+
+    const canClearAccepted = friendRequest.status === "accepted";
+    const canClearDeclined =
+      friendRequest.status === "declined" && isSender;
+
+    if (!canClearAccepted && !canClearDeclined) {
+      return res.status(403).json({
+        message: "This notification cannot be cleared.",
+      });
+    }
+
+    await friendRequest.deleteOne();
+    res.status(200).json({ success: true, message: "Request removed" });
+  } catch (error) {
+    console.error("Error deleting friend request", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function declineFriendRequest(req, res) {
+  try {
+    const userId = req.user.id;
+    const { id: requestId } = req.params;
+
+    const friendRequest = await FriendRequest.findById(requestId);
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    if (friendRequest.recipient.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Only the recipient can decline this request" });
+    }
+
+    friendRequest.status = "declined";
+    await friendRequest.save();
+
+    res.status(200).json({ success: true, message: "Request declined" });
+  } catch (error) {
+    console.error("Error declining friend request", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
