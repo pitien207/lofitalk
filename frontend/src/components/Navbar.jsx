@@ -14,6 +14,7 @@ import useLogout from "../hooks/useLogout";
 import ThemeSelector from "./ThemeSelector";
 import { AVAILABLE_LANGUAGES } from "../languages/translations";
 import { useTranslation } from "../languages/useTranslation";
+import usePendingNotifications from "../hooks/usePendingNotifications";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
@@ -22,6 +23,7 @@ const Navbar = () => {
   const [activeSetting, setActiveSetting] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { t, language, setLanguage } = useTranslation();
+  const { hasPending } = usePendingNotifications();
 
   const { logoutMutation } = useLogout();
 
@@ -47,8 +49,14 @@ const Navbar = () => {
 
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
-              <button className="btn btn-ghost btn-circle" title={t("nav.notifications")}>
+              <button
+                className="btn btn-ghost btn-circle relative"
+                title={t("nav.notifications")}
+              >
                 <BellIcon className="h-6 w-6 text-base-content opacity-70" />
+                {hasPending && (
+                  <span className="absolute top-2 right-2 block size-2 rounded-full bg-error" />
+                )}
               </button>
             </Link>
           </div>

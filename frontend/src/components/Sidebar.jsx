@@ -3,12 +3,14 @@ import useAuthUser from "../hooks/useAuthUser";
 import { BellIcon, HomeIcon, UsersIcon, ShuffleIcon } from "lucide-react";
 import logo from "../pictures/others/LofiTalk_logo.png";
 import { useTranslation } from "../languages/useTranslation";
+import usePendingNotifications from "../hooks/usePendingNotifications";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const currentPath = location.pathname;
   const { t } = useTranslation();
+  const { hasPending } = usePendingNotifications();
 
   return (
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
@@ -48,7 +50,12 @@ const Sidebar = () => {
             currentPath === "/notifications" ? "btn-active" : ""
           }`}
         >
-          <BellIcon className="size-5 text-base-content opacity-70" />
+          <span className="relative">
+            <BellIcon className="size-5 text-base-content opacity-70" />
+            {hasPending && (
+              <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+            )}
+          </span>
           <span>{t("sidebar.notifications")}</span>
         </Link>
 
