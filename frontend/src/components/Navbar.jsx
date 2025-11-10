@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
@@ -9,7 +9,6 @@ import {
   PaletteIcon,
   Settings2Icon,
 } from "lucide-react";
-import navLogo from "../pictures/others/LofiTalk_logo.png";
 import useLogout from "../hooks/useLogout";
 import ThemeSelector from "./ThemeSelector";
 import { AVAILABLE_LANGUAGES } from "../languages/translations";
@@ -18,8 +17,6 @@ import usePendingNotifications from "../hooks/usePendingNotifications";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
-  const location = useLocation();
-  const isChatPage = location.pathname?.startsWith("/chat");
   const [activeSetting, setActiveSetting] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { t, language, setLanguage } = useTranslation();
@@ -31,22 +28,6 @@ const Navbar = () => {
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-end w-full">
-          {/* LOGO - ONLY IN THE CHAT PAGE */}
-          {isChatPage && (
-            <div className="pl-5">
-              <Link to="/" className="flex items-center gap-2.5">
-                <img
-                  src={navLogo}
-                  alt="LofiTalk logo"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
-                <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
-                  LofiTalk
-                </span>
-              </Link>
-            </div>
-          )}
-
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
               <button
