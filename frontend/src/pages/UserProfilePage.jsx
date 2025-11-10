@@ -138,16 +138,6 @@ const UserProfilePage = () => {
           />
         </div>
 
-        <div className="card bg-base-200">
-          <div className="card-body">
-            <h2 className="font-semibold text-lg">
-              {t("profile.connections", { count: user.friendsCount || 0 })}
-            </h2>
-            <p className="text-sm opacity-70">
-              {t("profile.connectionHint")}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

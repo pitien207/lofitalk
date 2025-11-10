@@ -3,8 +3,8 @@ import { create } from "zustand";
 const STORAGE_KEY = "lofitalk-language";
 const defaultLanguage =
   typeof window !== "undefined"
-    ? localStorage.getItem(STORAGE_KEY) || "English"
-    : "English";
+    ? localStorage.getItem(STORAGE_KEY) || "Vietnamese"
+    : "Vietnamese";
 
 export const useLanguageStore = create((set) => ({
   language: defaultLanguage,
@@ -15,4 +15,3 @@ export const useLanguageStore = create((set) => ({
     set({ language });
   },
 }));
-
