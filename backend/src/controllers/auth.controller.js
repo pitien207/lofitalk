@@ -180,6 +180,44 @@ export async function verifySignupCode(req, res) {
   }
 }
 
+export async function updatePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Both current and new passwords are required" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.log("Error updating password:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export async function onboard(req, res) {
   try {
     const userId = req.user._id;
@@ -196,6 +234,7 @@ export async function onboard(req, res) {
       datingGoal,
       hobbies,
       pets,
+      profilePic,
     } = req.body;
 
     if (
@@ -217,25 +256,29 @@ export async function onboard(req, res) {
       });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        fullName,
-        bio: bio || "",
-        gender,
-        birthDate: birthDate ? new Date(birthDate) : undefined,
-        country,
-        city,
-        height: height || "",
-        education: education || "",
-        datingGoal: datingGoal || "",
-        hobbies: hobbies || "",
-        pets: pets || "",
-        location: `${city}, ${country}`,
-        isOnboarded: true,
-      },
-      { new: true }
-    );
+    const updatePayload = {
+      fullName,
+      bio: bio || "",
+      gender,
+      birthDate: birthDate ? new Date(birthDate) : undefined,
+      country,
+      city,
+      height: height || "",
+      education: education || "",
+      datingGoal: datingGoal || "",
+      hobbies: hobbies || "",
+      pets: pets || "",
+      location: [city, country].filter(Boolean).join(", "),
+      isOnboarded: true,
+    };
+
+    if (profilePic) {
+      updatePayload.profilePic = profilePic;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updatePayload, {
+      new: true,
+    });
 
     if (!updatedUser)
       return res.status(404).json({ message: "User not found" });

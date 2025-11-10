@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { completeOnboarding } from "../lib/api";
+import { completeOnboarding, updatePassword } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import {
   CameraIcon,
@@ -53,6 +53,11 @@ const HomePage = () => {
     pets: "",
     profilePic: "",
   });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   useEffect(() => {
     if (!authUser) return;
@@ -100,9 +105,37 @@ const HomePage = () => {
     },
   });
 
+  const {
+    mutate: changePassword,
+    isPending: isUpdatingPassword,
+  } = useMutation({
+    mutationFn: updatePassword,
+    onSuccess: () => {
+      toast.success(t("profile.passwordSuccess"));
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || t("profile.passwordError")
+      );
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     saveProfile(formState);
+  };
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error(t("profile.passwordMismatch"));
+      return;
+    }
+    changePassword({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    });
   };
 
   const handleRandomAvatar = () => {
@@ -241,18 +274,19 @@ const HomePage = () => {
         </div>
 
         {/* RIGHT: EDIT FORM */}
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body space-y-5">
-            <div>
-              <h2 className="text-2xl font-semibold">
-                {t("profile.editTitle")}
-              </h2>
-              <p className="text-sm opacity-70">
-                {t("profile.editSubtitle")}
-              </p>
-            </div>
+        <div className="space-y-6">
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body space-y-5">
+              <div>
+                <h2 className="text-2xl font-semibold">
+                  {t("profile.editTitle")}
+                </h2>
+                <p className="text-sm opacity-70">
+                  {t("profile.editSubtitle")}
+                </p>
+              </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -521,7 +555,97 @@ const HomePage = () => {
                   </>
                 )}
               </button>
-            </form>
+              </form>
+            </div>
+          </div>
+
+          <div className="card bg-base-200 shadow">
+            <div className="card-body space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {t("profile.passwordTitle")}
+                </h2>
+                <p className="text-sm opacity-70">
+                  {t("profile.passwordSubtitle")}
+                </p>
+              </div>
+              <form onSubmit={handlePasswordSubmit} className="space-y-3">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("profile.passwordCurrent")}
+                    </span>
+                  </label>
+                  <input
+                    type="password"
+                    className="input input-bordered"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        currentPassword: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("profile.passwordNew")}
+                    </span>
+                  </label>
+                  <input
+                    type="password"
+                    className="input input-bordered"
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        newPassword: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                  <p className="text-xs opacity-60 mt-1">
+                    {t("profile.passwordHint")}
+                  </p>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">
+                      {t("profile.passwordConfirm")}
+                    </span>
+                  </label>
+                  <input
+                    type="password"
+                    className="input input-bordered"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm((prev) => ({
+                        ...prev,
+                        confirmPassword: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="btn btn-outline w-full"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? (
+                    <>
+                      <LoaderIcon className="size-4 mr-2 animate-spin" />
+                      {t("profile.passwordSaving")}
+                    </>
+                  ) : (
+                    t("profile.passwordSubmit")
+                  )}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

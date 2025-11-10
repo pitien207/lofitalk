@@ -5,6 +5,7 @@ import {
   signup,
   onboard,
   verifySignupCode,
+  updatePassword,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -16,6 +17,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 router.post("/onboarding", protectRoute, onboard);
+router.put("/password", protectRoute, updatePassword);
 
 // check if user is logged in
 router.get("/me", protectRoute, (req, res) => {

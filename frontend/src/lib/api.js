@@ -105,3 +105,8 @@ export async function getUserProfile(userId) {
   const response = await axiosInstance.get(`/users/profile/${userId}`);
   return response.data;
 }
+
+export async function updatePassword(payload) {
+  const response = await axiosInstance.put("/auth/password", payload);
+  return response.data;
+}
