@@ -1,7 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
-import { getUserProfile } from "../lib/api";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useParams } from "react-router";
+import { getUserProfile, removeFriend, sendFriendRequest } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
+import useAuthUser from "../hooks/useAuthUser";
+import toast from "react-hot-toast";
 import {
   CalendarIcon,
   MapPinIcon,
@@ -10,6 +12,9 @@ import {
   BookOpenIcon,
   PawPrintIcon,
   LoaderIcon,
+  MessageSquareIcon,
+  UserMinusIcon,
+  UserPlusIcon,
 } from "lucide-react";
 
 const InfoRow = ({ icon: Icon, label, value }) => {
@@ -30,6 +35,8 @@ const InfoRow = ({ icon: Icon, label, value }) => {
 const UserProfilePage = () => {
   const { id } = useParams();
   const { t } = useTranslation();
+  const { authUser } = useAuthUser();
+  const queryClient = useQueryClient();
 
   const {
     data: user,
@@ -38,6 +45,30 @@ const UserProfilePage = () => {
   } = useQuery({
     queryKey: ["user-profile", id],
     queryFn: () => getUserProfile(id),
+  });
+
+  const { mutate: sendRequest, isPending: sending } = useMutation({
+    mutationFn: (targetId) => sendFriendRequest(targetId),
+    onSuccess: () => {
+      toast.success(t("profile.requestSentToast"));
+      queryClient.invalidateQueries({ queryKey: ["user-profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || t("profile.requestError"));
+    },
+  });
+
+  const { mutate: unfriend, isPending: removing } = useMutation({
+    mutationFn: (targetId) => removeFriend(targetId),
+    onSuccess: () => {
+      toast.success(t("profile.unfriendSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["user-profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || t("profile.unfriendError"));
+    },
   });
 
   if (isLoading) {
@@ -65,6 +96,62 @@ const UserProfilePage = () => {
       )
     : null;
 
+  const locationText =
+    [user.city, user.country].filter(Boolean).join(", ") || user.location || "";
+  const showActions = !user.isSelf && authUser?._id !== user._id;
+
+  const renderActions = () => {
+    if (!showActions) return null;
+
+    if (user.isFriend) {
+      return (
+        <div className="flex flex-wrap gap-3">
+          <Link to={`/chat/${user._id}`} className="btn btn-primary">
+            <MessageSquareIcon className="size-4 mr-2" />
+            {t("profile.message")}
+          </Link>
+          <button
+            className="btn btn-outline btn-error"
+            onClick={() => unfriend(user._id)}
+            disabled={removing}
+          >
+            {removing ? (
+              <LoaderIcon className="size-4 mr-2 animate-spin" />
+            ) : (
+              <UserMinusIcon className="size-4 mr-2" />
+            )}
+            {removing ? t("profile.saving") : t("profile.removeFriend")}
+          </button>
+        </div>
+      );
+    }
+
+    let label = t("profile.addFriend");
+    let disabled = sending;
+    if (user.pendingRequestSent) {
+      label = t("profile.requestSentStatus");
+      disabled = true;
+    } else if (user.pendingRequestReceived) {
+      label = t("profile.respondRequest");
+      disabled = true;
+    }
+
+    return (
+      <button
+        className="btn btn-primary"
+        onClick={() => sendRequest(user._id)}
+        disabled={disabled}
+      >
+        {sending && !disabled ? (
+          <LoaderIcon className="size-4 mr-2 animate-spin" />
+        ) : (
+          <UserPlusIcon className="size-4 mr-2" />
+        )}
+        {label}
+      </button>
+    );
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-10">
       <div className="container mx-auto max-w-4xl space-y-6">
@@ -85,17 +172,16 @@ const UserProfilePage = () => {
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-base-content/70">
-                  <MapPinIcon className="size-4" />
-                  <span>
-                    {[user.city, user.country].filter(Boolean).join(", ")}
-                  </span>
-                </div>
-                {user.bio && (
-                  <p className="text-base-content/80 italic">
-                    “{user.bio}”
-                  </p>
+                {locationText && (
+                  <div className="flex items-center gap-2 text-base-content/70">
+                    <MapPinIcon className="size-4" />
+                    <span>{locationText}</span>
+                  </div>
                 )}
+                {user.bio && (
+                  <p className="text-base-content/80 italic">“{user.bio}”</p>
+                )}
+                {renderActions()}
               </div>
             </div>
           </div>
@@ -121,23 +207,10 @@ const UserProfilePage = () => {
             label={t("profile.education")}
             value={user.education}
           />
-          <InfoRow
-            icon={QuoteIcon}
-            label={t("profile.hobbies")}
-            value={user.hobbies}
-          />
-          <InfoRow
-            icon={PawPrintIcon}
-            label={t("profile.pets")}
-            value={user.pets}
-          />
-          <InfoRow
-            icon={MapPinIcon}
-            label={t("profile.height")}
-            value={user.height}
-          />
+          <InfoRow icon={QuoteIcon} label={t("profile.hobbies")} value={user.hobbies} />
+          <InfoRow icon={PawPrintIcon} label={t("profile.pets")} value={user.pets} />
+          <InfoRow icon={MapPinIcon} label={t("profile.height")} value={user.height} />
         </div>
-
       </div>
     </div>
   );

@@ -110,3 +110,8 @@ export async function updatePassword(payload) {
   const response = await axiosInstance.put("/auth/password", payload);
   return response.data;
 }
+
+export async function removeFriend(userId) {
+  const response = await axiosInstance.delete(`/users/friends/${userId}`);
+  return response.data;
+}

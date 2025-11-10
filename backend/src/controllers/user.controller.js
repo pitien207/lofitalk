@@ -156,10 +156,11 @@ export async function getOutgoingFriendReqs(req, res) {
 export async function getUserProfile(req, res) {
   try {
     const { id } = req.params;
+    const viewerId = req.user.id;
 
     const user = await User.findById(id)
       .select(
-        "fullName profilePic bio gender birthDate country city height education datingGoal hobbies pets createdAt"
+        "fullName profilePic bio gender birthDate country city height education datingGoal hobbies pets friends location createdAt"
       )
       .lean();
 
@@ -167,9 +168,58 @@ export async function getUserProfile(req, res) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json(user);
+    const isSelf = viewerId.toString() === user._id.toString();
+    const isFriend =
+      !isSelf && user.friends?.some((friendId) => friendId.toString() === viewerId);
+
+    const [pendingSent, pendingReceived] = await Promise.all([
+      FriendRequest.findOne({ sender: viewerId, recipient: id, status: "pending" }),
+      FriendRequest.findOne({ sender: id, recipient: viewerId, status: "pending" }),
+    ]);
+
+    const { friends, ...rest } = user;
+
+    res.status(200).json({
+      ...rest,
+      isSelf,
+      isFriend,
+      pendingRequestSent: Boolean(pendingSent),
+      pendingRequestReceived: Boolean(pendingReceived),
+    });
   } catch (error) {
     console.error("Error in getUserProfile controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function removeFriend(req, res) {
+  try {
+    const viewerId = req.user.id;
+    const { id: targetId } = req.params;
+
+    if (viewerId === targetId) {
+      return res.status(400).json({ message: "Cannot remove yourself" });
+    }
+
+    const targetUser = await User.findById(targetId);
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.findByIdAndUpdate(viewerId, { $pull: { friends: targetId } });
+    await User.findByIdAndUpdate(targetId, { $pull: { friends: viewerId } });
+
+    await FriendRequest.deleteMany({
+      $or: [
+        { sender: viewerId, recipient: targetId },
+        { sender: targetId, recipient: viewerId },
+      ],
+      status: { $ne: "accepted" },
+    });
+
+    res.status(200).json({ success: true, message: "Friend removed" });
+  } catch (error) {
+    console.error("Error removing friend", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
