@@ -13,6 +13,7 @@ import {
   UserPlusIcon,
   UsersIcon,
 } from "lucide-react";
+import { getCountryFlag } from "../utils/flags";
 
 import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
@@ -116,6 +117,7 @@ const FriendsPage = () => {
                   [user.city, user.country].filter(Boolean).join(", ") ||
                   user.location ||
                   "";
+                const flagSrc = getCountryFlag(user.country, user.city, user.location || locationText);
 
                 return (
                   <div
@@ -136,9 +138,19 @@ const FriendsPage = () => {
                             {user.fullName}
                           </h3>
                           {locationText && (
-                            <div className="flex items-center text-xs opacity-70 mt-1">
-                              <MapPinIcon className="size-3 mr-1" />
-                              {locationText}
+                            <div className="flex items-center text-xs opacity-70 mt-1 gap-1.5">
+                              {flagSrc ? (
+                                <div className="w-6 h-4 overflow-hidden rounded-[4px] border border-base-300 shadow-sm">
+                                  <img
+                                    src={flagSrc}
+                                    alt={user.country}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <MapPinIcon className="size-3" />
+                              )}
+                              <span>{locationText}</span>
                             </div>
                           )}
                         </div>

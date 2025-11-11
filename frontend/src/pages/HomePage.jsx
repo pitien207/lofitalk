@@ -17,6 +17,7 @@ import {
   QuoteIcon,
   PawPrintIcon,
 } from "lucide-react";
+import { getCountryFlag } from "../utils/flags";
 
 const parseListField = (value) =>
   value
@@ -278,6 +279,7 @@ const HomePage = () => {
   const selectBaseClass =
     "select select-bordered w-full bg-base-100 border-base-300 focus:outline-none focus:border-primary/70 focus:ring focus:ring-primary/20 transition";
 
+
   const { mutate: saveProfile, isPending } = useMutation({
     mutationFn: completeOnboarding,
     onSuccess: () => {
@@ -363,6 +365,7 @@ const HomePage = () => {
           1970
       )
     : null;
+  const homeFlag = getCountryFlag(formState.country, formState.city);
 
   if (isLoading) {
     return (
@@ -388,7 +391,17 @@ const HomePage = () => {
                 <div>
                   <h1 className="text-3xl font-bold">{formState.fullName}</h1>
                   <div className="flex items-center justify-center gap-2 text-base-content/70 mt-1">
-                    <MapPinIcon className="size-4" />
+                    {homeFlag ? (
+                      <div className="w-7 h-4 overflow-hidden rounded-[5px] border border-base-200 shadow ring-1 ring-primary/30 ring-offset-2 ring-offset-base-100">
+                        <img
+                          src={homeFlag}
+                          alt={formState.country}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <MapPinIcon className="size-4" />
+                    )}
                     <span>
                       {[formState.city, formState.country]
                         .filter(Boolean)

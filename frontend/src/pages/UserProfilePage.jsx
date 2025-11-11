@@ -16,6 +16,7 @@ import {
   UserMinusIcon,
   UserPlusIcon,
 } from "lucide-react";
+import { getCountryFlag } from "../utils/flags";
 
 const InfoRow = ({ icon: Icon, label, value }) => {
   if (!value) return null;
@@ -99,6 +100,7 @@ const UserProfilePage = () => {
   const locationText =
     [user.city, user.country].filter(Boolean).join(", ") || user.location || "";
   const showActions = !user.isSelf && authUser?._id !== user._id;
+  const profileFlag = getCountryFlag(user.country, user.city, locationText);
 
   const renderActions = () => {
     if (!showActions) return null;
@@ -174,7 +176,17 @@ const UserProfilePage = () => {
                 </div>
                 {locationText && (
                   <div className="flex items-center gap-2 text-base-content/70">
-                    <MapPinIcon className="size-4" />
+                    {profileFlag ? (
+                      <div className="w-8 h-5 overflow-hidden rounded-md border border-base-200 shadow ring-1 ring-primary/30 ring-offset-2 ring-offset-base-100">
+                        <img
+                          src={profileFlag}
+                          alt={user.country}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <MapPinIcon className="size-4" />
+                    )}
                     <span>{locationText}</span>
                   </div>
                 )}
