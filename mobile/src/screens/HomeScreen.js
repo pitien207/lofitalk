@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -24,6 +26,7 @@ import {
 import { buttonStyles } from "../components/common/buttons";
 
 const HomeScreen = ({ user, onSignOut }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
   const birthDate = formatDate(user?.birthDate);
@@ -31,11 +34,67 @@ const HomeScreen = ({ user, onSignOut }) => {
   const hobbies = parseListField(user?.hobbies);
   const pets = parseListField(user?.pets);
 
+  const toggleMenu = () => {
+    setMenuOpen((prev) => !prev);
+  };
+
+  const handleMenuSelect = (item) => {
+    setMenuOpen(false);
+    if (item === "signout") {
+      onSignOut();
+      return;
+    }
+
+    const messages = {
+      language: "Language settings will be available soon.",
+      about: "LofiTalk mobile beta 1.0. Stay tuned for more updates.",
+    };
+
+    Alert.alert("LofiTalk", messages[item]);
+  };
+
   return (
     <ScrollView
       contentContainerStyle={styles.homeScroll}
       showsVerticalScrollIndicator={false}
     >
+      <View style={styles.homeHeader}>
+        <Text style={styles.homeTitle}>LofiTalk</Text>
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuTrigger}
+            onPress={toggleMenu}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.menuTriggerDots}>⋯</Text>
+          </TouchableOpacity>
+          {menuOpen && (
+            <View style={styles.menuDropdown}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => handleMenuSelect("language")}
+              >
+                <Text style={styles.menuItemText}>Language</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => handleMenuSelect("about")}
+              >
+                <Text style={styles.menuItemText}>About</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => handleMenuSelect("signout")}
+              >
+                <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                  Sign out
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+
       <View style={styles.profileCard}>
         <Image
           source={
@@ -97,6 +156,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
+  homeHeader: {
+    marginTop: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  homeTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  menuContainer: {
+    position: "relative",
+    zIndex: 10,
+  },
+  menuTrigger: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuTriggerDots: {
+    color: BRAND_COLORS.text,
+    fontSize: 24,
+    marginTop: -4,
+  },
+  menuDropdown: {
+    position: "absolute",
+    top: 44,
+    right: 0,
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    paddingVertical: 8,
+    minWidth: 150,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 12,
+    zIndex: 20,
+  },
+  menuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  menuItemText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  menuItemDanger: {
+    color: BRAND_COLORS.primary,
+  },
   profileCard: {
     backgroundColor: BRAND_COLORS.card,
     borderRadius: 32,
@@ -105,7 +221,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.08)",
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 20,
   },
   profileAvatar: {
     width: 86,

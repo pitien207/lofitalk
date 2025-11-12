@@ -46,11 +46,11 @@ const FriendsScreen = ({
           <Text style={styles.friendsTitle}>
             {showProfile ? "Friend profile" : "Friends"}
           </Text>
-          <Text style={styles.friendsSubtitle}>
-            {showProfile
-              ? "See what your friend has been up to lately."
-              : "Keep the cozy conversations going just like on the web."}
-          </Text>
+          {showProfile && (
+            <Text style={styles.friendsSubtitle}>
+              See what your friend has been up to lately.
+            </Text>
+          )}
         </View>
         <TouchableOpacity
           style={styles.ghostButton}
@@ -58,6 +58,7 @@ const FriendsScreen = ({
             showProfile ? onResetFriendSelection() : onNavigateHome()
           }
         >
+          <Text style={styles.ghostButtonIcon}>{"<"}</Text>
           <Text style={styles.ghostButtonText}>
             {showProfile ? "Back to friends" : "Back to home"}
           </Text>
@@ -235,11 +236,20 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   ghostButton: {
-    borderRadius: 999,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    paddingHorizontal: 16,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 18,
     paddingVertical: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  ghostButtonIcon: {
+    color: BRAND_COLORS.secondary,
+    fontSize: 14,
+    marginRight: 6,
+    marginTop: -1,
   },
   ghostButtonText: {
     color: BRAND_COLORS.text,
