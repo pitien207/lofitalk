@@ -10,6 +10,6 @@ export const fetchFriendProfile = async (friendId) => {
     throw new Error("friendId is required to fetch a profile");
   }
 
-  const { data } = await api.get(`/users/${friendId}`);
+  const { data } = await api.get(`/users/profile/${friendId}`);
   return data?.user ?? data;
 };

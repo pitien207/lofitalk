@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
 import FriendsScreen from "./screens/FriendsScreen";
+import ChatScreen from "./screens/ChatScreen";
 import BottomNav from "./components/navigation/BottomNav";
 import AppBackground from "./components/layout/AppBackground";
 import useAuth from "./hooks/useAuth";
 import useFriends from "./hooks/useFriends";
+import useChat from "./hooks/useChat";
 import { MENU_ITEMS } from "./constants";
 import { BRAND_COLORS } from "./theme/colors";
 
@@ -35,6 +37,20 @@ const AppContainer = () => {
     resetSelection,
     resetAllFriends,
   } = useFriends();
+  const {
+    channels,
+    chatLoading,
+    chatError,
+    activeChannel,
+    messages,
+    selectingChannel,
+    connectChat,
+    disconnectChat,
+    refreshChannels,
+    openChannel,
+    closeChannel,
+    sendMessage,
+  } = useChat();
   const [activePage, setActivePage] = useState("home");
 
   const handleLogin = async () => {
@@ -57,6 +73,7 @@ const AppContainer = () => {
   const handleSignOut = () => {
     signOut();
     resetAllFriends();
+    disconnectChat();
     setActivePage("home");
   };
 
@@ -64,6 +81,14 @@ const AppContainer = () => {
     resetSelection();
     setActivePage(page);
   };
+
+  useEffect(() => {
+    if (user) {
+      connectChat(user);
+    } else {
+      disconnectChat();
+    }
+  }, [connectChat, disconnectChat, user]);
 
   if (!user) {
     return (
@@ -88,9 +113,10 @@ const AppContainer = () => {
       <StatusBar style="light" />
       <AppBackground />
       <View style={styles.mainArea}>
-        {activePage === "home" ? (
+        {activePage === "home" && (
           <HomeScreen user={user} onSignOut={handleSignOut} />
-        ) : (
+        )}
+        {activePage === "friends" && (
           <FriendsScreen
             friends={friends}
             selectedFriend={selectedFriend}
@@ -100,6 +126,21 @@ const AppContainer = () => {
             onFriendSelect={selectFriend}
             onResetFriendSelection={resetSelection}
             onNavigateHome={() => handleNavChange("home")}
+          />
+        )}
+        {activePage === "chat" && (
+          <ChatScreen
+            user={user}
+            chatLoading={chatLoading}
+            chatError={chatError}
+            channels={channels}
+            activeChannel={activeChannel}
+            messages={messages}
+            selectingChannel={selectingChannel}
+            onRefresh={refreshChannels}
+            onChannelSelect={openChannel}
+            onBackToList={closeChannel}
+            onSendMessage={sendMessage}
           />
         )}
       </View>

@@ -1,6 +1,7 @@
 export const MENU_ITEMS = [
   { key: "home", label: "Homepage", icon: "H" },
   { key: "friends", label: "Friends", icon: "F" },
+  { key: "chat", label: "Chat", icon: "C" },
 ];
 
 export const genderLabels = {
