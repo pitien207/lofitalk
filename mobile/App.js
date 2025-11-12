@@ -16,12 +16,14 @@ import { StatusBar } from "expo-status-bar";
 import axios from "axios";
 import Logo from "./assets/LofiTalk_logo.png";
 
+axios.defaults.withCredentials = true;
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.100:5001/api";
 
 const MENU_ITEMS = [
-  { key: "home", label: "Homepage", icon: "🏠" },
-  { key: "friends", label: "Friends", icon: "💬" },
+  { key: "home", label: "Homepage", icon: "??" },
+  { key: "friends", label: "Friends", icon: "??" },
 ];
 
 const genderLabels = {
@@ -36,41 +38,6 @@ const FALLBACK_MESSAGES = [
   "Let's plan our next meet-up!",
   "Studying right now, join me?",
   "Sending you all the cozy vibes ✨",
-];
-
-const SAMPLE_FRIENDS = [
-  {
-    _id: "sample-1",
-    fullName: "Linh Nguyen",
-    location: "Hanoi, Vietnam",
-    profilePic: "https://avatar.iran.liara.run/public/22.png",
-    lastMessage: "Coffee tomorrow morning?",
-    isOnline: true,
-  },
-  {
-    _id: "sample-2",
-    fullName: "Emma Becker",
-    location: "Berlin, Germany",
-    profilePic: "https://avatar.iran.liara.run/public/48.png",
-    lastMessage: "Can't wait for our study session!",
-    isOnline: false,
-  },
-  {
-    _id: "sample-3",
-    fullName: "Haruto Sato",
-    location: "Osaka, Japan",
-    profilePic: "https://avatar.iran.liara.run/public/8.png",
-    lastMessage: "Just sent you a playlist 🎧",
-    isOnline: true,
-  },
-  {
-    _id: "sample-4",
-    fullName: "Mila Pham",
-    location: "Sydney, Australia",
-    profilePic: "https://avatar.iran.liara.run/public/63.png",
-    lastMessage: "Movie night soon?",
-    isOnline: true,
-  },
 ];
 
 const parseListField = (value) => {
@@ -127,6 +94,13 @@ const normalizeFriends = (rawFriends = []) => {
       const fallbackName = `Friend ${index + 1}`;
       const locationText = formatLocation(base);
 
+      const vibe = base.vibe || "Always up for a chat";
+      const favoriteSong = base.favoriteSong || "Share your favorite tune";
+      const hobbies =
+        base.hobbies && base.hobbies.length
+          ? parseListField(base.hobbies)
+          : parseListField("");
+
       return {
         _id: base._id || `${index}`,
         fullName: base.fullName || fallbackName,
@@ -139,15 +113,43 @@ const normalizeFriends = (rawFriends = []) => {
           FALLBACK_MESSAGES[index % FALLBACK_MESSAGES.length],
         isOnline:
           base.isOnline !== undefined ? base.isOnline : index % 2 === 0,
+        vibe,
+        favoriteSong,
+        hobbies,
       };
     })
     .filter(Boolean);
 };
 
 const ensureFriendsData = (rawFriends) => {
-  const normalized = normalizeFriends(rawFriends);
-  if (normalized.length) return normalized;
-  return SAMPLE_FRIENDS;
+  return normalizeFriends(rawFriends);
+};
+
+const fetchFriendsFromServer = async (token) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/users/friends`, {
+      withCredentials: true,
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined,
+    });
+    return response.data;
+  } catch (error) {
+    console.log("Failed to fetch friends from server:", error?.message);
+    return [];
+  }
+};
+
+const fetchFriendProfile = async (friendId, token) => {
+  if (!friendId) return null;
+  const response = await axios.get(
+    `${API_BASE_URL}/users/profile/${friendId}`,
+    {
+      withCredentials: true,
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    }
+  );
+  return response.data;
 };
 
 const StatBadge = ({ label, value }) => (
@@ -201,6 +203,19 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
   const [activePage, setActivePage] = useState("home");
+  const [selectedFriend, setSelectedFriend] = useState(null);
+  const [friendProfile, setFriendProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState(null);
+  const [authToken, setAuthToken] = useState(null);
+
+  const applyAuthHeader = (token) => {
+    if (token) {
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common.Authorization;
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -212,13 +227,24 @@ export default function App() {
     setError(null);
 
     try {
-      const { data } = await axios.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
+      const { data } = await axios.post(
+        `${API_BASE_URL}/auth/login`,
+        { email, password },
+        { withCredentials: true }
+      );
+
+      if (data.token) {
+        setAuthToken(data.token);
+        applyAuthHeader(data.token);
+      }
 
       setUser(data.user || { fullName: "Friend" });
-      setFriends(ensureFriendsData(data.user?.friends));
+      const serverFriends = await fetchFriendsFromServer(data.token);
+      setFriends(
+        ensureFriendsData(serverFriends ?? data.user?.friends)
+      );
+      setSelectedFriend(null);
+      setFriendProfile(null);
       setActivePage("home");
       Alert.alert(
         "Login successful",
@@ -240,7 +266,39 @@ export default function App() {
     setFriends([]);
     setEmail("");
     setPassword("");
+    setSelectedFriend(null);
+    setAuthToken(null);
+    applyAuthHeader(null);
     setActivePage("home");
+  };
+
+  const resetFriendSelection = () => {
+    setSelectedFriend(null);
+    setFriendProfile(null);
+    setProfileError(null);
+    setProfileLoading(false);
+  };
+
+  const handleFriendSelect = async (friend) => {
+    setSelectedFriend(friend);
+    setFriendProfile(null);
+    setProfileError(null);
+    setProfileLoading(true);
+    try {
+      const profile = await fetchFriendProfile(friend._id, authToken || null);
+      setFriendProfile(profile);
+    } catch (err) {
+      setProfileError(
+        err?.response?.data?.message || "Unable to load profile right now."
+      );
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleNavChange = (page) => {
+    resetFriendSelection();
+    setActivePage(page);
   };
 
   const renderBottomNav = () => (
@@ -254,7 +312,7 @@ export default function App() {
               styles.bottomNavItem,
               isActive && styles.bottomNavItemActive,
             ]}
-            onPress={() => setActivePage(item.key)}
+            onPress={() => handleNavChange(item.key)}
           >
             <Text style={styles.bottomNavIcon}>{item.icon}</Text>
             <Text
@@ -347,20 +405,30 @@ export default function App() {
     >
       <View style={styles.friendsHeader}>
         <View>
-          <Text style={styles.friendsTitle}>Friends</Text>
+          <Text style={styles.friendsTitle}>
+            {selectedFriend ? "Friend profile" : "Friends"}
+          </Text>
           <Text style={styles.friendsSubtitle}>
-            Keep the cozy conversations going just like on the web.
+            {selectedFriend
+              ? "See what your friend has been up to lately."
+              : "Keep the cozy conversations going just like on the web."}
           </Text>
         </View>
         <TouchableOpacity
           style={styles.ghostButton}
-          onPress={() => setActivePage("home")}
+          onPress={() =>
+            selectedFriend ? resetFriendSelection() : handleNavChange("home")
+          }
         >
-          <Text style={styles.ghostButtonText}>Back to home</Text>
+          <Text style={styles.ghostButtonText}>
+            {selectedFriend ? "Back to friends" : "Back to home"}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {friends.length === 0 ? (
+      {selectedFriend ? (
+        renderFriendProfile()
+      ) : friends.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>No friends yet</Text>
           <Text style={styles.emptySubtitle}>
@@ -374,6 +442,7 @@ export default function App() {
               key={friend._id}
               style={styles.friendCard}
               activeOpacity={0.85}
+              onPress={() => handleFriendSelect(friend)}
             >
               <View style={styles.friendAvatarWrapper}>
                 <Image
@@ -404,6 +473,98 @@ export default function App() {
       )}
     </ScrollView>
   );
+
+  const renderFriendProfile = () => {
+    if (profileLoading) {
+      return (
+        <View style={styles.profileStateBox}>
+          <ActivityIndicator color="#fff" />
+          <Text style={styles.profileStateText}>Loading friend profile…</Text>
+        </View>
+      );
+    }
+
+    if (profileError) {
+      return (
+        <View style={styles.profileStateBox}>
+          <Text style={styles.profileStateText}>{profileError}</Text>
+        </View>
+      );
+    }
+
+    const profile = friendProfile || selectedFriend;
+    if (!profile) return null;
+
+    const gender = genderLabels[profile.gender] || profile.gender || "";
+    const location = formatLocation(profile);
+    const birthDate = formatDate(profile.birthDate);
+    const age = computeAge(profile.birthDate);
+    const hobbies = parseListField(profile.hobbies);
+    const pets = parseListField(profile.pets);
+
+    return (
+      <View style={styles.friendProfileWrapper}>
+        <View style={styles.friendProfileCard}>
+          <Image
+            source={
+              typeof profile.profilePic === "string"
+                ? { uri: profile.profilePic }
+                : Logo
+            }
+            style={styles.friendProfileAvatar}
+          />
+          <Text style={styles.friendProfileName}>
+            {profile.fullName || "Friend"}
+          </Text>
+          {age && (
+            <Text style={styles.friendProfileBadge}>
+              {age} yrs · {gender || "—"}
+            </Text>
+          )}
+          <Text style={styles.friendProfileLocation}>
+            {location || "Somewhere cozy"}
+          </Text>
+          {profile.bio && (
+            <Text style={styles.friendProfileBio}>"{profile.bio}"</Text>
+          )}
+          <View style={styles.friendProfileActions}>
+            <TouchableOpacity style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Message</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryOutlineButton}>
+              <Text style={styles.secondaryOutlineText}>Start call</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.statRow}>
+          <StatBadge label="Gender" value={gender} />
+          <StatBadge label="Age" value={age} />
+          <StatBadge label="Height" value={profile.height} />
+        </View>
+
+        <SectionCard title="Personal info">
+          <InfoRow label="Email" value={profile.email} />
+          <InfoRow label="Birthday" value={birthDate} />
+          <InfoRow label="Country" value={profile.country} />
+          <InfoRow label="City" value={profile.city} />
+          <InfoRow label="Education" value={profile.education} />
+        </SectionCard>
+
+        <SectionCard title="Dating goal">
+          <InfoRow label="Goal" value={profile.datingGoal} />
+        </SectionCard>
+
+        <SectionCard title="Hobbies">
+          <PillList items={hobbies} />
+        </SectionCard>
+
+        <SectionCard title="Pets">
+          <PillList items={pets} />
+        </SectionCard>
+      </View>
+    );
+  };
 
   if (user) {
     return (
@@ -819,6 +980,18 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     textAlign: "center",
   },
+  secondaryOutlineButton: {
+    marginTop: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  secondaryOutlineText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
   friendList: {
     gap: 12,
     marginTop: 12,
@@ -880,5 +1053,66 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     fontWeight: "600",
     fontSize: 12,
+  },
+  profileStateBox: {
+    backgroundColor: "rgba(16,15,26,0.6)",
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+  },
+  profileStateText: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "600",
+    marginTop: 12,
+  },
+  friendProfileWrapper: {
+    gap: 20,
+  },
+  friendProfileCard: {
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+  },
+  friendProfileAvatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 36,
+    marginBottom: 16,
+  },
+  friendProfileName: {
+    color: BRAND_COLORS.text,
+    fontSize: 26,
+    fontWeight: "700",
+  },
+  friendProfileBadge: {
+    color: BRAND_COLORS.secondary,
+    marginTop: 6,
+    fontWeight: "600",
+  },
+  friendProfileLocation: {
+    color: BRAND_COLORS.muted,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  friendProfileBio: {
+    color: BRAND_COLORS.muted,
+    fontStyle: "italic",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  friendProfileActions: {
+    width: "100%",
+  },
+  friendProfileSection: {
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 28,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 });

@@ -110,7 +110,7 @@ export async function login(req, res) {
 
     setAuthCookie(res, token);
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({ success: true, token, user });
   } catch (error) {
     console.log("Error in login controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
