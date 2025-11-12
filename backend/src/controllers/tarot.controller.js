@@ -72,7 +72,17 @@ export async function clearLastTarotReading(req, res) {
 
 export async function getTarotReading(req, res) {
   try {
-    const { questions, cards } = req.body || {};
+    const { currentSituation, questions, cards } = req.body || {};
+
+    if (
+      !currentSituation ||
+      typeof currentSituation !== "string" ||
+      !currentSituation.trim()
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Please describe your current situation." });
+    }
 
     if (!Array.isArray(questions) || questions.length !== 3) {
       return res.status(400).json({
@@ -93,8 +103,10 @@ export async function getTarotReading(req, res) {
         .json({ message: "Missing OPENAI_API_KEY on server" });
     }
 
+    const trimmedSituation = currentSituation.trim();
+
     const system =
-      "You are an insightful but grounded tarot reader. Offer practical, positive guidance without superstition.";
+      "Bạn là một Tarot reader thấu hiểu nhưng thực tế. Luôn trả lời BẰNG TIẾNG VIỆT, đưa ra lời khuyên rõ ràng và không ba phải.";
 
     const fmt = (c) => {
       if (!c) return "";
@@ -104,18 +116,22 @@ export async function getTarotReading(req, res) {
       return `${name}${reversed}`;
     };
 
-    const userPrompt = `Create a tarot reading for these 3 questions and 3 drawn cards.
-Questions:
+    const userPrompt = `Bối cảnh hiện tại của người hỏi: "${trimmedSituation}"
+
+Hãy phân tích 3 câu hỏi và 3 lá bài tương ứng bên dưới để đưa ra lời khuyên gắn với hoàn cảnh này.
+
+Câu hỏi:
 1) ${questions[0]}
 2) ${questions[1]}
 3) ${questions[2]}
 
-Cards (order matches the questions):
+Lá bài đã rút (theo thứ tự câu hỏi):
 1) ${fmt(cards[0])}
 2) ${fmt(cards[1])}
 3) ${fmt(cards[2])}
 
-Return a compact JSON object with this shape:
+Luôn trả lời hoàn toàn bằng tiếng Việt.
+Trả về JSON với cấu trúc:
 {
   "readings": [
     {"question": string, "card": string, "message": string, "advice": string},
@@ -124,7 +140,7 @@ Return a compact JSON object with this shape:
   ],
   "overall_message": string
 }
-Messages should be 2-4 sentences each, actionable and encouraging. If a card is marked as reversed, reflect its reversed meaning in the interpretation.`;
+Message cho mỗi lá 2-5 câu, phân tích rõ vấn đề, dù tiêu cực hay tích cực. Nếu lá bài đảo chiều (reversed) hãy diễn giải theo nghĩa đảo chiều.`;
 
     const resp = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -160,6 +176,7 @@ Messages should be 2-4 sentences each, actionable and encouraging. If a card is 
     }
 
     req.user.lastTarotReading = {
+      currentSituation: trimmedSituation,
       questions,
       cards,
       result: parsed,

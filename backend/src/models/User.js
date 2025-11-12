@@ -101,6 +101,10 @@ const userSchema = new mongoose.Schema(
       default: () => new Date(),
     },
     lastTarotReading: {
+      currentSituation: {
+        type: String,
+        default: "",
+      },
       questions: {
         type: [String],
         default: undefined,

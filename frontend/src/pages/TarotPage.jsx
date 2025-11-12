@@ -32,6 +32,7 @@ const TarotPage = () => {
       });
   }, []);
 
+  const [currentSituation, setCurrentSituation] = useState("");
   const [questions, setQuestions] = useState(["", "", ""]);
   const [drawnCards, setDrawnCards] = useState([null, null, null]);
   const [readingResult, setReadingResult] = useState(null);
@@ -102,11 +103,19 @@ const TarotPage = () => {
     if (hasHydratedFromServer.current) return;
     if (!latestData?.reading) return;
 
-    const { questions: storedQuestions, cards: storedCards, result } =
-      latestData.reading;
+    const {
+      currentSituation: storedSituation,
+      questions: storedQuestions,
+      cards: storedCards,
+      result,
+    } = latestData.reading;
 
     if (result) {
       setReadingResult(result);
+    }
+
+    if (typeof storedSituation === "string") {
+      setCurrentSituation(storedSituation);
     }
 
     if (Array.isArray(storedQuestions) && storedQuestions.length === 3) {
@@ -137,6 +146,11 @@ const TarotPage = () => {
 
   const handleDrawCards = async () => {
     setErrorMsg("");
+
+    if (!currentSituation.trim()) {
+      setErrorMsg("Vui lòng ghi rõ Hoàn cảnh hiện tại trước khi rút bài.");
+      return;
+    }
 
     if (questions.some((question) => !question.trim())) {
       setErrorMsg(t("tarot.errors.needQuestionsBeforeDraw"));
@@ -192,6 +206,11 @@ const TarotPage = () => {
     event.preventDefault();
     setErrorMsg("");
 
+    if (!currentSituation.trim()) {
+      setErrorMsg("Vui lòng ghi rõ Hoàn cảnh hiện tại trước khi xin lời khuyên.");
+      return;
+    }
+
     if (questions.some((question) => !question.trim())) {
       setErrorMsg(t("tarot.errors.needQuestions"));
       return;
@@ -207,12 +226,13 @@ const TarotPage = () => {
       reversed: Boolean(card?.reversed),
     }));
 
-    requestReading({ questions, cards });
+    requestReading({ currentSituation: currentSituation.trim(), questions, cards });
   };
 
   const handleClearTable = () => {
     setDrawnCards([null, null, null]);
     setQuestions(["", "", ""]);
+    setCurrentSituation("");
     setReadingResult(null);
     setErrorMsg("");
     clearLatestMutation();
@@ -393,6 +413,22 @@ const TarotPage = () => {
                 <p className="text-xs opacity-70 mb-3">
                   {t("tarot.questions.instructions")}
                 </p>
+
+                <div className="form-control mb-4">
+                  <label className="label">
+                    <span className="label-text font-semibold">
+                      Hoàn cảnh hiện tại (Current Situation)
+                    </span>
+                  </label>
+                  <textarea
+                    className="textarea textarea-bordered"
+                    rows={3}
+                    placeholder="Mô tả cảm xúc, vấn đề hoặc bối cảnh bạn đang trải qua..."
+                    value={currentSituation}
+                    onChange={(event) => setCurrentSituation(event.target.value)}
+                  />
+                </div>
+
                 <div className="space-y-3">
                   {[0, 1, 2].map((index) => (
                     <div key={index} className="form-control">
