@@ -19,12 +19,59 @@ import Logo from "./assets/LofiTalk_logo.png";
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL || "http://192.168.0.100:5001/api";
 
+const MENU_ITEMS = [
+  { key: "home", label: "Homepage", icon: "🏠" },
+  { key: "friends", label: "Friends", icon: "💬" },
+];
+
 const genderLabels = {
   male: "Male",
   female: "Female",
   "non-binary": "Non-binary",
   prefer_not_say: "Prefer not to say",
 };
+
+const FALLBACK_MESSAGES = [
+  "Ready for a late night chat?",
+  "Let's plan our next meet-up!",
+  "Studying right now, join me?",
+  "Sending you all the cozy vibes ✨",
+];
+
+const SAMPLE_FRIENDS = [
+  {
+    _id: "sample-1",
+    fullName: "Linh Nguyen",
+    location: "Hanoi, Vietnam",
+    profilePic: "https://avatar.iran.liara.run/public/22.png",
+    lastMessage: "Coffee tomorrow morning?",
+    isOnline: true,
+  },
+  {
+    _id: "sample-2",
+    fullName: "Emma Becker",
+    location: "Berlin, Germany",
+    profilePic: "https://avatar.iran.liara.run/public/48.png",
+    lastMessage: "Can't wait for our study session!",
+    isOnline: false,
+  },
+  {
+    _id: "sample-3",
+    fullName: "Haruto Sato",
+    location: "Osaka, Japan",
+    profilePic: "https://avatar.iran.liara.run/public/8.png",
+    lastMessage: "Just sent you a playlist 🎧",
+    isOnline: true,
+  },
+  {
+    _id: "sample-4",
+    fullName: "Mila Pham",
+    location: "Sydney, Australia",
+    profilePic: "https://avatar.iran.liara.run/public/63.png",
+    lastMessage: "Movie night soon?",
+    isOnline: true,
+  },
+];
 
 const parseListField = (value) => {
   if (!value) return [];
@@ -58,9 +105,49 @@ const computeAge = (value) => {
 };
 
 const formatLocation = (user) => {
-  const { city, country } = user || {};
+  if (!user) return "";
+  const { city, country, location } = user;
   const joined = [city, country].filter(Boolean).join(", ");
-  return joined;
+  return joined || location || "";
+};
+
+const normalizeFriends = (rawFriends = []) => {
+  if (!Array.isArray(rawFriends)) return [];
+  return rawFriends
+    .map((friend, index) => {
+      if (!friend) return null;
+
+      const isObject = typeof friend === "object";
+      const base = isObject
+        ? friend
+        : {
+            _id: friend,
+          };
+
+      const fallbackName = `Friend ${index + 1}`;
+      const locationText = formatLocation(base);
+
+      return {
+        _id: base._id || `${index}`,
+        fullName: base.fullName || fallbackName,
+        profilePic:
+          base.profilePic ||
+          `https://avatar.iran.liara.run/public/${(index % 90) + 1}.png`,
+        location: locationText,
+        lastMessage:
+          base.lastMessage ||
+          FALLBACK_MESSAGES[index % FALLBACK_MESSAGES.length],
+        isOnline:
+          base.isOnline !== undefined ? base.isOnline : index % 2 === 0,
+      };
+    })
+    .filter(Boolean);
+};
+
+const ensureFriendsData = (rawFriends) => {
+  const normalized = normalizeFriends(rawFriends);
+  if (normalized.length) return normalized;
+  return SAMPLE_FRIENDS;
 };
 
 const StatBadge = ({ label, value }) => (
@@ -112,6 +199,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
+  const [friends, setFriends] = useState([]);
+  const [activePage, setActivePage] = useState("home");
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -129,6 +218,8 @@ export default function App() {
       });
 
       setUser(data.user || { fullName: "Friend" });
+      setFriends(ensureFriendsData(data.user?.friends));
+      setActivePage("home");
       Alert.alert(
         "Login successful",
         `Welcome back ${data.user?.fullName || "friend"}!`
@@ -144,7 +235,43 @@ export default function App() {
     }
   };
 
-  if (user) {
+  const handleSignOut = () => {
+    setUser(null);
+    setFriends([]);
+    setEmail("");
+    setPassword("");
+    setActivePage("home");
+  };
+
+  const renderBottomNav = () => (
+    <View style={styles.bottomNav}>
+      {MENU_ITEMS.map((item) => {
+        const isActive = activePage === item.key;
+        return (
+          <TouchableOpacity
+            key={item.key}
+            style={[
+              styles.bottomNavItem,
+              isActive && styles.bottomNavItemActive,
+            ]}
+            onPress={() => setActivePage(item.key)}
+          >
+            <Text style={styles.bottomNavIcon}>{item.icon}</Text>
+            <Text
+              style={[
+                styles.bottomNavLabel,
+                isActive && styles.bottomNavLabelActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
+  const renderHomeContent = () => {
     const gender = genderLabels[user.gender] || user.gender || "";
     const location = formatLocation(user);
     const birthDate = formatDate(user.birthDate);
@@ -153,69 +280,143 @@ export default function App() {
     const pets = parseListField(user.pets);
 
     return (
+      <ScrollView
+        contentContainerStyle={styles.homeScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.profileCard}>
+          <Image
+            source={
+              user.profilePic ? { uri: user.profilePic } : Logo
+            }
+            style={styles.profileAvatar}
+          />
+          <View style={styles.profileText}>
+            <Text style={styles.profileName}>
+              {user.fullName || "Your profile"}
+            </Text>
+            <Text style={styles.profileLocation}>
+              {location || "Add your location"}
+            </Text>
+            <Text style={styles.profileBio}>
+              {user.bio || "Share a short bio so friends know you better."}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.statRow}>
+          <StatBadge label="Gender" value={gender} />
+          <StatBadge label="Age" value={age} />
+          <StatBadge label="Height" value={user.height} />
+        </View>
+
+        <SectionCard title="Personal info">
+          <InfoRow label="Email" value={user.email} />
+          <InfoRow label="Birthday" value={birthDate} />
+          <InfoRow label="Country" value={user.country} />
+          <InfoRow label="City" value={user.city} />
+          <InfoRow label="Education" value={user.education} />
+        </SectionCard>
+
+        <SectionCard title="Dating goal">
+          <InfoRow label="Goal" value={user.datingGoal} />
+        </SectionCard>
+
+        <SectionCard title="Hobbies">
+          <PillList items={hobbies} />
+        </SectionCard>
+
+        <SectionCard title="Pets">
+          <PillList items={pets} />
+        </SectionCard>
+
+        <TouchableOpacity
+          style={[styles.primaryButton, styles.homeSignOut]}
+          onPress={handleSignOut}
+        >
+          <Text style={styles.primaryButtonText}>Sign out</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
+
+  const renderFriendsContent = () => (
+    <ScrollView
+      contentContainerStyle={styles.friendsScroll}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.friendsHeader}>
+        <View>
+          <Text style={styles.friendsTitle}>Friends</Text>
+          <Text style={styles.friendsSubtitle}>
+            Keep the cozy conversations going just like on the web.
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.ghostButton}
+          onPress={() => setActivePage("home")}
+        >
+          <Text style={styles.ghostButtonText}>Back to home</Text>
+        </TouchableOpacity>
+      </View>
+
+      {friends.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>No friends yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Send a few requests on the web app and they will appear here.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.friendList}>
+          {friends.map((friend) => (
+            <TouchableOpacity
+              key={friend._id}
+              style={styles.friendCard}
+              activeOpacity={0.85}
+            >
+              <View style={styles.friendAvatarWrapper}>
+                <Image
+                  source={
+                    typeof friend.profilePic === "string"
+                      ? { uri: friend.profilePic }
+                      : Logo
+                  }
+                  style={styles.friendAvatar}
+                />
+                {friend.isOnline && <View style={styles.onlineDot} />}
+              </View>
+              <View style={styles.friendMeta}>
+                <Text style={styles.friendName}>{friend.fullName}</Text>
+                <Text style={styles.friendLocation}>
+                  {friend.location || "Let's keep in touch"}
+                </Text>
+                <Text style={styles.friendMessage} numberOfLines={1}>
+                  {friend.lastMessage}
+                </Text>
+              </View>
+              <View style={styles.friendTimeBadge}>
+                <Text style={styles.friendTimeText}>Now</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </ScrollView>
+  );
+
+  if (user) {
+    return (
       <View style={styles.screen}>
         <StatusBar style="light" />
         <View style={styles.heroOne} />
         <View style={styles.heroTwo} />
-        <ScrollView
-          contentContainerStyle={styles.homeScroll}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.profileCard}>
-            <Image
-              source={
-                user.profilePic
-                  ? { uri: user.profilePic }
-                  : Logo
-              }
-              style={styles.profileAvatar}
-            />
-            <View style={styles.profileText}>
-              <Text style={styles.profileName}>
-                {user.fullName || "Your profile"}
-              </Text>
-              <Text style={styles.profileLocation}>
-                {location || "Add your location"}
-              </Text>
-              <Text style={styles.profileBio}>
-                {user.bio || "Share a short bio so friends know you better."}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.statRow}>
-            <StatBadge label="Gender" value={gender} />
-            <StatBadge label="Age" value={age} />
-            <StatBadge label="Height" value={user.height} />
-          </View>
-
-          <SectionCard title="Personal info">
-            <InfoRow label="Email" value={user.email} />
-            <InfoRow label="Birthday" value={birthDate} />
-            <InfoRow label="Country" value={user.country} />
-            <InfoRow label="City" value={user.city} />
-            <InfoRow label="Education" value={user.education} />
-          </SectionCard>
-
-          <SectionCard title="Dating goal">
-            <InfoRow label="Goal" value={user.datingGoal} />
-          </SectionCard>
-
-          <SectionCard title="Hobbies">
-            <PillList items={hobbies} />
-          </SectionCard>
-
-          <SectionCard title="Pets">
-            <PillList items={pets} />
-          </SectionCard>
-
-          <TouchableOpacity
-            style={[styles.primaryButton, { marginTop: 16 }]}
-            onPress={() => setUser(null)}
-          >
-            <Text style={styles.primaryButtonText}>Sign out</Text>
-          </TouchableOpacity>
-        </ScrollView>
+        <View style={styles.mainArea}>
+          {activePage === "home"
+            ? renderHomeContent()
+            : renderFriendsContent()}
+        </View>
+        {renderBottomNav()}
       </View>
     );
   }
@@ -400,6 +601,51 @@ const styles = StyleSheet.create({
     color: "#FEB2B2",
     marginBottom: 8,
   },
+  mainArea: {
+    flex: 1,
+    paddingTop: 32,
+    paddingBottom: 120,
+  },
+  bottomNav: {
+    position: "absolute",
+    left: 24,
+    right: 24,
+    bottom: 32,
+    backgroundColor: "rgba(16, 15, 26, 0.9)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  bottomNavItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  bottomNavItemActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+  bottomNavIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+    color: BRAND_COLORS.secondary,
+  },
+  bottomNavLabel: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "600",
+    fontSize: 12,
+  },
+  bottomNavLabelActive: {
+    color: BRAND_COLORS.text,
+  },
   homeScroll: {
     paddingHorizontal: 24,
     paddingBottom: 40,
@@ -412,7 +658,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.08)",
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 80,
+    marginTop: 40,
   },
   profileAvatar: {
     width: 86,
@@ -520,5 +766,119 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.text,
     fontWeight: "600",
     fontSize: 13,
+  },
+  homeSignOut: {
+    marginTop: 24,
+  },
+  friendsScroll: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  friendsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 40,
+    marginBottom: 20,
+  },
+  friendsTitle: {
+    fontSize: 26,
+    fontWeight: "700",
+    color: BRAND_COLORS.text,
+  },
+  friendsSubtitle: {
+    color: BRAND_COLORS.muted,
+    marginTop: 4,
+  },
+  ghostButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  ghostButtonText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  emptyState: {
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 28,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    alignItems: "center",
+  },
+  emptyTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    color: BRAND_COLORS.muted,
+    textAlign: "center",
+  },
+  friendList: {
+    gap: 12,
+    marginTop: 12,
+  },
+  friendCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.05)",
+  },
+  friendAvatarWrapper: {
+    marginRight: 12,
+  },
+  friendAvatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+  },
+  onlineDot: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#22C55E",
+    borderWidth: 2,
+    borderColor: BRAND_COLORS.background,
+  },
+  friendMeta: {
+    flex: 1,
+  },
+  friendName: {
+    color: BRAND_COLORS.text,
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  friendLocation: {
+    color: BRAND_COLORS.secondary,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  friendMessage: {
+    color: BRAND_COLORS.muted,
+    marginTop: 6,
+  },
+  friendTimeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    marginLeft: 12,
+  },
+  friendTimeText: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "600",
+    fontSize: 12,
   },
 });
