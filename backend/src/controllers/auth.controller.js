@@ -1,7 +1,10 @@
 import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import { sendVerificationEmail } from "../utils/email.js";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../utils/email.js";
 
 const CODE_EXPIRATION_MINUTES = 15;
 
@@ -214,6 +217,94 @@ export async function updatePassword(req, res) {
       .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
     console.log("Error updating password:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function requestPasswordReset(req, res) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    // Do not reveal whether the email exists to avoid enumeration
+    if (!user || !user.isEmailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: "If this email is registered, a reset code will be sent shortly.",
+      });
+    }
+
+    const resetCode = generateVerificationCode();
+    const resetExpiresAt = new Date(
+      Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
+    );
+
+    user.passwordResetCode = resetCode;
+    user.passwordResetCodeExpiresAt = resetExpiresAt;
+    await user.save();
+
+    await sendPasswordResetEmail(email, resetCode);
+
+    res.status(200).json({
+      success: true,
+      message: "If this email is registered, a reset code will be sent shortly.",
+    });
+  } catch (error) {
+    console.log("Error in requestPasswordReset controller", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function resetPassword(req, res) {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Email, verification code, and new password are required" });
+  }
+
+  if (newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "New password must be at least 6 characters" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired verification code" });
+    }
+
+    const normalizedCode = String(code).trim();
+    if (
+      !user.passwordResetCode ||
+      user.passwordResetCode !== normalizedCode ||
+      !user.passwordResetCodeExpiresAt ||
+      user.passwordResetCodeExpiresAt < new Date()
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired verification code" });
+    }
+
+    user.password = newPassword;
+    user.passwordResetCode = undefined;
+    user.passwordResetCodeExpiresAt = undefined;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.log("Error in resetPassword controller", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

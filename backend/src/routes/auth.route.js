@@ -6,6 +6,8 @@ import {
   onboard,
   verifySignupCode,
   updatePassword,
+  requestPasswordReset,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -15,6 +17,8 @@ router.post("/signup", signup);
 router.post("/verify-code", verifySignupCode);
 router.post("/login", login);
 router.post("/logout", logout);
+router.post("/forgot-password", requestPasswordReset);
+router.post("/reset-password", resetPassword);
 
 router.post("/onboarding", protectRoute, onboard);
 router.put("/password", protectRoute, updatePassword);

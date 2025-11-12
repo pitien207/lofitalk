@@ -3,12 +3,26 @@ import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
 import { useTranslation } from "../languages/useTranslation";
+import {
+  requestPasswordReset,
+  resetPasswordWithCode,
+} from "../lib/api";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   });
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotStep, setForgotStep] = useState("request");
+  const [resetForm, setResetForm] = useState({
+    email: "",
+    code: "",
+    newPassword: "",
+  });
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
 
   const { isPending, error, loginMutation } = useLogin();
   const { t } = useTranslation();
@@ -16,6 +30,82 @@ const LoginPage = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     loginMutation(loginData);
+  };
+
+  const openForgotModal = () => {
+    setResetForm((prev) => ({
+      ...prev,
+      email: loginData.email || prev.email,
+    }));
+    setForgotStep("request");
+    setResetError("");
+    setResetMessage("");
+    setForgotOpen(true);
+  };
+
+  const closeForgotModal = () => {
+    setForgotOpen(false);
+    setResetLoading(false);
+  };
+
+  const handleSendResetCode = async (e) => {
+    e.preventDefault();
+    setResetError("");
+    setResetMessage("");
+
+    if (!resetForm.email) {
+      setResetError("Please enter your email address.");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await requestPasswordReset({ email: resetForm.email });
+      setResetMessage("Verification code sent. Please check your inbox.");
+      setForgotStep("verify");
+    } catch (err) {
+      setResetError(
+        err?.response?.data?.message ||
+          "Unable to send reset code. Please try again."
+      );
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError("");
+    setResetMessage("");
+
+    if (!resetForm.code || !resetForm.newPassword) {
+      setResetError("Please enter the code and your new password.");
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await resetPasswordWithCode({
+        email: resetForm.email,
+        code: resetForm.code,
+        newPassword: resetForm.newPassword,
+      });
+      setResetMessage("Password updated! You can now sign in.");
+      setForgotStep("done");
+      setLoginData((prev) => ({
+        ...prev,
+        email: resetForm.email,
+        password: "",
+      }));
+      setResetForm((prev) => ({ ...prev, code: "", newPassword: "" }));
+    } catch (err) {
+      setResetError(
+        err?.response?.data?.message ||
+          "Unable to reset password. Please try again."
+      );
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -86,6 +176,16 @@ const LoginPage = () => {
                     />
                   </div>
 
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      className="text-primary text-sm hover:underline"
+                      onClick={openForgotModal}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+
                   <button
                     type="submit"
                     className="btn btn-primary w-full"
@@ -141,6 +241,119 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+
+      {forgotOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-base-100 rounded-xl w-full max-w-md p-6 relative shadow-2xl border border-primary/20">
+            <button
+              className="btn btn-sm btn-ghost absolute right-4 top-4"
+              onClick={closeForgotModal}
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-semibold mb-2">Reset password</h2>
+            <p className="text-sm opacity-70 mb-4">
+              Enter your email to receive a verification code. Once verified, you
+              can set a new password.
+            </p>
+
+            {resetError && (
+              <div className="alert alert-error mb-4">
+                <span>{resetError}</span>
+              </div>
+            )}
+            {resetMessage && (
+              <div className="alert alert-success mb-4">
+                <span>{resetMessage}</span>
+              </div>
+            )}
+
+            {forgotStep !== "done" ? (
+              <form
+                onSubmit={
+                  forgotStep === "request"
+                    ? handleSendResetCode
+                    : handleResetPassword
+                }
+                className="space-y-4"
+              >
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Email</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="input input-bordered"
+                    value={resetForm.email}
+                    onChange={(e) =>
+                      setResetForm({ ...resetForm, email: e.target.value })
+                    }
+                    required
+                    disabled={forgotStep !== "request"}
+                  />
+                </div>
+
+                {forgotStep === "verify" && (
+                  <>
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">Verification code</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="input input-bordered"
+                        value={resetForm.code}
+                        onChange={(e) =>
+                          setResetForm({ ...resetForm, code: e.target.value })
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">New password</span>
+                      </label>
+                      <input
+                        type="password"
+                        className="input input-bordered"
+                        value={resetForm.newPassword}
+                        onChange={(e) =>
+                          setResetForm({
+                            ...resetForm,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary w-full"
+                  disabled={resetLoading}
+                >
+                  {resetLoading && (
+                    <span className="loading loading-spinner loading-xs"></span>
+                  )}
+                  {forgotStep === "request"
+                    ? "Send verification code"
+                    : "Update password"}
+                </button>
+              </form>
+            ) : (
+              <button
+                className="btn btn-outline w-full mt-4"
+                onClick={closeForgotModal}
+              >
+                Back to login
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

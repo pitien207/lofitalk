@@ -70,6 +70,12 @@ const userSchema = new mongoose.Schema(
     verificationCodeExpiresAt: {
       type: Date,
     },
+    passwordResetCode: {
+      type: String,
+    },
+    passwordResetCodeExpiresAt: {
+      type: Date,
+    },
     location: {
       type: String,
       default: "",

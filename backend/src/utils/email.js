@@ -50,3 +50,30 @@ export async function sendVerificationEmail(recipient, code) {
   });
 }
 
+export async function sendPasswordResetEmail(recipient, code) {
+  if (!transporter) {
+    console.warn("Email transporter not configured. Skipping email send.");
+    return;
+  }
+
+  const fromAddress = MAIL_FROM || MAIL_USER;
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; line-height:1.5;">
+      <p>Hi there,</p>
+      <p>We received a request to reset your LofiTalk password. Use the verification code below:</p>
+      <p style="font-size: 24px; font-weight: 700; letter-spacing: 6px;">
+        ${code}
+      </p>
+      <p>This code expires in 15 minutes. If you didn't request a reset, you can safely ignore this message.</p>
+      <p>— The LofiTalk Team</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: recipient,
+    subject: "Reset your LofiTalk password",
+    text: `Use this code to reset your password: ${code}. It expires in 15 minutes.`,
+    html: htmlBody,
+  });
+}
