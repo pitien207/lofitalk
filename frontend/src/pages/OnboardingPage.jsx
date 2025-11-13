@@ -11,6 +11,7 @@ import {
   ShuffleIcon,
   UploadIcon,
 } from "lucide-react";
+import LanguageSelector from "../components/LanguageSelector";
 import { getRandomAvatar } from "../utils/avatarPool";
 
 const parseListField = (value) =>
@@ -45,7 +46,6 @@ const OnboardingPage = () => {
     city: authUser?.city || "",
     height: authUser?.height || "",
     education: authUser?.education || "",
-    datingGoal: authUser?.datingGoal || "",
     hobbies: initialHobbies,
     pets: initialPets,
     profilePic: authUser?.profilePic || "",
@@ -302,9 +302,12 @@ const OnboardingPage = () => {
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="card bg-base-200 w-full max-w-3xl shadow-xl">
         <div className="card-body p-6 sm:p-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">
-            {t("onboarding.title")}
-          </h1>
+          <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+            <h1 className="text-2xl sm:text-3xl font-bold text-center flex-grow">
+              {t("onboarding.title")}
+            </h1>
+            <LanguageSelector />
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* PROFILE PIC CONTAINER */}
@@ -382,7 +385,7 @@ const OnboardingPage = () => {
             </div>
 
             {/* CORE INFO */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">
@@ -529,23 +532,6 @@ const OnboardingPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    {t("onboarding.datingGoal")}{" "}
-                    <span className="text-xs opacity-60">
-                      ({t("onboarding.optional")})
-                    </span>
-                  </span>
-                </label>
-                <textarea
-                  name="datingGoal"
-                  value={formState.datingGoal}
-                  onChange={(e) => updateFormField("datingGoal", e.target.value)}
-                  className="textarea textarea-bordered h-24"
-                  placeholder={t("onboarding.datingGoalPlaceholder")}
-                />
-              </div>
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">

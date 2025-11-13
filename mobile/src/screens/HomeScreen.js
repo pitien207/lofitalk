@@ -131,10 +131,6 @@ const HomeScreen = ({ user, onSignOut }) => {
         <InfoRow label="Education" value={user?.education} />
       </SectionCard>
 
-      <SectionCard title="Dating goal">
-        <InfoRow label="Goal" value={user?.datingGoal} />
-      </SectionCard>
-
       <SectionCard title="Hobbies">
         <PillList items={hobbies} />
       </SectionCard>

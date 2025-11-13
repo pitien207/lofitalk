@@ -197,10 +197,6 @@ const FriendProfile = ({ profile, loading, error }) => {
         <InfoRow label="Education" value={profile.education} />
       </SectionCard>
 
-      <SectionCard title="Dating goal">
-        <InfoRow label="Goal" value={profile.datingGoal} />
-      </SectionCard>
-
       <SectionCard title="Hobbies">
         <PillList items={hobbies} />
       </SectionCard>

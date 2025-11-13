@@ -3,6 +3,7 @@ import { ShipWheelIcon } from "lucide-react";
 import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
 import { useTranslation } from "../languages/useTranslation";
+import LanguageSelector from "../components/LanguageSelector";
 import {
   requestPasswordReset,
   resetPasswordWithCode,
@@ -116,12 +117,15 @@ const LoginPage = () => {
       <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
         {/* LOGIN FORM SECTION */}
         <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
-          {/* LOGO */}
-          <div className="mb-4 flex items-center justify-start gap-2">
-            <ShipWheelIcon className="size-9 text-primary" />
-            <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
-              LofiTalk
-            </span>
+          {/* LOGO + LANGUAGE */}
+          <div className="flex items-start justify-between gap-4 mb-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <ShipWheelIcon className="size-9 text-primary" />
+              <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
+                LofiTalk
+              </span>
+            </div>
+            <LanguageSelector />
           </div>
 
           {/* ERROR MESSAGE DISPLAY */}

@@ -44,10 +44,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    datingGoal: {
-      type: String,
-      default: "",
-    },
     hobbies: {
       type: String,
       default: "",

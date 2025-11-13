@@ -166,7 +166,7 @@ export async function getUserProfile(req, res) {
 
     const user = await User.findById(id)
       .select(
-        "fullName profilePic bio gender birthDate country city height education datingGoal hobbies pets friends location createdAt"
+        "fullName profilePic bio gender birthDate country city height education hobbies pets friends location createdAt"
       )
       .lean();
 

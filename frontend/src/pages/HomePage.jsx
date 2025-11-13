@@ -58,7 +58,6 @@ const HomePage = () => {
     city: "",
     height: "",
     education: "",
-    datingGoal: "",
     hobbies: [],
     pets: [],
     profilePic: "",
@@ -86,7 +85,6 @@ const HomePage = () => {
       city: authUser.city || "",
       height: authUser.height || "",
       education: authUser.education || "",
-      datingGoal: authUser.datingGoal || "",
       hobbies: parseListField(authUser.hobbies),
       pets: parseListField(authUser.pets),
       profilePic: authUser.profilePic || "",
@@ -441,11 +439,6 @@ const HomePage = () => {
               }
             />
             <InfoBadge
-              icon={HeartIcon}
-              label={t("profile.datingGoal")}
-              value={formState.datingGoal}
-            />
-            <InfoBadge
               icon={BookOpenIcon}
               label={t("profile.education")}
               value={formState.education}
@@ -700,22 +693,6 @@ const HomePage = () => {
                 </div>
               </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    {t("onboarding.datingGoal")}{" "}
-                    <span className="text-xs opacity-60">
-                      ({t("onboarding.optional")})
-                    </span>
-                  </span>
-                </label>
-                <textarea
-                  value={formState.datingGoal}
-                  onChange={(e) => updateFormField("datingGoal", e.target.value)}
-                  className="textarea textarea-bordered h-20"
-                  placeholder={t("onboarding.datingGoalPlaceholder")}
-                />
-              </div>
 
               <div className="form-control">
                 <label className="label">

@@ -210,11 +210,6 @@ const UserProfilePage = () => {
             }
           />
           <InfoRow
-            icon={HeartIcon}
-            label={t("profile.datingGoal")}
-            value={user.datingGoal}
-          />
-          <InfoRow
             icon={BookOpenIcon}
             label={t("profile.education")}
             value={user.education}

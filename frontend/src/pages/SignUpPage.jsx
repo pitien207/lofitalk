@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router";
 import useSignUp from "../hooks/useSignup.js";
 import useVerifySignup from "../hooks/useVerifySignup.js";
 import { useTranslation } from "../languages/useTranslation";
+import LanguageSelector from "../components/LanguageSelector";
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -77,11 +78,14 @@ const SignUpPage = () => {
     >
       <div className="border border-primary/25 flex flex-col lg:flex-row w-full max-w-5xl mx-auto bg-base-100 rounded-xl shadow-lg overflow-hidden">
         <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
-          <div className="mb-4 flex items-center justify-start gap-2">
-            <ShipWheelIcon className="size-9 text-primary" />
-            <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
-              LofiTalk
-            </span>
+          <div className="flex items-start justify-between gap-4 mb-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <ShipWheelIcon className="size-9 text-primary" />
+              <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
+                LofiTalk
+              </span>
+            </div>
+            <LanguageSelector />
           </div>
           <p className="text-sm opacity-70">{t("auth.signupLogoTagline")}</p>
 
