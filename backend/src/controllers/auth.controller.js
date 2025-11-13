@@ -5,11 +5,29 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "../utils/email.js";
+import { getRandomAvatar } from "../utils/avatarPool.js";
 
 const CODE_EXPIRATION_MINUTES = 15;
 
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
+
+const buildAssetUrl = (relativePath) => {
+  if (!relativePath) return "";
+
+  const base =
+    process.env.ASSET_BASE_URL ||
+    process.env.APP_BASE_URL ||
+    process.env.SERVER_URL ||
+    process.env.API_BASE_URL ||
+    `http://localhost:${process.env.PORT || 5001}`;
+
+  try {
+    return new URL(relativePath, base).toString();
+  } catch (error) {
+    return `${base.replace(/\/$/, "")}${relativePath}`;
+  }
+};
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -60,8 +78,8 @@ export async function signup(req, res) {
       user.verificationCodeExpiresAt = verificationCodeExpiresAt;
       await user.save();
     } else {
-      const idx = Math.floor(Math.random() * 100) + 1;
-      const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+      const randomAvatarPath = getRandomAvatar();
+      const randomAvatar = randomAvatarPath ? buildAssetUrl(randomAvatarPath) : "";
 
       user = await User.create({
         email,

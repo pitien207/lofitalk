@@ -93,6 +93,12 @@ const filterMessages = (messages) =>
         !msg.type)
   );
 
+const resolveImageSource = (value) => {
+  if (!value) return Logo;
+  if (typeof value === "string") return { uri: value };
+  return value;
+};
+
 const ChatScreen = ({
   user,
   chatLoading,
@@ -117,12 +123,7 @@ const ChatScreen = ({
         onPress={() => onChannelSelect(meta.id)}
       >
         <View style={styles.avatarWrapper}>
-          <Image
-            source={
-              typeof meta.avatar === "string" ? { uri: meta.avatar } : Logo
-            }
-            style={styles.threadAvatar}
-          />
+          <Image source={resolveImageSource(meta.avatar)} style={styles.threadAvatar} />
           {meta.online && <View style={styles.onlineDot} />}
         </View>
         <View style={styles.threadContent}>
@@ -173,14 +174,10 @@ const ChatScreen = ({
           <TouchableOpacity style={styles.backButton} onPress={onBackToList}>
             <Text style={styles.backButtonText}>◀</Text>
           </TouchableOpacity>
-          <Image
-            source={
-              typeof conversationMeta.avatar === "string"
-                ? { uri: conversationMeta.avatar }
-                : Logo
-            }
-            style={styles.chatAvatar}
-          />
+        <Image
+          source={resolveImageSource(conversationMeta.avatar)}
+          style={styles.chatAvatar}
+        />
           <View style={{ flex: 1 }}>
             <Text style={styles.chatName}>{conversationMeta.name}</Text>
             <Text style={styles.chatStatus}>

@@ -26,6 +26,11 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(
+  "/static/avatars",
+  express.static(path.join(__dirname, "mobile/assets/avatars"))
+);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);

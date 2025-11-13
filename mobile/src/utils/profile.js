@@ -1,4 +1,5 @@
 import { FALLBACK_MESSAGES } from "../constants";
+import { getRandomAvatar } from "./avatarPool";
 
 export const parseListField = (value) => {
   if (!value) return [];
@@ -60,12 +61,15 @@ export const normalizeFriends = (rawFriends = []) => {
           ? parseListField(base.hobbies)
           : parseListField("");
 
+      const resolvedAvatar =
+        base.profilePic ||
+        getRandomAvatar(base.gender) ||
+        getRandomAvatar();
+
       return {
         _id: base._id || `${index}`,
         fullName: base.fullName || `Friend ${index + 1}`,
-        profilePic:
-          base.profilePic ||
-          `https://avatar.iran.liara.run/public/${(index % 90) + 1}.png`,
+        profilePic: resolvedAvatar,
         location: locationText,
         lastMessage:
           base.lastMessage ||

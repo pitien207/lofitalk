@@ -25,6 +25,12 @@ import {
 } from "../components/profile/ProfileDetails";
 import { buttonStyles } from "../components/common/buttons";
 
+const resolveImageSource = (value) => {
+  if (!value) return Logo;
+  if (typeof value === "string") return { uri: value };
+  return value;
+};
+
 const HomeScreen = ({ user, onSignOut }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const gender = genderLabels[user?.gender] || user?.gender || "";
@@ -97,11 +103,7 @@ const HomeScreen = ({ user, onSignOut }) => {
 
       <View style={styles.profileCard}>
         <Image
-          source={
-            typeof user?.profilePic === "string"
-              ? { uri: user?.profilePic }
-              : Logo
-          }
+          source={resolveImageSource(user?.profilePic)}
           style={styles.profileAvatar}
         />
         <View style={styles.profileText}>

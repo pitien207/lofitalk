@@ -11,6 +11,7 @@ import {
   ShuffleIcon,
   UploadIcon,
 } from "lucide-react";
+import { getRandomAvatar } from "../utils/avatarPool";
 
 const parseListField = (value) =>
   value
@@ -257,8 +258,13 @@ const OnboardingPage = () => {
   };
 
   const handleRandomAvatar = () => {
-    const idx = Math.floor(Math.random() * 100) + 1; // 1-100 included
-    const randomAvatar = `https://avatar.iran.liara.run/public/${idx}.png`;
+    const genderForAvatar = formState.gender || authUser?.gender || "";
+    const randomAvatar = getRandomAvatar(genderForAvatar);
+
+    if (!randomAvatar) {
+      toast.error("Không tìm thấy avatar phù hợp.");
+      return;
+    }
 
     updateFormField("profilePic", randomAvatar);
     toast.success(t("language.randomAvatarToast"));

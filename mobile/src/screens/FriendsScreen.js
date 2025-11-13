@@ -24,6 +24,12 @@ import {
 } from "../components/profile/ProfileDetails";
 import { buttonStyles } from "../components/common/buttons";
 
+const resolveImageSource = (value) => {
+  if (!value) return Logo;
+  if (typeof value === "string") return { uri: value };
+  return value;
+};
+
 const FriendsScreen = ({
   friends = [],
   selectedFriend,
@@ -89,11 +95,7 @@ const FriendsScreen = ({
             >
               <View style={styles.friendAvatarWrapper}>
                 <Image
-                  source={
-                    typeof friend.profilePic === "string"
-                      ? { uri: friend.profilePic }
-                      : Logo
-                  }
+                  source={resolveImageSource(friend.profilePic)}
                   style={styles.friendAvatar}
                 />
                 {friend.isOnline && <View style={styles.onlineDot} />}
@@ -153,14 +155,10 @@ const FriendProfile = ({ profile, loading, error }) => {
   return (
     <View style={styles.friendProfileWrapper}>
       <View style={styles.friendProfileCard}>
-        <Image
-          source={
-            typeof profile.profilePic === "string"
-              ? { uri: profile.profilePic }
-              : Logo
-          }
-          style={styles.friendProfileAvatar}
-        />
+          <Image
+            source={resolveImageSource(profile.profilePic)}
+            style={styles.friendProfileAvatar}
+          />
         <Text style={styles.friendProfileName}>
           {profile.fullName || "Friend"}
         </Text>
