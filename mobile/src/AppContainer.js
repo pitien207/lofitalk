@@ -102,7 +102,7 @@ const AppContainer = () => {
           error={error}
           onEmailChange={handleEmailChange}
           onPasswordChange={handlePasswordChange}
-          onSubmit={handleLogin}
+          onLogin={handleLogin}
         />
       </View>
     );

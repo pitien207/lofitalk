@@ -1,5 +1,7 @@
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +14,10 @@ import {
 import { BRAND_COLORS } from "../theme/colors";
 import Logo from "../../assets/LofiTalk_logo.png";
 import { buttonStyles } from "../components/common/buttons";
+import {
+  signupRequest,
+  verifySignupCodeRequest,
+} from "../services/authService";
 
 const AuthScreen = ({
   email,
@@ -20,25 +26,146 @@ const AuthScreen = ({
   error,
   onEmailChange,
   onPasswordChange,
-  onSubmit,
-}) => (
-  <KeyboardAvoidingView
-    behavior={Platform.OS === "ios" ? "padding" : "height"}
-    style={styles.content}
-    keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
-  >
-    <View style={styles.brandHeader}>
-      <Image source={Logo} style={styles.logo} />
-      <Text style={styles.appName}>LofiTalk</Text>
-      <Text style={styles.appTagline}>Connect, chat and feel the vibe</Text>
-    </View>
+  onLogin,
+}) => {
+  const [mode, setMode] = useState("signin");
+  const [signupStep, setSignupStep] = useState("form");
+  const [fullName, setFullName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingPassword, setPendingPassword] = useState("");
 
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>Sign in</Text>
-      <Text style={styles.cardSubtitle}>
-        Use your existing LofiTalk account to continue
-      </Text>
+  const resetSignupState = () => {
+    setSignupStep("form");
+    setVerificationCode("");
+    setSignupError("");
+    setInfoMessage("");
+    setPendingEmail("");
+    setPendingPassword("");
+    setFullName("");
+    setConfirmPassword("");
+  };
 
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    if (nextMode === "signin") {
+      resetSignupState();
+    }
+  };
+
+  const handleSignIn = async () => {
+    if (loading) return;
+    await onLogin();
+  };
+
+  const handleSignup = async () => {
+    if (!fullName.trim()) {
+      setSignupError("Please enter your full name or nickname.");
+      return;
+    }
+    if (!email || !password) {
+      setSignupError("Please enter email and password.");
+      return;
+    }
+    if (password.length < 6) {
+      setSignupError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setSignupError("Passwords do not match.");
+      return;
+    }
+
+    setSignupLoading(true);
+    setSignupError("");
+
+    try {
+      const response = await signupRequest({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
+      setSignupStep("verify");
+      setPendingEmail(email.trim());
+      setPendingPassword(password);
+      setInfoMessage(
+        response?.message ||
+          "We sent a 6-digit verification code to your email."
+      );
+      Alert.alert(
+        "Check your email",
+        "Enter the verification code to activate your account."
+      );
+    } catch (err) {
+      const message =
+        err?.response?.data?.message || "Unable to sign up right now.";
+      setSignupError(message);
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!pendingEmail || !pendingPassword) {
+      setSignupError("Please submit the sign up form again.");
+      setSignupStep("form");
+      return;
+    }
+    if (!verificationCode.trim()) {
+      setSignupError("Please enter the verification code.");
+      return;
+    }
+
+    setSignupLoading(true);
+    setSignupError("");
+
+    try {
+      await verifySignupCodeRequest({
+        email: pendingEmail,
+        code: verificationCode.trim(),
+      });
+
+      onEmailChange(pendingEmail);
+      onPasswordChange(pendingPassword);
+
+      const result = await onLogin();
+      if (result) {
+        Alert.alert("Account verified", "Welcome to LofiTalk!");
+        resetSignupState();
+        setMode("signin");
+      }
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        "Invalid or expired code. Please try again.";
+      setSignupError(message);
+    } finally {
+      setSignupLoading(false);
+    }
+  };
+
+  const modeTitle = useMemo(() => {
+    if (mode === "signup") {
+      return signupStep === "form" ? "Create account" : "Verify email";
+    }
+    return "Sign in";
+  }, [mode, signupStep]);
+
+  const modeSubtitle = useMemo(() => {
+    if (mode === "signup") {
+      return signupStep === "form"
+        ? "Join LofiTalk and start cozy conversations."
+        : `Enter the code sent to ${pendingEmail || "your email"}.`;
+    }
+    return "Use your existing LofiTalk account to continue";
+  }, [mode, signupStep, pendingEmail]);
+
+  const renderSignInForm = () => (
+    <>
       <TextInput
         placeholder="Email"
         placeholderTextColor="#A0A6B7"
@@ -61,11 +188,8 @@ const AuthScreen = ({
       {error && <Text style={styles.error}>{error}</Text>}
 
       <TouchableOpacity
-        style={[
-          buttonStyles.primaryButton,
-          loading && styles.disabledButton,
-        ]}
-        onPress={onSubmit}
+        style={[buttonStyles.primaryButton, loading && styles.disabledButton]}
+        onPress={handleSignIn}
         disabled={loading}
       >
         {loading ? (
@@ -78,9 +202,168 @@ const AuthScreen = ({
       <TouchableOpacity style={buttonStyles.secondaryButton}>
         <Text style={buttonStyles.secondaryButtonText}>Forgot password?</Text>
       </TouchableOpacity>
-    </View>
-  </KeyboardAvoidingView>
-);
+    </>
+  );
+
+  const renderSignupForm = () => (
+    <>
+      <TextInput
+        placeholder="Full name / Nickname"
+        placeholderTextColor="#A0A6B7"
+        value={fullName}
+        onChangeText={setFullName}
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Email"
+        placeholderTextColor="#A0A6B7"
+        value={email}
+        onChangeText={onEmailChange}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Password"
+        placeholderTextColor="#A0A6B7"
+        value={password}
+        onChangeText={onPasswordChange}
+        secureTextEntry
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Confirm password"
+        placeholderTextColor="#A0A6B7"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+
+      {signupError && <Text style={styles.error}>{signupError}</Text>}
+      {infoMessage && <Text style={styles.info}>{infoMessage}</Text>}
+
+      <TouchableOpacity
+        style={[
+          buttonStyles.primaryButton,
+          signupLoading && styles.disabledButton,
+        ]}
+        onPress={handleSignup}
+        disabled={signupLoading}
+      >
+        {signupLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={buttonStyles.primaryButtonText}>Continue</Text>
+        )}
+      </TouchableOpacity>
+    </>
+  );
+
+  const renderVerifyStep = () => (
+    <>
+      <View style={styles.infoBox}>
+        <Text style={styles.info}>
+          We sent a 6-digit code to{" "}
+          <Text style={styles.boldText}>{pendingEmail}</Text>.
+        </Text>
+      </View>
+
+      <TextInput
+        placeholder="Verification code"
+        placeholderTextColor="#A0A6B7"
+        value={verificationCode}
+        onChangeText={setVerificationCode}
+        keyboardType="number-pad"
+        style={styles.input}
+        maxLength={6}
+      />
+
+      {signupError && <Text style={styles.error}>{signupError}</Text>}
+      {infoMessage && <Text style={styles.info}>{infoMessage}</Text>}
+
+      <TouchableOpacity
+        style={buttonStyles.secondaryButton}
+        onPress={() => setSignupStep("form")}
+        disabled={signupLoading}
+      >
+        <Text style={buttonStyles.secondaryButtonText}>Edit email</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          buttonStyles.primaryButton,
+          signupLoading && styles.disabledButton,
+        ]}
+        onPress={handleVerifyCode}
+        disabled={signupLoading}
+      >
+        {signupLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={buttonStyles.primaryButtonText}>Verify & sign in</Text>
+        )}
+      </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.content}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
+    >
+      <View style={styles.brandHeader}>
+        <Image source={Logo} style={styles.logo} />
+        <Text style={styles.appName}>LofiTalk</Text>
+        <Text style={styles.appTagline}>Connect, chat and feel the vibe</Text>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.modeSwitch}>
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "signin" && styles.modeActive]}
+            onPress={() => handleModeChange("signin")}
+          >
+            <Text
+              style={[
+                styles.modeText,
+                mode === "signin" && styles.modeTextActive,
+              ]}
+            >
+              Sign in
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "signup" && styles.modeActive]}
+            onPress={() => handleModeChange("signup")}
+          >
+            <Text
+              style={[
+                styles.modeText,
+                mode === "signup" && styles.modeTextActive,
+              ]}
+            >
+              Sign up
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.cardTitle}>{modeTitle}</Text>
+        <Text style={styles.cardSubtitle}>{modeSubtitle}</Text>
+
+        {mode === "signin"
+          ? renderSignInForm()
+          : signupStep === "form"
+          ? renderSignupForm()
+          : renderVerifyStep()}
+      </View>
+    </KeyboardAvoidingView>
+  );
+};
 
 const styles = StyleSheet.create({
   content: {
@@ -139,8 +422,49 @@ const styles = StyleSheet.create({
     color: "#FEB2B2",
     marginBottom: 8,
   },
+  info: {
+    color: BRAND_COLORS.muted,
+    marginBottom: 8,
+  },
+  infoBox: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    marginBottom: 12,
+  },
+  boldText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
   disabledButton: {
     opacity: 0.6,
+  },
+  modeSwitch: {
+    flexDirection: "row",
+    padding: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    marginBottom: 20,
+  },
+  modeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 999,
+    alignItems: "center",
+  },
+  modeText: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "600",
+  },
+  modeActive: {
+    backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  modeTextActive: {
+    color: BRAND_COLORS.text,
   },
 });
 
