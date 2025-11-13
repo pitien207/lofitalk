@@ -1,8 +1,11 @@
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const projectRoot = path.resolve();
-const avatarsDir = path.join(projectRoot, "mobile", "assets", "avatars");
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const backendRoot = path.resolve(currentDir, "../../");
+const repoRoot = path.resolve(backendRoot, "..");
+const avatarsDir = path.join(repoRoot, "mobile", "assets", "avatars");
 const boyDir = path.join(avatarsDir, "boy");
 const girlDir = path.join(avatarsDir, "girl");
 
