@@ -69,11 +69,16 @@ export async function sendPasswordResetEmail(recipient, code) {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: fromAddress,
-    to: recipient,
-    subject: "Reset your LofiTalk password",
-    text: `Use this code to reset your password: ${code}. It expires in 15 minutes.`,
-    html: htmlBody,
-  });
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: recipient,
+      subject: "Reset your LofiTalk password",
+      text: `Use this code to reset your password: ${code}. It expires in 15 minutes.`,
+      html: htmlBody,
+    });
+  } catch (error) {
+    console.error("Failed to send password reset email:", error.message);
+    throw error;
+  }
 }

@@ -26,3 +26,32 @@ export const verifySignupCodeRequest = async ({ email, code }) => {
   });
   return data;
 };
+
+export const updatePasswordRequest = async ({
+  currentPassword,
+  newPassword,
+}) => {
+  const { data } = await api.put("/auth/password", {
+    currentPassword,
+    newPassword,
+  });
+  return data;
+};
+
+export const requestPasswordReset = async ({ email }) => {
+  const { data } = await api.post("/auth/forgot-password", { email });
+  return data;
+};
+
+export const resetPasswordWithCode = async ({
+  email,
+  code,
+  newPassword,
+}) => {
+  const { data } = await api.post("/auth/reset-password", {
+    email,
+    code,
+    newPassword,
+  });
+  return data;
+};

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
 import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
@@ -24,6 +26,7 @@ import {
   StatBadge,
 } from "../components/profile/ProfileDetails";
 import { buttonStyles } from "../components/common/buttons";
+import { updatePasswordRequest } from "../services/authService";
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
@@ -33,6 +36,14 @@ const resolveImageSource = (value) => {
 
 const HomeScreen = ({ user, onSignOut }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
   const birthDate = formatDate(user?.birthDate);
@@ -57,6 +68,59 @@ const HomeScreen = ({ user, onSignOut }) => {
     };
 
     Alert.alert("LofiTalk", messages[item]);
+  };
+
+  const handlePasswordFieldChange = (field, value) => {
+    setPasswordForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    setPasswordError("");
+    setPasswordMessage("");
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (
+      !passwordForm.currentPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
+      setPasswordError("Please fill in all password fields.");
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError("New password must be at least 6 characters.");
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError("");
+    setPasswordMessage("");
+
+    try {
+      await updatePasswordRequest({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordMessage("Password updated successfully.");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      Alert.alert("Success", "Password updated successfully.");
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        "Unable to update password. Please try again.";
+      setPasswordError(message);
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -138,6 +202,57 @@ const HomeScreen = ({ user, onSignOut }) => {
       <SectionCard title="Pets">
         <PillList items={pets} />
       </SectionCard>
+
+      <View style={styles.passwordCard}>
+        <Text style={styles.passwordTitle}>Change password</Text>
+        <Text style={styles.passwordSubtitle}>
+          Keep your account secure by updating it regularly.
+        </Text>
+        <TextInput
+          placeholder="Current password"
+          placeholderTextColor="#A0A6B7"
+          style={styles.passwordInput}
+          secureTextEntry
+          value={passwordForm.currentPassword}
+          onChangeText={(value) => handlePasswordFieldChange("currentPassword", value)}
+        />
+        <TextInput
+          placeholder="New password"
+          placeholderTextColor="#A0A6B7"
+          style={styles.passwordInput}
+          secureTextEntry
+          value={passwordForm.newPassword}
+          onChangeText={(value) => handlePasswordFieldChange("newPassword", value)}
+        />
+        <TextInput
+          placeholder="Confirm new password"
+          placeholderTextColor="#A0A6B7"
+          style={styles.passwordInput}
+          secureTextEntry
+          value={passwordForm.confirmPassword}
+          onChangeText={(value) => handlePasswordFieldChange("confirmPassword", value)}
+        />
+        {passwordError ? (
+          <Text style={styles.error}>{passwordError}</Text>
+        ) : null}
+        {passwordMessage ? (
+          <Text style={styles.passwordSuccess}>{passwordMessage}</Text>
+        ) : null}
+        <TouchableOpacity
+          style={[
+            buttonStyles.primaryButton,
+            passwordLoading && styles.disabledButton,
+          ]}
+          onPress={handlePasswordSubmit}
+          disabled={passwordLoading}
+        >
+          {passwordLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={buttonStyles.primaryButtonText}>Update password</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[buttonStyles.primaryButton, styles.homeSignOut]}
@@ -254,6 +369,37 @@ const styles = StyleSheet.create({
   },
   homeSignOut: {
     marginTop: 24,
+  },
+  passwordCard: {
+    marginTop: 24,
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 28,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    gap: 12,
+  },
+  passwordTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  passwordSubtitle: {
+    color: BRAND_COLORS.muted,
+    fontSize: 14,
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    color: BRAND_COLORS.text,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  passwordSuccess: {
+    color: "#9AE6B4",
+    marginBottom: 4,
   },
 });
 

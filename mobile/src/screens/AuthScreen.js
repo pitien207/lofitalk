@@ -38,6 +38,14 @@ const AuthScreen = ({
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
+  const [forgotVisible, setForgotVisible] = useState(false);
+  const [resetStep, setResetStep] = useState("request");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
 
   const resetSignupState = () => {
     setSignupStep("form");
@@ -55,6 +63,23 @@ const AuthScreen = ({
     if (nextMode === "signin") {
       resetSignupState();
     }
+  };
+
+  const openForgotPassword = () => {
+    setForgotVisible(true);
+    setResetStep("request");
+    setResetEmail(email || "");
+    setResetCode("");
+    setResetNewPassword("");
+    setResetError("");
+    setResetMessage("");
+  };
+
+  const closeForgotPassword = () => {
+    setForgotVisible(false);
+    setResetLoading(false);
+    setResetError("");
+    setResetMessage("");
   };
 
   const handleSignIn = async () => {
@@ -148,6 +173,69 @@ const AuthScreen = ({
     }
   };
 
+  const handleResetRequest = async () => {
+    if (!resetEmail.trim()) {
+      setResetError("Please enter your email.");
+      return;
+    }
+    setResetLoading(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      const response = await requestPasswordReset({
+        email: resetEmail.trim(),
+      });
+      setResetMessage(
+        response?.message || "Verification code sent. Check your email."
+      );
+      setResetStep("verify");
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        "Unable to send reset code right now.";
+      setResetError(message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetCode.trim() || !resetNewPassword.trim()) {
+      setResetError("Please enter the verification code and new password.");
+      return;
+    }
+    if (resetNewPassword.length < 6) {
+      setResetError("New password must be at least 6 characters.");
+      return;
+    }
+
+    setResetLoading(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      await resetPasswordWithCode({
+        email: resetEmail.trim(),
+        code: resetCode.trim(),
+        newPassword: resetNewPassword,
+      });
+      Alert.alert(
+        "Password updated",
+        "You can now sign in with your new password."
+      );
+      closeForgotPassword();
+      setMode("signin");
+      onEmailChange(resetEmail.trim());
+      onPasswordChange("");
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        "Unable to reset password. Please try again.";
+      setResetError(message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const modeTitle = useMemo(() => {
     if (mode === "signup") {
       return signupStep === "form" ? "Create account" : "Verify email";
@@ -199,7 +287,10 @@ const AuthScreen = ({
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={buttonStyles.secondaryButton}>
+      <TouchableOpacity
+        style={buttonStyles.secondaryButton}
+        onPress={openForgotPassword}
+      >
         <Text style={buttonStyles.secondaryButtonText}>Forgot password?</Text>
       </TouchableOpacity>
     </>
@@ -359,8 +450,98 @@ const AuthScreen = ({
           ? renderSignInForm()
           : signupStep === "form"
           ? renderSignupForm()
-          : renderVerifyStep()}
+        : renderVerifyStep()}
       </View>
+      {forgotVisible && (
+        <View style={styles.forgotOverlay}>
+          <View style={styles.forgotCard}>
+            <Text style={styles.forgotTitle}>Reset password</Text>
+            <Text style={styles.forgotSubtitle}>
+              Enter your email to receive a verification code. Then set a new
+              password.
+            </Text>
+
+            <TextInput
+              placeholder="Email"
+              placeholderTextColor="#A0A6B7"
+              value={resetEmail}
+              onChangeText={(value) => {
+                setResetEmail(value);
+                setResetError("");
+                setResetMessage("");
+              }}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+              editable={resetStep === "request"}
+            />
+
+            {resetStep === "verify" && (
+              <>
+                <TextInput
+                  placeholder="Verification code"
+                  placeholderTextColor="#A0A6B7"
+                  value={resetCode}
+                  onChangeText={(value) => {
+                    setResetCode(value);
+                    setResetError("");
+                  }}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                  maxLength={6}
+                />
+                <TextInput
+                  placeholder="New password"
+                  placeholderTextColor="#A0A6B7"
+                  value={resetNewPassword}
+                  onChangeText={(value) => {
+                    setResetNewPassword(value);
+                    setResetError("");
+                  }}
+                  secureTextEntry
+                  style={styles.input}
+                />
+              </>
+            )}
+
+            {resetError ? <Text style={styles.error}>{resetError}</Text> : null}
+            {resetMessage ? (
+              <Text style={styles.info}>{resetMessage}</Text>
+            ) : null}
+
+            <View style={styles.forgotActions}>
+              <TouchableOpacity
+                style={styles.forgotCancel}
+                onPress={closeForgotPassword}
+                disabled={resetLoading}
+              >
+                <Text style={styles.forgotCancelText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  buttonStyles.primaryButton,
+                  styles.forgotSubmit,
+                  resetLoading && styles.disabledButton,
+                ]}
+                onPress={
+                  resetStep === "request"
+                    ? handleResetRequest
+                    : handleResetPassword
+                }
+                disabled={resetLoading}
+              >
+                {resetLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={buttonStyles.primaryButtonText}>
+                    {resetStep === "request" ? "Send code" : "Update password"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -465,6 +646,52 @@ const styles = StyleSheet.create({
   },
   modeTextActive: {
     color: BRAND_COLORS.text,
+  },
+  forgotOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  forgotCard: {
+    width: "100%",
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 28,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  forgotTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  forgotSubtitle: {
+    color: BRAND_COLORS.muted,
+    marginTop: 6,
+    marginBottom: 16,
+  },
+  forgotActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
+  },
+  forgotCancel: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  forgotCancelText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  forgotSubmit: {
+    flex: 1,
   },
 });
 
