@@ -70,6 +70,12 @@ const useAuth = () => {
     setAuthToken(null);
   };
 
+  const updateUserProfile = (nextUser) => {
+    if (nextUser) {
+      setUser(nextUser);
+    }
+  };
+
   return {
     email,
     password,
@@ -81,6 +87,7 @@ const useAuth = () => {
     signOut,
     handleEmailChange,
     handlePasswordChange,
+    updateUserProfile,
   };
 };
 

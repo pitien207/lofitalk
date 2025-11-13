@@ -55,3 +55,8 @@ export const resetPasswordWithCode = async ({
   });
   return data;
 };
+
+export const completeOnboardingRequest = async (payload) => {
+  const { data } = await api.post("/auth/onboarding", payload);
+  return data;
+};

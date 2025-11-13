@@ -5,6 +5,7 @@ import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
 import FriendsScreen from "./screens/FriendsScreen";
 import ChatScreen from "./screens/ChatScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
 import BottomNav from "./components/navigation/BottomNav";
 import AppBackground from "./components/layout/AppBackground";
 import useAuth from "./hooks/useAuth";
@@ -24,6 +25,7 @@ const AppContainer = () => {
     signOut,
     handleEmailChange,
     handlePasswordChange,
+    updateUserProfile,
   } = useAuth();
   const {
     friends,
@@ -103,6 +105,19 @@ const AppContainer = () => {
           onEmailChange={handleEmailChange}
           onPasswordChange={handlePasswordChange}
           onLogin={handleLogin}
+        />
+      </View>
+    );
+  }
+
+  if (user && !user.isOnboarded) {
+    return (
+      <View style={styles.screen}>
+        <StatusBar style="light" />
+        <AppBackground />
+        <OnboardingScreen
+          user={user}
+          onComplete={(updatedUser) => updateUserProfile(updatedUser)}
         />
       </View>
     );
