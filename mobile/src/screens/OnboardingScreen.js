@@ -18,59 +18,14 @@ import * as ImagePicker from "expo-image-picker";
 import { completeOnboardingRequest } from "../services/authService";
 import { parseListField } from "../utils/profile";
 import { getRandomAvatar } from "../utils/avatarPool";
-
-const REQUIRED_FIELDS = ["fullName", "gender", "birthDate", "country", "city"];
-
-const genderOptions = [
-  { value: "female", label: "Female" },
-  { value: "male", label: "Male" },
-  { value: "non-binary", label: "Non-binary" },
-  { value: "prefer_not_say", label: "Prefer not say" },
-];
-
-const countryCityOptions = [
-  {
-    value: "Vietnam",
-    label: "Vietnam",
-    cities: ["Hanoi", "Ho Chi Minh City", "Da Nang"],
-  },
-  {
-    value: "Germany",
-    label: "Germany",
-    cities: ["Berlin", "Munich", "Hamburg"],
-  },
-  {
-    value: "Japan",
-    label: "Japan",
-    cities: ["Tokyo", "Osaka", "Kyoto"],
-  },
-  {
-    value: "Australia",
-    label: "Australia",
-    cities: ["Sydney", "Melbourne", "Brisbane"],
-  },
-];
-
-const educationOptions = [
-  "High school graduate",
-  "University",
-  "Vocational training",
-  "Working professional",
-];
-
-const hobbyOptions = [
-  "Music",
-  "Reading",
-  "Sports",
-  "Cooking",
-  "Travel",
-  "Movies",
-  "Gaming",
-  "Yoga",
-  "Design",
-];
-
-const petOptions = ["Dog", "Cat", "Bird", "Fish", "Hamster", "Other"];
+import {
+  REQUIRED_FIELDS,
+  genderOptions,
+  countryCityOptions,
+  educationOptions,
+  hobbyOptions,
+  petOptions,
+} from "../constants/profileOptions";
 
 const OnboardingScreen = ({ user, onComplete }) => {
   const [formState, setFormState] = useState({

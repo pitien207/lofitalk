@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -32,12 +35,54 @@ import {
 } from "../services/authService";
 import { getRandomAvatar } from "../utils/avatarPool";
 import * as ImagePicker from "expo-image-picker";
+import {
+  REQUIRED_FIELDS,
+  genderOptions,
+  countryCityOptions,
+  educationOptions,
+  hobbyOptions,
+  petOptions,
+} from "../constants/profileOptions";
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
   if (typeof value === "string") return { uri: value };
   return value;
 };
+
+const buildProfileFormState = (baseUser = {}) => ({
+  fullName: baseUser?.fullName || "",
+  bio: baseUser?.bio || "",
+  gender: baseUser?.gender || "",
+  birthDate: baseUser?.birthDate
+    ? new Date(baseUser.birthDate).toISOString().slice(0, 10)
+    : "",
+  country: baseUser?.country || "",
+  city: baseUser?.city || "",
+  height: baseUser?.height || "",
+  education: baseUser?.education || "",
+  hobbies: parseListField(baseUser?.hobbies),
+  pets: parseListField(baseUser?.pets),
+  profilePic: baseUser?.profilePic || "",
+});
+
+const serializeProfilePayload = (formState) => ({
+  fullName: formState.fullName || "",
+  bio: formState.bio || "",
+  gender: formState.gender || "",
+  birthDate: formState.birthDate || "",
+  country: formState.country || "",
+  city: formState.city || "",
+  height: formState.height || "",
+  education: formState.education || "",
+  hobbies: Array.isArray(formState.hobbies)
+    ? formState.hobbies.join(", ")
+    : formState.hobbies || "",
+  pets: Array.isArray(formState.pets)
+    ? formState.pets.join(", ")
+    : formState.pets || "",
+  profilePic: formState.profilePic || "",
+});
 
 const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -52,12 +97,152 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarError, setAvatarError] = useState("");
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [profileForm, setProfileForm] = useState(() => buildProfileFormState(user));
+  const [profileError, setProfileError] = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
   const birthDate = formatDate(user?.birthDate);
   const age = computeAge(user?.birthDate);
   const hobbies = parseListField(user?.hobbies);
   const pets = parseListField(user?.pets);
+  const availableCities = useMemo(() => {
+    return (
+      countryCityOptions.find(
+        (country) => country.value === profileForm.country
+      )?.cities || []
+    );
+  }, [profileForm.country]);
+
+  useEffect(() => {
+    if (!editModalVisible) {
+      setProfileForm(buildProfileFormState(user));
+    }
+  }, [user, editModalVisible]);
+
+  const openProfileEditor = () => {
+    setProfileForm(buildProfileFormState(user));
+    setProfileError("");
+    setEditModalVisible(true);
+  };
+
+  const closeProfileEditor = () => {
+    setEditModalVisible(false);
+    setProfileError("");
+    setProfileForm(buildProfileFormState(user));
+  };
+
+  const handleProfileFieldChange = (field, value) => {
+    setProfileForm((prev) => ({ ...prev, [field]: value }));
+    setProfileError("");
+  };
+
+  const handleProfileCountrySelect = (country) => {
+    const currentCities =
+      countryCityOptions.find((item) => item.value === country)?.cities || [];
+    const keepCity = currentCities.includes(profileForm.city)
+      ? profileForm.city
+      : "";
+    setProfileForm((prev) => ({
+      ...prev,
+      country,
+      city: keepCity,
+    }));
+    setProfileError("");
+  };
+
+  const toggleProfileMultiValue = (field, value) => {
+    setProfileForm((prev) => {
+      const current = Array.isArray(prev[field]) ? prev[field] : [];
+      const exists = current.includes(value);
+      const next = exists
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      return { ...prev, [field]: next };
+    });
+    setProfileError("");
+  };
+
+  const isRequiredFieldFilled = (field) => {
+    const value = profileForm[field];
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return Boolean(value && value.toString().trim());
+  };
+
+  const handleProfileAvatarRandomLocal = () => {
+    const avatar =
+      getRandomAvatar(profileForm.gender || user?.gender) || getRandomAvatar();
+    if (!avatar) {
+      Alert.alert("Avatar unavailable", "Please try again in a moment.");
+      return;
+    }
+    setProfileForm((prev) => ({ ...prev, profilePic: avatar }));
+  };
+
+  const handleProfileAvatarUploadLocal = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow access to your photos to upload an avatar."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.length) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        const dataUri = `data:${asset.type || "image/jpeg"};base64,${
+          asset.base64
+        }`;
+        setProfileForm((prev) => ({ ...prev, profilePic: dataUri }));
+      }
+    }
+  };
+
+  const handleProfileSubmit = async () => {
+    const missingFields = REQUIRED_FIELDS.filter(
+      (field) => !isRequiredFieldFilled(field)
+    );
+
+    if (missingFields.length > 0) {
+      setProfileError("Please fill in all required fields.");
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError("");
+
+    try {
+      const payload = serializeProfilePayload(profileForm);
+      const response = await completeOnboardingRequest(payload);
+      if (response?.user) {
+        onProfileUpdate?.(response.user);
+        setProfileForm(buildProfileFormState(response.user));
+        setEditModalVisible(false);
+        Alert.alert("Profile updated", "Your details have been saved.");
+      }
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        "Unable to update profile at the moment.";
+      setProfileError(message);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
@@ -65,6 +250,10 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
 
   const handleMenuSelect = (item) => {
     setMenuOpen(false);
+    if (item === "edit") {
+      openProfileEditor();
+      return;
+    }
     if (item === "signout") {
       onSignOut();
       return;
@@ -78,24 +267,6 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     Alert.alert("LofiTalk", messages[item]);
   };
 
-  const buildProfilePayload = (profilePic) => ({
-    fullName: user?.fullName || "",
-    bio: user?.bio || "",
-    gender: user?.gender || "",
-    birthDate: user?.birthDate || "",
-    country: user?.country || "",
-    city: user?.city || "",
-    height: user?.height || "",
-    education: user?.education || "",
-    hobbies: Array.isArray(user?.hobbies)
-      ? user.hobbies.join(", ")
-      : user?.hobbies || "",
-    pets: Array.isArray(user?.pets)
-      ? user.pets.join(", ")
-      : user?.pets || "",
-    profilePic,
-  });
-
   const handleAvatarUpdate = async (profilePic) => {
     if (!profilePic) return;
 
@@ -103,11 +274,15 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     setAvatarError("");
     setAvatarMessage("");
     try {
-      const payload = buildProfilePayload(profilePic);
+      const payload = serializeProfilePayload({
+        ...profileForm,
+        profilePic,
+      });
       const response = await completeOnboardingRequest(payload);
       if (response?.user) {
         onProfileUpdate?.(response.user);
         setAvatarMessage("Avatar updated!");
+        setProfileForm(buildProfileFormState(response.user));
       }
     } catch (err) {
       const message =
@@ -212,7 +387,8 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   };
 
   return (
-    <ScrollView
+    <>
+      <ScrollView
       contentContainerStyle={styles.homeScroll}
       showsVerticalScrollIndicator={false}
     >
@@ -224,10 +400,16 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             onPress={toggleMenu}
             activeOpacity={0.7}
           >
-            <Text style={styles.menuTriggerDots}>⋯</Text>
+            <Text style={styles.menuTriggerDots}>⋮</Text>
           </TouchableOpacity>
           {menuOpen && (
             <View style={styles.menuDropdown}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => handleMenuSelect("edit")}
+              >
+                <Text style={styles.menuItemText}>Edit profile</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => handleMenuSelect("language")}
@@ -379,6 +561,288 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
         <Text style={buttonStyles.primaryButtonText}>Sign out</Text>
       </TouchableOpacity>
     </ScrollView>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={editModalVisible}
+        onRequestClose={closeProfileEditor}
+      >
+        <View style={styles.editModalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            style={styles.editModalWrapper}
+          >
+            <View style={styles.editModalCard}>
+              <View style={styles.editHeader}>
+                <Text style={styles.editTitle}>Edit profile</Text>
+                <TouchableOpacity
+                  style={styles.editCloseButton}
+                  onPress={closeProfileEditor}
+                >
+                  <Text style={styles.editCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                style={styles.editScroll}
+                contentContainerStyle={styles.editScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.editAvatarSection}>
+                  {profileForm.profilePic || user?.profilePic ? (
+                    <Image
+                      source={resolveImageSource(
+                        profileForm.profilePic || user?.profilePic
+                      )}
+                      style={styles.editAvatarPreview}
+                    />
+                  ) : (
+                    <View style={styles.editAvatarPlaceholder}>
+                      <Text style={styles.editAvatarPlaceholderText}>
+                        Add avatar
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.editAvatarActions}>
+                    <TouchableOpacity
+                      style={[buttonStyles.primaryButton, styles.editAvatarButton]}
+                      onPress={handleProfileAvatarRandomLocal}
+                    >
+                      <Text style={buttonStyles.primaryButtonText}>
+                        Random avatar
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        buttonStyles.secondaryOutlineButton,
+                        styles.editAvatarButton,
+                      ]}
+                      onPress={handleProfileAvatarUploadLocal}
+                    >
+                      <Text style={buttonStyles.secondaryOutlineText}>
+                        Upload photo
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TextInput
+                  placeholder="Full name / Nickname"
+                  placeholderTextColor="#A0A6B7"
+                  value={profileForm.fullName}
+                  onChangeText={(value) => handleProfileFieldChange("fullName", value)}
+                  style={styles.editInput}
+                />
+
+                <TextInput
+                  placeholder="Short bio"
+                  placeholderTextColor="#A0A6B7"
+                  value={profileForm.bio}
+                  onChangeText={(value) => handleProfileFieldChange("bio", value)}
+                  style={[styles.editInput, styles.editTextArea]}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <Text style={styles.editSectionLabel}>Gender*</Text>
+                <View style={styles.editChipRow}>
+                  {genderOptions.map((option) => {
+                    const active = profileForm.gender === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.editChip, active && styles.editChipActive]}
+                        onPress={() =>
+                          handleProfileFieldChange("gender", option.value)
+                        }
+                      >
+                        <Text
+                          style={[
+                            styles.editChipText,
+                            active && styles.editChipTextActive,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.editSectionLabel}>Country*</Text>
+                <View style={styles.editChipRow}>
+                  {countryCityOptions.map((option) => {
+                    const active = profileForm.country === option.value;
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.editChip, active && styles.editChipActive]}
+                        onPress={() => handleProfileCountrySelect(option.value)}
+                      >
+                        <Text
+                          style={[
+                            styles.editChipText,
+                            active && styles.editChipTextActive,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.editSectionLabel}>City*</Text>
+                <View style={styles.editChipRow}>
+                  {availableCities.length === 0 ? (
+                    <Text style={styles.editHelperText}>
+                      Select a country to see cities.
+                    </Text>
+                  ) : (
+                    availableCities.map((city) => {
+                      const active = profileForm.city === city;
+                      return (
+                        <TouchableOpacity
+                          key={city}
+                          style={[styles.editChip, active && styles.editChipActive]}
+                          onPress={() => handleProfileFieldChange("city", city)}
+                        >
+                          <Text
+                            style={[
+                              styles.editChipText,
+                              active && styles.editChipTextActive,
+                            ]}
+                          >
+                            {city}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })
+                  )}
+                </View>
+
+                <TextInput
+                  placeholder="Birth date (YYYY-MM-DD)*"
+                  placeholderTextColor="#A0A6B7"
+                  value={profileForm.birthDate}
+                  onChangeText={(value) => handleProfileFieldChange("birthDate", value)}
+                  style={styles.editInput}
+                />
+
+                <TextInput
+                  placeholder="Height"
+                  placeholderTextColor="#A0A6B7"
+                  value={profileForm.height}
+                  onChangeText={(value) => handleProfileFieldChange("height", value)}
+                  style={styles.editInput}
+                />
+
+                <Text style={styles.editSectionLabel}>Education</Text>
+                <View style={styles.editChipRow}>
+                  {educationOptions.map((option) => {
+                    const active = profileForm.education === option;
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.editChip, active && styles.editChipActive]}
+                        onPress={() => handleProfileFieldChange("education", option)}
+                      >
+                        <Text
+                          style={[
+                            styles.editChipText,
+                            active && styles.editChipTextActive,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.editSectionLabel}>Hobbies</Text>
+                <View style={styles.editChipRow}>
+                  {hobbyOptions.map((option) => {
+                    const active = profileForm.hobbies.includes(option);
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.editChip, active && styles.editChipActive]}
+                        onPress={() => toggleProfileMultiValue("hobbies", option)}
+                      >
+                        <Text
+                          style={[
+                            styles.editChipText,
+                            active && styles.editChipTextActive,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.editSectionLabel}>Pets</Text>
+                <View style={styles.editChipRow}>
+                  {petOptions.map((option) => {
+                    const active = profileForm.pets.includes(option);
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.editChip, active && styles.editChipActive]}
+                        onPress={() => toggleProfileMultiValue("pets", option)}
+                      >
+                        <Text
+                          style={[
+                            styles.editChipText,
+                            active && styles.editChipTextActive,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {profileError ? (
+                  <Text style={styles.error}>{profileError}</Text>
+                ) : null}
+
+                <View style={styles.editActionRow}>
+                  <TouchableOpacity
+                    style={[
+                      buttonStyles.secondaryOutlineButton,
+                      styles.editActionButton,
+                    ]}
+                    onPress={closeProfileEditor}
+                    disabled={profileLoading}
+                  >
+                    <Text style={buttonStyles.secondaryOutlineText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      buttonStyles.primaryButton,
+                      styles.editActionButton,
+                      profileLoading && styles.disabledButton,
+                    ]}
+                    onPress={handleProfileSubmit}
+                    disabled={profileLoading}
+                  >
+                    {profileLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={buttonStyles.primaryButtonText}>Save</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
+    </>
   );
 };
 
@@ -443,6 +907,139 @@ const styles = StyleSheet.create({
   },
   menuItemDanger: {
     color: BRAND_COLORS.primary,
+  },
+  editModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  editModalWrapper: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  editModalCard: {
+    backgroundColor: BRAND_COLORS.card,
+    borderRadius: 28,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    maxHeight: "90%",
+  },
+  editHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  editTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 22,
+    fontWeight: "700",
+  },
+  editCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editCloseText: {
+    color: BRAND_COLORS.text,
+    fontSize: 18,
+  },
+  editScroll: {
+    marginTop: 8,
+  },
+  editScrollContent: {
+    paddingBottom: 32,
+    gap: 12,
+  },
+  editAvatarSection: {
+    alignItems: "center",
+    gap: 12,
+  },
+  editAvatarPreview: {
+    width: 110,
+    height: 110,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  editAvatarPlaceholder: {
+    width: 110,
+    height: 110,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editAvatarPlaceholderText: {
+    color: BRAND_COLORS.muted,
+  },
+  editAvatarActions: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  editAvatarButton: {
+    flex: 1,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    color: BRAND_COLORS.text,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+  },
+  editTextArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  editSectionLabel: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  editChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  editChip: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  editChipActive: {
+    backgroundColor: BRAND_COLORS.primary,
+    borderColor: BRAND_COLORS.primary,
+  },
+  editChipText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  editChipTextActive: {
+    color: "#0F0C1D",
+  },
+  editHelperText: {
+    color: BRAND_COLORS.muted,
+  },
+  editActionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  editActionButton: {
+    flex: 1,
   },
   profileCard: {
     backgroundColor: BRAND_COLORS.card,
