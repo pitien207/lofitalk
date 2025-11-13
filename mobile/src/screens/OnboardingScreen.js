@@ -10,11 +10,14 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { BRAND_COLORS } from "../theme/colors";
 import { buttonStyles } from "../components/common/buttons";
+import * as ImagePicker from "expo-image-picker";
 import { completeOnboardingRequest } from "../services/authService";
 import { parseListField } from "../utils/profile";
+import { getRandomAvatar } from "../utils/avatarPool";
 
 const REQUIRED_FIELDS = ["fullName", "gender", "birthDate", "country", "city"];
 
@@ -83,9 +86,11 @@ const OnboardingScreen = ({ user, onComplete }) => {
     education: user?.education || "",
     hobbies: parseListField(user?.hobbies),
     pets: parseListField(user?.pets),
+    profilePic: user?.profilePic || "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
 
   const availableCities = useMemo(() => {
     return (
@@ -177,6 +182,101 @@ const OnboardingScreen = ({ user, onComplete }) => {
         <Text style={styles.subtitle}>
           Share a few details so friends know you better.
         </Text>
+
+        <View style={styles.avatarSection}>
+          {formState.profilePic ? (
+            <Image
+              source={
+                typeof formState.profilePic === "string"
+                  ? { uri: formState.profilePic }
+                  : formState.profilePic
+              }
+              style={styles.avatarPreview}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarPlaceholderText}>No photo</Text>
+            </View>
+          )}
+          <View style={styles.avatarActions}>
+            <TouchableOpacity
+              style={[
+                buttonStyles.primaryButton,
+                styles.avatarButton,
+                avatarLoading && styles.disabledButton,
+              ]}
+              onPress={async () => {
+                setAvatarLoading(true);
+                try {
+                  const randomAvatar =
+                    getRandomAvatar(formState.gender) || getRandomAvatar();
+                  if (randomAvatar) {
+                    setFormState((prev) => ({
+                      ...prev,
+                      profilePic: randomAvatar,
+                    }));
+                    setError("");
+                  } else {
+                    Alert.alert(
+                      "Avatar unavailable",
+                      "Unable to generate avatar right now."
+                    );
+                  }
+                } finally {
+                  setAvatarLoading(false);
+                }
+              }}
+              disabled={avatarLoading}
+            >
+              <Text style={buttonStyles.primaryButtonText}>
+                Random avatar
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                buttonStyles.secondaryOutlineButton,
+                styles.avatarButton,
+                avatarLoading && styles.disabledButton,
+              ]}
+              onPress={async () => {
+                const permissionResult =
+                  await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!permissionResult.granted) {
+                  Alert.alert(
+                    "Permission needed",
+                    "Please allow access to your photos to upload an avatar."
+                  );
+                  return;
+                }
+
+                const result = await ImagePicker.launchImageLibraryAsync({
+                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                  allowsEditing: true,
+                  aspect: [1, 1],
+                  quality: 0.6,
+                  base64: true,
+                });
+
+                if (!result.canceled && result.assets?.length) {
+                  const asset = result.assets[0];
+                  if (asset.base64) {
+                    const dataUri = `data:${asset.type || "image/jpeg"};base64,${
+                      asset.base64
+                    }`;
+                    setFormState((prev) => ({
+                      ...prev,
+                      profilePic: dataUri,
+                    }));
+                    setError("");
+                  }
+                }
+              }}
+              disabled={avatarLoading}
+            >
+              <Text style={buttonStyles.secondaryOutlineText}>Upload photo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <TextInput
           placeholder="Full name / Nickname"
@@ -398,6 +498,36 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     textAlign: "center",
     marginBottom: 12,
+  },
+  avatarSection: {
+    alignItems: "center",
+    gap: 12,
+  },
+  avatarPreview: {
+    width: 110,
+    height: 110,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.15)",
+  },
+  avatarPlaceholder: {
+    width: 110,
+    height: 110,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarPlaceholderText: {
+    color: BRAND_COLORS.muted,
+  },
+  avatarActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  avatarButton: {
+    flex: 1,
   },
   sectionLabel: {
     color: BRAND_COLORS.text,

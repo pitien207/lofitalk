@@ -129,7 +129,11 @@ const AppContainer = () => {
       <AppBackground />
       <View style={styles.mainArea}>
         {activePage === "home" && (
-          <HomeScreen user={user} onSignOut={handleSignOut} />
+          <HomeScreen
+            user={user}
+            onSignOut={handleSignOut}
+            onProfileUpdate={updateUserProfile}
+          />
         )}
         {activePage === "friends" && (
           <FriendsScreen

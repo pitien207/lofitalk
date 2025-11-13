@@ -26,7 +26,12 @@ import {
   StatBadge,
 } from "../components/profile/ProfileDetails";
 import { buttonStyles } from "../components/common/buttons";
-import { updatePasswordRequest } from "../services/authService";
+import {
+  updatePasswordRequest,
+  completeOnboardingRequest,
+} from "../services/authService";
+import { getRandomAvatar } from "../utils/avatarPool";
+import * as ImagePicker from "expo-image-picker";
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
@@ -34,7 +39,7 @@ const resolveImageSource = (value) => {
   return value;
 };
 
-const HomeScreen = ({ user, onSignOut }) => {
+const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -44,6 +49,9 @@ const HomeScreen = ({ user, onSignOut }) => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState("");
+  const [avatarError, setAvatarError] = useState("");
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
   const birthDate = formatDate(user?.birthDate);
@@ -68,6 +76,86 @@ const HomeScreen = ({ user, onSignOut }) => {
     };
 
     Alert.alert("LofiTalk", messages[item]);
+  };
+
+  const buildProfilePayload = (profilePic) => ({
+    fullName: user?.fullName || "",
+    bio: user?.bio || "",
+    gender: user?.gender || "",
+    birthDate: user?.birthDate || "",
+    country: user?.country || "",
+    city: user?.city || "",
+    height: user?.height || "",
+    education: user?.education || "",
+    hobbies: Array.isArray(user?.hobbies)
+      ? user.hobbies.join(", ")
+      : user?.hobbies || "",
+    pets: Array.isArray(user?.pets)
+      ? user.pets.join(", ")
+      : user?.pets || "",
+    profilePic,
+  });
+
+  const handleAvatarUpdate = async (profilePic) => {
+    if (!profilePic) return;
+
+    setAvatarLoading(true);
+    setAvatarError("");
+    setAvatarMessage("");
+    try {
+      const payload = buildProfilePayload(profilePic);
+      const response = await completeOnboardingRequest(payload);
+      if (response?.user) {
+        onProfileUpdate?.(response.user);
+        setAvatarMessage("Avatar updated!");
+      }
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        "Unable to update avatar at the moment.";
+      setAvatarError(message);
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleRandomAvatar = async () => {
+    const avatar = getRandomAvatar(user?.gender) || getRandomAvatar();
+    if (!avatar) {
+      Alert.alert("Avatar unavailable", "Please try again in a moment.");
+      return;
+    }
+    await handleAvatarUpdate(avatar);
+  };
+
+  const handleUploadAvatar = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow access to your photos to upload an avatar."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets?.length) {
+      const asset = result.assets[0];
+      if (asset.base64) {
+        const dataUri = `data:${asset.type || "image/jpeg"};base64,${
+          asset.base64
+        }`;
+        await handleAvatarUpdate(dataUri);
+      }
+    }
   };
 
   const handlePasswordFieldChange = (field, value) => {
@@ -178,6 +266,36 @@ const HomeScreen = ({ user, onSignOut }) => {
           <Text style={styles.profileBio}>
             {user?.bio || "Share a short bio so friends know you better."}
           </Text>
+          <View style={styles.avatarActionRow}>
+            <TouchableOpacity
+              style={[
+                buttonStyles.primaryButton,
+                styles.avatarActionButton,
+                avatarLoading && styles.disabledButton,
+              ]}
+              onPress={handleRandomAvatar}
+              disabled={avatarLoading}
+            >
+              <Text style={buttonStyles.primaryButtonText}>Random avatar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                buttonStyles.secondaryOutlineButton,
+                styles.avatarActionButton,
+                avatarLoading && styles.disabledButton,
+              ]}
+              onPress={handleUploadAvatar}
+              disabled={avatarLoading}
+            >
+              <Text style={buttonStyles.secondaryOutlineText}>
+                Upload photo
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
+          {avatarMessage ? (
+            <Text style={styles.avatarSuccess}>{avatarMessage}</Text>
+          ) : null}
         </View>
       </View>
 
@@ -346,6 +464,18 @@ const styles = StyleSheet.create({
   profileText: {
     flex: 1,
     marginLeft: 16,
+  },
+  avatarActionRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 12,
+  },
+  avatarActionButton: {
+    flex: 1,
+  },
+  avatarSuccess: {
+    color: "#9AE6B4",
+    marginTop: 4,
   },
   profileName: {
     fontSize: 24,
