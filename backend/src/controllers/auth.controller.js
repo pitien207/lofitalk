@@ -78,7 +78,9 @@ export async function signup(req, res) {
       user.verificationCodeExpiresAt = verificationCodeExpiresAt;
       await user.save();
     } else {
-      const randomAvatarPath = getRandomAvatar();
+      const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
+      const avatarSource = platformHeader === "web" ? "web" : "mobile";
+      const randomAvatarPath = getRandomAvatar(undefined, avatarSource);
       const randomAvatar = randomAvatarPath ? buildAssetUrl(randomAvatarPath) : "";
 
       user = await User.create({
@@ -412,3 +414,5 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
+

@@ -5,56 +5,69 @@ import { fileURLToPath } from "url";
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(currentDir, "../../");
 const repoRoot = path.resolve(backendRoot, "..");
-const avatarsDir = path.join(repoRoot, "mobile", "assets", "avatars");
-const boyDir = path.join(avatarsDir, "boy");
-const girlDir = path.join(avatarsDir, "girl");
 
-const AVATAR_STATIC_PREFIX =
+const mobileAvatarsDir = path.join(repoRoot, "mobile", "assets", "avatars");
+const frontendAvatarsDir = path.join(repoRoot, "frontend", "src", "pictures", "avatars");
+
+const MOBILE_PREFIX =
   process.env.MOBILE_AVATAR_STATIC_PATH || "/static/avatars/mobile";
+const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || "/static/avatars/frontend";
 
-const buildPublicPaths = (dir, subPath) => {
+const buildPublicPaths = (dir, prefix, subPath) => {
   try {
     return fs
       .readdirSync(dir)
       .filter((file) => file.toLowerCase().endsWith(".png"))
-      .map((file) => `${AVATAR_STATIC_PREFIX}/${subPath}/${file}`);
+      .map((file) => `${prefix}/${subPath}/${file}`);
   } catch (error) {
     console.warn(`Unable to read avatars from ${dir}:`, error.message);
     return [];
   }
 };
 
-const boyAvatars = buildPublicPaths(boyDir, "boy");
-const girlAvatars = buildPublicPaths(girlDir, "girl");
-const allAvatars = [...boyAvatars, ...girlAvatars];
+const createAvatarPool = (baseDir, prefix) => {
+  const boyDir = path.join(baseDir, "boy");
+  const girlDir = path.join(baseDir, "girl");
+
+  const boy = buildPublicPaths(boyDir, prefix, "boy");
+  const girl = buildPublicPaths(girlDir, prefix, "girl");
+  const all = [...boy, ...girl];
+
+  return { boy, girl, all };
+};
+
+const mobilePool = createAvatarPool(mobileAvatarsDir, MOBILE_PREFIX);
+const webPool = createAvatarPool(frontendAvatarsDir, WEB_PREFIX);
 
 const normalizeGender = (gender = "") => gender.toLowerCase().trim();
 
-export const getRandomAvatar = (gender) => {
+const pickFromPool = (pool, gender) => {
+  if (!pool) return null;
   const normalized = normalizeGender(gender);
-  let pool = allAvatars;
 
-  if (["male", "man", "boy"].includes(normalized) && boyAvatars.length) {
-    pool = boyAvatars;
-  } else if (
-    ["female", "woman", "girl"].includes(normalized) &&
-    girlAvatars.length
-  ) {
-    pool = girlAvatars;
-  } else if (!allAvatars.length) {
+  let options = pool.all;
+  if (["male", "man", "boy"].includes(normalized) && pool.boy.length) {
+    options = pool.boy;
+  } else if (["female", "woman", "girl"].includes(normalized) && pool.girl.length) {
+    options = pool.girl;
+  }
+
+  if (!options.length) {
+    options = pool.all;
+  }
+
+  if (!options.length) {
     return null;
   }
 
-  if (!pool.length) {
-    pool = allAvatars;
-  }
-
-  if (!pool.length) {
-    return null;
-  }
-
-  const idx = Math.floor(Math.random() * pool.length);
-  return pool[idx];
+  const idx = Math.floor(Math.random() * options.length);
+  return options[idx];
 };
 
+export const getRandomAvatar = (gender, source = "mobile") => {
+  const pool = source === "web" ? webPool : mobilePool;
+  return pickFromPool(pool, gender);
+};
 
+export const getRandomWebAvatar = (gender) => getRandomAvatar(gender, "web");
+export const getRandomMobileAvatar = (gender) => getRandomAvatar(gender, "mobile");

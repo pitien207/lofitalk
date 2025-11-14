@@ -16,9 +16,16 @@ const PORT = process.env.PORT;
 
 const __dirname = path.resolve();
 
+const allowedOrigins = (
+  process.env.FRONTEND_URLS || "http://localhost:5173,https://lofitalk.onrender.com"
+)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true, // allow frontend to send cookies
   })
 );
@@ -65,3 +72,4 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectDB();
 });
+

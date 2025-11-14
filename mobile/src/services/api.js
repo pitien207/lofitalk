@@ -8,6 +8,8 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.defaults.headers.common["X-Client-Platform"] = "mobile";
+
 export const setAuthToken = (token) => {
   if (token) {
     api.defaults.headers.common.Authorization = `Bearer ${token}`;
