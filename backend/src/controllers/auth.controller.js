@@ -1,5 +1,7 @@
 import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
+import PendingSignup from "../models/PendingSignup.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
   sendPasswordResetEmail,
@@ -63,40 +65,38 @@ export async function signup(req, res) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: existingUser.isEmailVerified
+          ? "Email already exists, please use a different one"
+          : "Please verify your email before logging in.",
+      });
+    }
+
     const verificationCode = generateVerificationCode();
     const verificationCodeExpiresAt = new Date(
       Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
     );
 
-    let user = await User.findOne({ email });
+    const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
+    const avatarSource = platformHeader === "web" ? "web" : "mobile";
+    const randomAvatarPath = getRandomAvatar(undefined, avatarSource);
+    const randomAvatar = randomAvatarPath ? buildAssetUrl(randomAvatarPath) : "";
 
-    if (user) {
-      if (user.isEmailVerified) {
-        return res
-          .status(400)
-          .json({ message: "Email already exists, please use a different one" });
-      }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      user.fullName = fullName;
-      user.password = password;
-      user.verificationCode = verificationCode;
-      user.verificationCodeExpiresAt = verificationCodeExpiresAt;
-      await user.save();
-    } else {
-      const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
-      const avatarSource = platformHeader === "web" ? "web" : "mobile";
-      const randomAvatarPath = getRandomAvatar(undefined, avatarSource);
-      const randomAvatar = randomAvatarPath ? buildAssetUrl(randomAvatarPath) : "";
-
-      user = await User.create({
-        email,
+    await PendingSignup.findOneAndUpdate(
+      { email },
+      {
         fullName,
-        password,
+        passwordHash: hashedPassword,
         profilePic: randomAvatar,
         verificationCode,
         verificationCodeExpiresAt,
-      });
-    }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     await sendVerificationEmail(email, verificationCode);
 
@@ -158,32 +158,59 @@ export async function verifySignupCode(req, res) {
       return res.status(400).json({ message: "Email and code are required" });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.isEmailVerified) {
-      return res.status(400).json({ message: "Email already verified" });
-    }
-
     const normalizedCode = String(code).trim();
 
-    if (
-      !user.verificationCode ||
-      user.verificationCode !== normalizedCode ||
-      !user.verificationCodeExpiresAt ||
-      user.verificationCodeExpiresAt < new Date()
-    ) {
-      return res
-        .status(400)
-        .json({ message: "Invalid or expired verification code" });
-    }
+    let user = await User.findOne({ email });
+    let pendingSignup = null;
 
-    user.isEmailVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpiresAt = undefined;
-    await user.save();
+    if (!user) {
+      pendingSignup = await PendingSignup.findOne({ email });
+      if (!pendingSignup) {
+        return res.status(404).json({ message: "Signup session not found" });
+      }
+
+      if (
+        !pendingSignup.verificationCode ||
+        pendingSignup.verificationCode !== normalizedCode ||
+        !pendingSignup.verificationCodeExpiresAt ||
+        pendingSignup.verificationCodeExpiresAt < new Date()
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Invalid or expired verification code" });
+      }
+
+      user = new User({
+        email: pendingSignup.email,
+        fullName: pendingSignup.fullName,
+        password: pendingSignup.passwordHash,
+        profilePic: pendingSignup.profilePic || "",
+        isEmailVerified: true,
+      });
+      user._skipPasswordHash = true;
+      await user.save();
+      await PendingSignup.deleteOne({ _id: pendingSignup._id });
+    } else {
+      if (user.isEmailVerified) {
+        return res.status(400).json({ message: "Email already verified" });
+      }
+
+      if (
+        !user.verificationCode ||
+        user.verificationCode !== normalizedCode ||
+        !user.verificationCodeExpiresAt ||
+        user.verificationCodeExpiresAt < new Date()
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Invalid or expired verification code" });
+      }
+
+      user.isEmailVerified = true;
+      user.verificationCode = undefined;
+      user.verificationCodeExpiresAt = undefined;
+      await user.save();
+    }
 
     try {
       await upsertStreamUser({
@@ -419,6 +446,7 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
 
 
 
