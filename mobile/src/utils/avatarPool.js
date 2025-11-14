@@ -4,7 +4,7 @@ const stripApiSuffix = (url) => url.replace(/\/api\/?$/, "");
 const STATIC_BASE = stripApiSuffix(API_BASE_URL);
 
 const buildUrl = (folder, file) =>
-  `${STATIC_BASE}/static/avatars/${folder}/${file}`;
+  `${STATIC_BASE}/static/avatars/mobile/${folder}/${file}`;
 
 const boyFiles = [
   "AV1.png",
@@ -139,3 +139,4 @@ export const getRandomAvatar = (gender) => {
   const idx = Math.floor(Math.random() * pool.length);
   return pool[idx];
 };
+

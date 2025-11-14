@@ -26,10 +26,27 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(
-  "/static/avatars",
-  express.static(path.join(__dirname, "..", "mobile", "assets", "avatars"))
+const frontendAvatarDirectory = path.join(
+  __dirname,
+  "..",
+  "frontend",
+  "src",
+  "pictures",
+  "avatars"
 );
+
+const mobileAvatarDirectory = path.join(
+  __dirname,
+  "..",
+  "mobile",
+  "assets",
+  "avatars"
+);
+
+app.use("/static/avatars/frontend", express.static(frontendAvatarDirectory));
+app.use("/static/avatars/web", express.static(frontendAvatarDirectory));
+app.use("/static/avatars/mobile", express.static(mobileAvatarDirectory));
+app.use("/static/avatars", express.static(mobileAvatarDirectory));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

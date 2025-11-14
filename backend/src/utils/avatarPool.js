@@ -9,12 +9,15 @@ const avatarsDir = path.join(repoRoot, "mobile", "assets", "avatars");
 const boyDir = path.join(avatarsDir, "boy");
 const girlDir = path.join(avatarsDir, "girl");
 
+const AVATAR_STATIC_PREFIX =
+  process.env.MOBILE_AVATAR_STATIC_PATH || "/static/avatars/mobile";
+
 const buildPublicPaths = (dir, subPath) => {
   try {
     return fs
       .readdirSync(dir)
       .filter((file) => file.toLowerCase().endsWith(".png"))
-      .map((file) => `/static/avatars/${subPath}/${file}`);
+      .map((file) => `${AVATAR_STATIC_PREFIX}/${subPath}/${file}`);
   } catch (error) {
     console.warn(`Unable to read avatars from ${dir}:`, error.message);
     return [];
@@ -53,3 +56,5 @@ export const getRandomAvatar = (gender) => {
   const idx = Math.floor(Math.random() * pool.length);
   return pool[idx];
 };
+
+
