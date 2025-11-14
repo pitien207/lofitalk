@@ -353,7 +353,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.genderLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.gender}
                     onChange={(e) => updateFilterField("gender", e.target.value)}
                   >
@@ -371,7 +371,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.countryLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.country}
                     onChange={(e) => updateFilterField("country", e.target.value)}
                   >
@@ -389,7 +389,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.cityLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.city}
                     onChange={(e) => updateFilterField("city", e.target.value)}
                     disabled={!filters.country}
@@ -422,7 +422,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.educationLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.education}
                     onChange={(e) => updateFilterField("education", e.target.value)}
                   >
@@ -440,7 +440,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.hobbyLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.hobby}
                     onChange={(e) => updateFilterField("hobby", e.target.value)}
                   >
@@ -458,7 +458,7 @@ const FriendsPage = () => {
                     <span className="label-text font-semibold">{t("friends.filters.petLabel")}</span>
                   </label>
                   <select
-                    className="select select-bordered"
+                    className="select select-bordered lofitalk-select"
                     value={filters.pet}
                     onChange={(e) => updateFilterField("pet", e.target.value)}
                   >

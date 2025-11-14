@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const ENERGY_MAX = 7;
+const DAILY_ENERGY_GAIN = 3;
 
 const refreshDailyEnergy = (user) => {
   if (typeof user.energy !== "number" || user.energy > ENERGY_MAX) {
@@ -21,7 +22,8 @@ const refreshDailyEnergy = (user) => {
   );
 
   if (diffDays > 0) {
-    user.energy = Math.min(ENERGY_MAX, user.energy + diffDays);
+    const gainedEnergy = diffDays * DAILY_ENERGY_GAIN;
+    user.energy = Math.min(ENERGY_MAX, user.energy + gainedEnergy);
     user.lastEnergyRefill = today;
     return true;
   }

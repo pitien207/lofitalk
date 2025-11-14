@@ -65,7 +65,8 @@ const english = {
       energyHint: "Each filter attempt consumes 1 energy.",
       applyHint:
         "Filters apply to recommendations. Up to 5 matching profiles are shown per energy.",
-      emptyState: "Set your vibe filters and apply them to discover new friends.",
+      emptyState:
+        "Set your vibe filters and apply them to discover new friends.",
       reset: "Reset",
       apply: "Apply filters",
       genderLabel: "Gender",
@@ -80,7 +81,6 @@ const english = {
       energyError: "Not enough energy. Please refill in Tarot.",
     },
   },
-
 
   nav: {
     notifications: "Notifications",
@@ -246,10 +246,10 @@ const english = {
   },
   tarot: {
     title: "Tarot Reading",
-    subtitle: "Accumulate {required} energy (+1 per day) before drawing cards.",
+    subtitle: "Accumulate {required} energy (+3 per day) before drawing cards.",
     energy: {
       summary: "Energy: {current}/{max}",
-      regenHint: "+1 energy per day. Last refill: {date}",
+      regenHint: "+3 energy per day. Last refill: {date}",
       pendingDate: "...",
     },
     buttons: {
@@ -346,7 +346,8 @@ const vietnamese = {
     yourFriends: "Bạn bè của bạn",
     friendRequests: "Lời mời kết bạn",
     meetTitle: "Gặp những tâm hồn thảnh thơi mới",
-    meetSubtitle: "Tìm người trò chuyện hợp vibe dựa trên profile chill của bạn",
+    meetSubtitle:
+      "Tìm người trò chuyện hợp vibe dựa trên profile chill của bạn",
     noRecommendations: "Chưa có gợi ý nào",
     checkLater: "Hãy quay lại sau để tìm thêm bạn học!",
     requestSent: "Đã gửi lời mời",
@@ -357,7 +358,7 @@ const vietnamese = {
       energyTitle: "Năng lượng dùng chung (cùng Tarot)",
       energyHint: "Mỗi lọc sẽ tiêu tốn 1 năng lượng.",
       applyHint:
-        "Bộ lọc áp dụng cho gợi ý. Tối đa 5 hồ sơ phù hợp được hiển thị cho mỗi năng lượng.",
+        "Bộ lọc áp dụng cho gợi ý. Tối đa 5 bạn bè phù hợp được hiển thị cho mỗi năng lượng.",
       emptyState: "Hãy chọn bộ lọc phù hợp rồi áp dụng để khám phá bạn mới.",
       reset: "Đặt lại",
       apply: "Áp dụng bộ lọc",
@@ -373,7 +374,6 @@ const vietnamese = {
       energyError: "Không đủ năng lượng. Hãy nạp thêm trong Tarot.",
     },
   },
-
 
   nav: {
     notifications: "Thông báo",
@@ -540,10 +540,10 @@ const vietnamese = {
   tarot: {
     title: "Trải bài Tarot",
     subtitle:
-      "Cần tích lũy đủ {required} năng lượng (mỗi ngày +1) trước khi bốc bài.",
+      "Cần tích lũy đủ {required} năng lượng (mỗi ngày +3) trước khi bốc bài.",
     energy: {
       summary: "Năng lượng: {current}/{max}",
-      regenHint: "+1 năng lượng mỗi ngày. Lần hồi gần nhất: {date}",
+      regenHint: "+3 năng lượng mỗi ngày. Lần hồi gần nhất: {date}",
       pendingDate: "...",
     },
     buttons: {
@@ -642,7 +642,8 @@ const german = {
     yourFriends: "Deine Freunde",
     friendRequests: "Freundschaftsanfragen",
     meetTitle: "Triff neue entspannte Freunde",
-    meetSubtitle: "Finde Menschen, die deinen ruhigen Vibe teilen – passend zu deinem Profil",
+    meetSubtitle:
+      "Finde Menschen, die deinen ruhigen Vibe teilen – passend zu deinem Profil",
     noRecommendations: "Keine Empfehlungen verfügbar",
     checkLater: "Schau später erneut vorbei, um neue Partner zu entdecken!",
     requestSent: "Anfrage gesendet",
@@ -670,7 +671,6 @@ const german = {
       energyError: "Nicht genug Energie. Bitte im Tarot auffüllen.",
     },
   },
-
 
   nav: {
     notifications: "Benachrichtigungen",
@@ -837,10 +837,10 @@ const german = {
   },
   tarot: {
     title: "Tarot-Lesung",
-    subtitle: "Sammle {required} Energie (+1 pro Tag), bevor du Karten ziehst.",
+    subtitle: "Sammle {required} Energie (+3 pro Tag), bevor du Karten ziehst.",
     energy: {
       summary: "Energie: {current}/{max}",
-      regenHint: "+1 Energie pro Tag. Letzte Aufladung: {date}",
+      regenHint: "+3 Energie pro Tag. Letzte Aufladung: {date}",
       pendingDate: "...",
     },
     buttons: {

@@ -276,7 +276,7 @@ const HomePage = () => {
       .join(", ");
 
   const selectBaseClass =
-    "select select-bordered w-full bg-base-100 border-base-300 focus:outline-none focus:border-primary/70 focus:ring focus:ring-primary/20 transition";
+    "select select-bordered lofitalk-select w-full bg-base-100 border-base-300 focus:outline-none focus:border-primary/70 focus:ring focus:ring-primary/20 transition";
 
 
   const { mutate: saveProfile, isPending } = useMutation({
