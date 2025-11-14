@@ -15,12 +15,17 @@ const generateVerificationCode = () =>
 const buildAssetUrl = (relativePath) => {
   if (!relativePath) return "";
 
+  const defaultBase =
+    process.env.NODE_ENV === "production"
+      ? "https://lofitalk.onrender.com"
+      : `http://localhost:${process.env.PORT || 5001}`;
+
   const base =
     process.env.ASSET_BASE_URL ||
     process.env.APP_BASE_URL ||
     process.env.SERVER_URL ||
     process.env.API_BASE_URL ||
-    `http://localhost:${process.env.PORT || 5001}`;
+    defaultBase;
 
   try {
     return new URL(relativePath, base).toString();
@@ -414,5 +419,6 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
+
 
 

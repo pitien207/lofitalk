@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -40,10 +40,16 @@ const ChatPage = () => {
     const initChat = async () => {
       if (!tokenData?.token || !authUser) return;
 
+      const resolvedApiKey = tokenData?.apiKey || FALLBACK_STREAM_API_KEY;
+      if (!resolvedApiKey) {
+        toast.error("Missing Stream API key");
+        return;
+      }
+
       try {
         console.log("Initializing stream chat client...");
 
-        const client = StreamChat.getInstance(STREAM_API_KEY);
+        const client = StreamChat.getInstance(resolvedApiKey);
 
         await client.connectUser(
           {
@@ -82,7 +88,9 @@ const ChatPage = () => {
 
   const handleVideoCall = () => {
     if (channel) {
-      const callUrl = `${window.location.origin}/call/${channel.id}`;
+      const callUrl = process.env.NODE_ENV === "production"
+        ? `https://lofitalk.onrender.com/call/${channel.id}`
+        : `${window.location.origin}/call/${channel.id}`;
 
       channel.sendMessage({
         text: `I've started a video call. Join me here: ${callUrl}`,

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { StreamChat } from "stream-chat";
 import { fetchStreamToken } from "../services/chatService";
 
-const STREAM_API_KEY = process.env.EXPO_PUBLIC_STREAM_API_KEY;
+const FALLBACK_STREAM_API_KEY = process.env.EXPO_PUBLIC_STREAM_API_KEY;
 
 const useChat = () => {
   const [channels, setChannels] = useState([]);
@@ -70,11 +70,6 @@ const useChat = () => {
   const connectChat = useCallback(
     async (user) => {
       if (!user || !user._id || isConnectingRef.current) return;
-      if (!STREAM_API_KEY) {
-        setChatError("Missing Stream API key.");
-        return;
-      }
-
       if (currentUserIdRef.current === user._id && clientRef.current) {
         await queryChannels(clientRef.current, user._id);
         return;
@@ -87,12 +82,15 @@ const useChat = () => {
       await disconnectChat();
 
       try {
-        const token = await fetchStreamToken();
-        if (!token) {
-          throw new Error("Unable to fetch chat token");
+        const tokenResponse = await fetchStreamToken();
+        const token = tokenResponse?.token;
+        const apiKey = tokenResponse?.apiKey || FALLBACK_STREAM_API_KEY;
+
+        if (!token || !apiKey) {
+          throw new Error("Unable to fetch chat credentials");
         }
 
-        const streamClient = StreamChat.getInstance(STREAM_API_KEY);
+        const streamClient = StreamChat.getInstance(apiKey);
         await streamClient.connectUser(
           {
             id: user._id,

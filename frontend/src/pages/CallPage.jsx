@@ -19,7 +19,7 @@ import "@stream-io/video-react-sdk/dist/css/styles.css";
 import toast from "react-hot-toast";
 import PageLoader from "../components/PageLoader";
 
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
 const CallPage = () => {
   const { id: callId } = useParams();
@@ -37,7 +37,14 @@ const CallPage = () => {
 
   useEffect(() => {
     const initCall = async () => {
-      if (!tokenData.token || !authUser || !callId) return;
+      if (!tokenData?.token || !authUser || !callId) return;
+
+      const resolvedApiKey = tokenData?.apiKey || FALLBACK_STREAM_API_KEY;
+      if (!resolvedApiKey) {
+        toast.error("Missing Stream API key");
+        setIsConnecting(false);
+        return;
+      }
 
       try {
         console.log("Initializing Stream video client...");
@@ -49,7 +56,7 @@ const CallPage = () => {
         };
 
         const videoClient = new StreamVideoClient({
-          apiKey: STREAM_API_KEY,
+          apiKey: resolvedApiKey,
           user,
           token: tokenData.token,
         });
