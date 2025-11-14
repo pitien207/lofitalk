@@ -1,22 +1,122 @@
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 
+const toObjectId = (value) =>
+  value instanceof mongoose.Types.ObjectId
+    ? value
+    : new mongoose.Types.ObjectId(value);
+
+const normalizeFilterArray = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value
+    .toString()
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const normalizeUserList = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value
+    .toString()
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const extractNumericHeight = (heightString = '') => {
+  if (!heightString) return null;
+  const match = heightString.toString().match(/(\d+(\.\d+)?)/);
+  return match ? parseFloat(match[1]) : null;
+};
+
+
 export async function getRecommendedUsers(req, res) {
   try {
-    const currentUserId = req.user.id;
-    const currentUser = req.user;
+    const viewerId = req.user._id || req.user.id;
+    const viewer = await User.findById(viewerId).select('friends energy');
 
-    const recommendedUsers = await User.find({
-      $and: [
-        { _id: { $ne: currentUserId } }, //exclude current user
-        { _id: { $nin: currentUser.friends } }, // exclude current user's friends
-        { isOnboarded: true },
-      ],
+    if (!viewer) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const currentEnergy = Math.max(0, viewer.energy ?? 0);
+    if (currentEnergy <= 0) {
+      return res.status(400).json({
+        message: 'Not enough energy. Refill in Tarot to run filters again.',
+        energy: currentEnergy,
+      });
+    }
+
+    await User.findByIdAndUpdate(viewerId, { $inc: { energy: -1 } });
+
+    const friendIds = (viewer.friends || []).map((friendId) => toObjectId(friendId));
+    const excludedIds = [toObjectId(viewerId), ...friendIds];
+
+    const { gender, country, city, education, heightMin } = req.query;
+    const requestedHobby = req.query.hobbies || req.query.hobby;
+    const requestedPet = req.query.pets || req.query.pet;
+
+    const matchStage = {
+      _id: { $nin: excludedIds },
+      isOnboarded: true,
+    };
+
+    if (gender) matchStage.gender = gender;
+    if (country) matchStage.country = country;
+    if (city) matchStage.city = city;
+    if (education) matchStage.education = education;
+
+    const candidates = await User.aggregate([
+      { $match: matchStage },
+      { $sample: { size: 50 } },
+    ]);
+
+    const requestedHobbies = normalizeFilterArray(requestedHobby);
+    const requestedPets = normalizeFilterArray(requestedPet);
+    const minHeightValue = heightMin ? parseFloat(heightMin) : null;
+
+    const filtered = candidates.filter((candidate) => {
+      const candidateHeight = extractNumericHeight(candidate.height);
+      const meetsHeight =
+        !minHeightValue ||
+        (candidateHeight !== null && candidateHeight >= minHeightValue);
+
+      const userHobbies = normalizeUserList(candidate.hobbies);
+      const hobbiesMatch =
+        !requestedHobbies.length ||
+        requestedHobbies.every((filterValue) =>
+          userHobbies.some(
+            (userValue) =>
+              userValue.toLowerCase() === filterValue.toLowerCase()
+          )
+        );
+
+      const userPets = normalizeUserList(candidate.pets);
+      const petsMatch =
+        !requestedPets.length ||
+        requestedPets.every((filterValue) =>
+          userPets.some(
+            (userValue) =>
+              userValue.toLowerCase() === filterValue.toLowerCase()
+          )
+        );
+
+      return meetsHeight && hobbiesMatch && petsMatch;
     });
-    res.status(200).json(recommendedUsers);
+
+    const remainingEnergy = Math.max(0, currentEnergy - 1);
+
+    res.status(200).json({
+      users: filtered.slice(0, 5),
+      energy: remainingEnergy,
+    });
   } catch (error) {
-    console.error("Error in getRecommendedUsers controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error in getRecommendedUsers controller', error.message);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 }
 

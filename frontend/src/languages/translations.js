@@ -9,9 +9,10 @@ const english = {
     loading: "Loading...",
   },
   auth: {
-    signupLogoTagline: "Find calm conversations for everyday practice.",
+    signupLogoTagline: "Slow down and find your cozy space to chat.",
     signupTitle: "Create an Account",
-    signupSubtitle: "Join LofiTalk and start your language learning adventure!",
+    signupSubtitle:
+      "Join LofiTalk to drift into calm conversations and meet kindred spirits.",
     fullName: "Full Name / Nickname",
     email: "Email",
     password: "Password",
@@ -24,13 +25,13 @@ const english = {
     alreadyHaveAccount: "Already have an account? ",
     signIn: "Sign in",
     loginTitle: "Welcome Back",
-    loginSubtitle: "Sign in to your account to continue your language journey",
+    loginSubtitle: "Sign in to reconnect with your calm chat spaces.",
     signInButton: "Sign In",
     dontHaveAccount: "Don't have an account? ",
     createOne: "Create one",
-    signupIllustrationTitle: "Connect with language partners worldwide",
+    signupIllustrationTitle: "Create your cozy circle",
     signupIllustrationSubtitle:
-      "Practice conversations, make friends, and improve your language skills together",
+      "Share moments, swap feelings, and enjoy laid-back conversations anytime.",
     verificationTitle: "Check your inbox",
     verificationSubtitle:
       "We sent a 6-digit code to {email}. Enter it below to finish creating your account.",
@@ -51,13 +52,36 @@ const english = {
     startChat: "Start a Chat",
     yourFriends: "Your Friends",
     friendRequests: "Friend Requests",
-    meetTitle: "Meet New Learners",
-    meetSubtitle: "Discover perfect language exchange partners based on your profile",
+    meetTitle: "Meet new mellow friends",
+    meetSubtitle: "Find people who match your calm vibe based on your profile",
     noRecommendations: "No recommendations available",
     checkLater: "Check back later for new language partners!",
     requestSent: "Request Sent",
     sendRequest: "Send Friend Request",
   },
+  friends: {
+    filters: {
+      energyTitle: "Shared energy (with Tarot)",
+      energyHint: "Each filter attempt consumes 1 energy.",
+      applyHint:
+        "Filters apply to recommendations. Up to 5 matching profiles are shown per energy.",
+      emptyState: "Set your vibe filters and apply them to discover new friends.",
+      reset: "Reset",
+      apply: "Apply filters",
+      genderLabel: "Gender",
+      countryLabel: "Country",
+      cityLabel: "City",
+      heightLabel: "Minimum height (cm)",
+      heightPlaceholder: "e.g. 160",
+      educationLabel: "Education",
+      hobbyLabel: "Hobby",
+      petLabel: "Pet",
+      anyOption: "Any",
+      energyError: "Not enough energy. Please refill in Tarot.",
+    },
+  },
+
+
   nav: {
     notifications: "Notifications",
     theme: "Theme",
@@ -74,7 +98,8 @@ const english = {
     decline: "Decline",
     deleted: "Notification cleared",
     declined: "Request declined",
-    statusDeclined: "You declined this request. We'll keep it here for your records.",
+    statusDeclined:
+      "You declined this request. We'll keep it here for your records.",
     delete: "Clear",
     error: "Something went wrong. Please try again.",
     newConnections: "New Connections",
@@ -259,7 +284,8 @@ const english = {
     errors: {
       needQuestionsBeforeDraw: "Please enter all 3 questions before drawing.",
       loadingEnergy: "Loading energy status...",
-      needEnergy: "You need {required} energy to draw (current {current}/{required}).",
+      needEnergy:
+        "You need {required} energy to draw (current {current}/{required}).",
       noDeck: "Deck not found.",
       consumeFailed: "Unable to consume energy.",
       notEnoughCards: "Not enough cards to draw.",
@@ -276,9 +302,10 @@ const vietnamese = {
     loading: "Đang tải...",
   },
   auth: {
-    signupLogoTagline: "Không gian thư giãn để luyện ngôn ngữ mỗi ngày.",
+    signupLogoTagline: "Không gian thư giãn để trò chuyện mỗi ngày.",
     signupTitle: "Tạo tài khoản",
-    signupSubtitle: "Tham gia LofiTalk và bắt đầu hành trình học ngôn ngữ của bạn!",
+    signupSubtitle:
+      "Tham gia LofiTalk để trò chuyện chill và kết nối những người cùng tần số.",
     fullName: "Họ tên / Nickname",
     email: "Email",
     password: "Mật khẩu",
@@ -291,13 +318,13 @@ const vietnamese = {
     alreadyHaveAccount: "Đã có tài khoản? ",
     signIn: "Đăng nhập",
     loginTitle: "Chào mừng trở lại",
-    loginSubtitle: "Đăng nhập để tiếp tục hành trình ngôn ngữ của bạn",
+    loginSubtitle: "Đăng nhập để tiếp tục những cuộc trò chuyện nhẹ nhàng.",
     signInButton: "Đăng nhập",
     dontHaveAccount: "Chưa có tài khoản? ",
     createOne: "Tạo ngay",
-    signupIllustrationTitle: "Kết nối với bạn học trên toàn thế giới",
+    signupIllustrationTitle: "Tạo vòng bạn bè ấm áp",
     signupIllustrationSubtitle:
-      "Luyện hội thoại, kết bạn và cải thiện kỹ năng cùng nhau",
+      "Chia sẻ cảm xúc, đổi vibe và tận hưởng câu chuyện nhẹ nhàng bất cứ lúc nào",
     verificationTitle: "Kiểm tra hộp thư",
     verificationSubtitle:
       "Chúng tôi đã gửi mã gồm 6 chữ số tới {email}. Nhập mã để hoàn tất tạo tài khoản.",
@@ -318,13 +345,36 @@ const vietnamese = {
     startChat: "Bắt đầu trò chuyện",
     yourFriends: "Bạn bè của bạn",
     friendRequests: "Lời mời kết bạn",
-    meetTitle: "Gặp gỡ người học mới",
-    meetSubtitle: "Khám phá những người phù hợp dựa trên hồ sơ của bạn",
+    meetTitle: "Gặp những tâm hồn thảnh thơi mới",
+    meetSubtitle: "Tìm người trò chuyện hợp vibe dựa trên profile chill của bạn",
     noRecommendations: "Chưa có gợi ý nào",
     checkLater: "Hãy quay lại sau để tìm thêm bạn học!",
     requestSent: "Đã gửi lời mời",
     sendRequest: "Gửi lời mời kết bạn",
   },
+  friends: {
+    filters: {
+      energyTitle: "Năng lượng dùng chung (cùng Tarot)",
+      energyHint: "Mỗi lọc sẽ tiêu tốn 1 năng lượng.",
+      applyHint:
+        "Bộ lọc áp dụng cho gợi ý. Tối đa 5 hồ sơ phù hợp được hiển thị cho mỗi năng lượng.",
+      emptyState: "Hãy chọn bộ lọc phù hợp rồi áp dụng để khám phá bạn mới.",
+      reset: "Đặt lại",
+      apply: "Áp dụng bộ lọc",
+      genderLabel: "Giới tính",
+      countryLabel: "Quốc gia",
+      cityLabel: "Thành phố",
+      heightLabel: "Chiều cao tối thiểu (cm)",
+      heightPlaceholder: "vd. 160",
+      educationLabel: "Trình độ",
+      hobbyLabel: "Sở thích",
+      petLabel: "Thú cưng",
+      anyOption: "Bất kỳ",
+      energyError: "Không đủ năng lượng. Hãy nạp thêm trong Tarot.",
+    },
+  },
+
+
   nav: {
     notifications: "Thông báo",
     theme: "Giao diện",
@@ -341,7 +391,8 @@ const vietnamese = {
     decline: "Từ chối",
     deleted: "Đã ẩn thông báo",
     declined: "Đã từ chối lời mời",
-    statusDeclined: "Bạn đã từ chối lời mời này. Thông tin sẽ được giữ lại để bạn tiện theo dõi.",
+    statusDeclined:
+      "Bạn đã từ chối lời mời này. Thông tin sẽ được giữ lại để bạn tiện theo dõi.",
     delete: "Ẩn",
     error: "Có lỗi xảy ra, vui lòng thử lại.",
     newConnections: "Kết nối mới",
@@ -488,7 +539,8 @@ const vietnamese = {
   },
   tarot: {
     title: "Trải bài Tarot",
-    subtitle: "Cần tích lũy đủ {required} năng lượng (mỗi ngày +1) trước khi bốc bài.",
+    subtitle:
+      "Cần tích lũy đủ {required} năng lượng (mỗi ngày +1) trước khi bốc bài.",
     energy: {
       summary: "Năng lượng: {current}/{max}",
       regenHint: "+1 năng lượng mỗi ngày. Lần hồi gần nhất: {date}",
@@ -510,7 +562,8 @@ const vietnamese = {
     },
     questions: {
       title: "Câu hỏi của bạn",
-      instructions: "Ghép thứ tự câu hỏi với thứ tự lá bài (từ trái sang phải).",
+      instructions:
+        "Ghép thứ tự câu hỏi với thứ tự lá bài (từ trái sang phải).",
       label: "Câu hỏi {number}",
       placeholder: "Nhập câu hỏi {number}",
       submit: "Xem lời tiên tri",
@@ -526,7 +579,8 @@ const vietnamese = {
     errors: {
       needQuestionsBeforeDraw: "Hãy nhập đủ 3 câu hỏi trước khi bốc bài.",
       loadingEnergy: "Đang tải trạng thái năng lượng...",
-      needEnergy: "Bạn cần {required} năng lượng để bốc bài (hiện có {current}/{required}).",
+      needEnergy:
+        "Bạn cần {required} năng lượng để bốc bài (hiện có {current}/{required}).",
       noDeck: "Không tìm thấy bộ bài.",
       consumeFailed: "Không thể tiêu hao năng lượng.",
       notEnoughCards: "Không đủ lá bài để bốc.",
@@ -543,9 +597,10 @@ const german = {
     loading: "Wird geladen...",
   },
   auth: {
-    signupLogoTagline: "Finde deinen ruhigen Ort für tägliche Sprachpraxis.",
+    signupLogoTagline: "Finde deinen ruhigen Ort für entspannte Gespräche.",
     signupTitle: "Konto erstellen",
-    signupSubtitle: "Tritt LofiTalk bei und starte dein Sprachabenteuer!",
+    signupSubtitle:
+      "Tritt LofiTalk bei, um entspannte Chats zu führen und Gleichgesinnte zu treffen.",
     fullName: "Vollständiger Name / Spitzname",
     email: "E-Mail",
     password: "Passwort",
@@ -558,7 +613,7 @@ const german = {
     alreadyHaveAccount: "Du hast bereits ein Konto? ",
     signIn: "Anmelden",
     loginTitle: "Willkommen zurück",
-    loginSubtitle: "Melde dich an, um deine Sprachreise fortzusetzen",
+    loginSubtitle: "Melde dich an und knüpfe nahtlos an deine Cozy-Chats an.",
     signInButton: "Anmelden",
     dontHaveAccount: "Noch kein Konto? ",
     createOne: "Jetzt erstellen",
@@ -573,7 +628,8 @@ const german = {
     verificationResendHint:
       "Keinen Code erhalten? Geh zurück und sende das Formular erneut.",
     verificationBack: "Zurück zum Registrierungsformular",
-    verificationEmailSent: "Wir haben dir gerade einen Bestätigungscode geschickt.",
+    verificationEmailSent:
+      "Wir haben dir gerade einen Bestätigungscode geschickt.",
     verificationSuccess: "E-Mail erfolgreich bestätigt! Weiterleitung...",
   },
   home: {
@@ -585,13 +641,37 @@ const german = {
     startChat: "Chat starten",
     yourFriends: "Deine Freunde",
     friendRequests: "Freundschaftsanfragen",
-    meetTitle: "Lerne neue Lernende kennen",
-    meetSubtitle: "Finde perfekte Tandempartner basierend auf deinem Profil",
+    meetTitle: "Triff neue entspannte Freunde",
+    meetSubtitle: "Finde Menschen, die deinen ruhigen Vibe teilen – passend zu deinem Profil",
     noRecommendations: "Keine Empfehlungen verfügbar",
     checkLater: "Schau später erneut vorbei, um neue Partner zu entdecken!",
     requestSent: "Anfrage gesendet",
     sendRequest: "Freundschaftsanfrage senden",
   },
+  friends: {
+    filters: {
+      energyTitle: "Geteilte Energie (mit Tarot)",
+      energyHint: "Jeder Filterversuch verbraucht 1 Energie.",
+      applyHint:
+        "Filter gelten für Empfehlungen. Bis zu 5 passende Profile pro Energie.",
+      emptyState:
+        "Stell deine Vibe-Filter ein und wende sie an, um neue Freunde zu entdecken.",
+      reset: "Zurücksetzen",
+      apply: "Filter anwenden",
+      genderLabel: "Geschlecht",
+      countryLabel: "Land",
+      cityLabel: "Stadt",
+      heightLabel: "Mindestgröße (cm)",
+      heightPlaceholder: "z. B. 160",
+      educationLabel: "Bildungsstand",
+      hobbyLabel: "Hobby",
+      petLabel: "Haustier",
+      anyOption: "Beliebig",
+      energyError: "Nicht genug Energie. Bitte im Tarot auffüllen.",
+    },
+  },
+
+
   nav: {
     notifications: "Benachrichtigungen",
     theme: "Design",
@@ -608,7 +688,8 @@ const german = {
     decline: "Ablehnen",
     deleted: "Benachrichtigung entfernt",
     declined: "Anfrage abgelehnt",
-    statusDeclined: "Du hast diese Anfrage abgelehnt. Wir lassen sie hier zu deiner Information stehen.",
+    statusDeclined:
+      "Du hast diese Anfrage abgelehnt. Wir lassen sie hier zu deiner Information stehen.",
     delete: "Entfernen",
     error: "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     newConnections: "Neue Verbindungen",
@@ -639,7 +720,8 @@ const german = {
     saving: "Speichern...",
     updated: "Profil erfolgreich aktualisiert!",
     passwordTitle: "Passwort ändern",
-    passwordSubtitle: "Aktualisiere dein Passwort regelmäßig für mehr Sicherheit.",
+    passwordSubtitle:
+      "Aktualisiere dein Passwort regelmäßig für mehr Sicherheit.",
     passwordCurrent: "Aktuelles Passwort",
     passwordNew: "Neues Passwort",
     passwordConfirm: "Neues Passwort bestätigen",
@@ -777,7 +859,8 @@ const german = {
     },
     questions: {
       title: "Deine Fragen",
-      instructions: "Ordne Fragen der Kartenreihenfolge zu (von links nach rechts).",
+      instructions:
+        "Ordne Fragen der Kartenreihenfolge zu (von links nach rechts).",
       label: "Frage {number}",
       placeholder: "Frage {number} eingeben",
       submit: "Lesung abrufen",
@@ -793,14 +876,16 @@ const german = {
     errors: {
       needQuestionsBeforeDraw: "Bitte gib alle 3 Fragen ein, bevor du ziehst.",
       loadingEnergy: "Energie wird geladen...",
-      needEnergy: "Du benötigst {required} Energie (aktuell {current}/{required}).",
+      needEnergy:
+        "Du benötigst {required} Energie (aktuell {current}/{required}).",
       noDeck: "Deck nicht gefunden.",
       consumeFailed: "Energie kann nicht verbraucht werden.",
       notEnoughCards: "Nicht genug Karten zum Ziehen.",
       needQuestions: "Bitte gib alle 3 Fragen ein.",
       needDrawnCards: "Bitte ziehe zuerst alle 3 Karten.",
       refillFailed: "Energie kann nicht aufgefüllt werden.",
-      readingFailed: "Lesung konnte nicht abgerufen werden. Versuche es erneut.",
+      readingFailed:
+        "Lesung konnte nicht abgerufen werden. Versuche es erneut.",
     },
   },
 };

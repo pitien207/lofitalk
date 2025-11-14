@@ -43,6 +43,7 @@ const ChatPage = () => {
       const resolvedApiKey = tokenData?.apiKey || FALLBACK_STREAM_API_KEY;
       if (!resolvedApiKey) {
         toast.error("Missing Stream API key");
+        setLoading(false);
         return;
       }
 
