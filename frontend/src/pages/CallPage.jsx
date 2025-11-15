@@ -8,7 +8,6 @@ import {
   StreamVideo,
   StreamVideoClient,
   StreamCall,
-  CallControls,
   SpeakerLayout,
   StreamTheme,
   CallingState,
@@ -18,6 +17,7 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import toast from "react-hot-toast";
 import PageLoader from "../components/PageLoader";
+import CallControlsNoRecording from "../components/CallControlsNoRecording";
 
 const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -106,13 +106,14 @@ const CallContent = () => {
   const callingState = useCallCallingState();
 
   const navigate = useNavigate();
+  const handleLeave = () => navigate("/");
 
   if (callingState === CallingState.LEFT) return navigate("/");
 
   return (
     <StreamTheme>
       <SpeakerLayout />
-      <CallControls />
+      <CallControlsNoRecording onLeave={handleLeave} />
     </StreamTheme>
   );
 };

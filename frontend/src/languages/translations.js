@@ -9,6 +9,11 @@ const english = {
     loading: "Loading...",
     prev: "Previous",
     next: "Next",
+    presence: {
+      online: "Online now",
+      offline: "Last seen {timeAgo}",
+      offlineUnknown: "Offline",
+    },
   },
   auth: {
     signupLogoTagline: "Slow down and find your cozy space to chat.",
@@ -60,6 +65,12 @@ const english = {
     checkLater: "Check back later for new language partners!",
     requestSent: "Request Sent",
     sendRequest: "Send Friend Request",
+  },
+  chatHome: {
+    empty: "No conversations yet",
+    emptyHint:
+      "Start a chat from someone's profile and your conversations will show up here.",
+    noMessages: "No messages yet",
   },
   friends: {
     filters: {
@@ -457,6 +468,11 @@ const vietnamese = {
     loading: "Đang tải...",
     prev: "Trang trước",
     next: "Trang sau",
+    presence: {
+      online: "Đang trực tuyến",
+      offline: "Hoạt động {timeAgo}",
+      offlineUnknown: "Ngoại tuyến",
+    },
   },
   auth: {
     signupLogoTagline: "Không gian thư giãn để trò chuyện mỗi ngày.",
@@ -509,6 +525,12 @@ const vietnamese = {
     checkLater: "Hãy quay lại sau để tìm thêm bạn học!",
     requestSent: "Đã gửi lời mời",
     sendRequest: "Gửi lời mời kết bạn",
+  },
+  chatHome: {
+    empty: "Chưa có cuộc trò chuyện nào",
+    emptyHint:
+      "Mở trò chuyện từ trang cá nhân của ai đó để cuộc trò chuyện hiển thị tại đây.",
+    noMessages: "Chưa có tin nhắn",
   },
   friends: {
     filters: {
@@ -907,6 +929,11 @@ const german = {
     loading: "Wird geladen...",
     prev: "Zurück",
     next: "Weiter",
+    presence: {
+      online: "Jetzt online",
+      offline: "Zuletzt aktiv {timeAgo}",
+      offlineUnknown: "Offline",
+    },
   },
   auth: {
     signupLogoTagline: "Finde deinen ruhigen Ort für entspannte Gespräche.",
@@ -960,6 +987,12 @@ const german = {
     checkLater: "Schau später erneut vorbei, um neue Partner zu entdecken!",
     requestSent: "Anfrage gesendet",
     sendRequest: "Freundschaftsanfrage senden",
+  },
+  chatHome: {
+    empty: "Noch keine Unterhaltungen",
+    emptyHint:
+      "Starte einen Chat über das Profil einer Person, dann erscheinen eure Unterhaltungen hier.",
+    noMessages: "Noch keine Nachrichten",
   },
   friends: {
     filters: {
