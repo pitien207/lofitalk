@@ -5,7 +5,6 @@ import qrAndroid from "../pictures/others/QR_Android_App.png";
 
 const MobileAppPage = () => {
   const { t } = useTranslation();
-  const mobileAppUrl = import.meta.env.VITE_MOBILE_APP_URL_LOFI_TALK;
 
   const featuresRaw = t("mobileAppPage.features");
   const features = useMemo(
@@ -15,8 +14,6 @@ const MobileAppPage = () => {
 
   const stepsRaw = t("mobileAppPage.steps");
   const steps = useMemo(() => (Array.isArray(stepsRaw) ? stepsRaw : []), [stepsRaw]);
-
-  const isDownloadReady = Boolean(mobileAppUrl);
 
   return (
     <div className="w-full">
@@ -35,17 +32,15 @@ const MobileAppPage = () => {
           </p>
         </section>
 
-        {isDownloadReady && (
-          <section className="rounded-3xl border border-base-300 bg-base-100/90 p-6 shadow flex flex-col items-center gap-4">
-            <h2 className="text-xl font-semibold text-base-content">{t("mobileAppPage.qrTitle")}</h2>
-            <img
-              src={qrAndroid}
-              alt="Android APK QR code"
-              className="w-52 max-w-full rounded-2xl border border-base-300 bg-base-100 p-4"
-            />
-            <p className="text-center text-sm text-base-content/70">{t("mobileAppPage.qrDescription")}</p>
-          </section>
-        )}
+        <section className="rounded-3xl border border-base-300 bg-base-100/90 p-6 shadow flex flex-col items-center gap-4">
+          <h2 className="text-xl font-semibold text-base-content">{t("mobileAppPage.qrTitle")}</h2>
+          <img
+            src={qrAndroid}
+            alt="Android APK QR code"
+            className="w-52 max-w-full rounded-2xl border border-base-300 bg-base-100 p-4"
+          />
+          <p className="text-center text-sm text-base-content/70">{t("mobileAppPage.qrDescription")}</p>
+        </section>
 
         <section className="grid gap-6 rounded-3xl border border-base-300 bg-base-100/90 p-6 shadow">
           <h2 className="text-xl font-semibold text-base-content">{t("mobileAppPage.featuresTitle")}</h2>
