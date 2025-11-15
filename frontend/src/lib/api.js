@@ -69,6 +69,16 @@ export async function getFriendRequests() {
   return response.data;
 }
 
+export async function getFortuneCookie() {
+  const response = await axiosInstance.get("/users/fortune-cookie");
+  return response.data;
+}
+
+export async function openFortuneCookie(payload) {
+  const response = await axiosInstance.post("/users/fortune-cookie", payload);
+  return response.data;
+}
+
 export async function acceptFriendRequest(requestId) {
   const response = await axiosInstance.put(
     `/users/friend-request/${requestId}/accept`

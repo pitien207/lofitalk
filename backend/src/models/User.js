@@ -128,6 +128,20 @@ const userSchema = new mongoose.Schema(
         default: null,
       },
     },
+    fortuneCookie: {
+      message: {
+        type: String,
+        default: "",
+      },
+      messageIndex: {
+        type: Number,
+        default: null,
+      },
+      openedAt: {
+        type: Date,
+        default: null,
+      },
+    },
   },
   { timestamps: true }
 );

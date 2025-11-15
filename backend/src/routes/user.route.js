@@ -5,10 +5,12 @@ import {
   declineFriendRequest,
   deleteFriendRequest,
   getFriendRequests,
+  getFortuneCookie,
   getMyFriends,
   getOutgoingFriendReqs,
   getRecommendedUsers,
   getUserProfile,
+  openFortuneCookie,
   removeFriend,
   sendFriendRequest,
 } from "../controllers/user.controller.js";
@@ -21,6 +23,8 @@ router.use(protectRoute);
 router.get("/", getRecommendedUsers);
 router.get("/friends", getMyFriends);
 router.get("/profile/:id", getUserProfile);
+router.get("/fortune-cookie", getFortuneCookie);
+router.post("/fortune-cookie", openFortuneCookie);
 router.delete("/friends/:id", removeFriend);
 router.delete("/friend-request/:id", deleteFriendRequest);
 

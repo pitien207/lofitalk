@@ -33,6 +33,64 @@ const extractNumericHeight = (heightString = '') => {
   return match ? parseFloat(match[1]) : null;
 };
 
+const isSameUTCDay = (left, right) => {
+  if (!left || !right) return false;
+  return (
+    left.getUTCFullYear() === right.getUTCFullYear() &&
+    left.getUTCMonth() === right.getUTCMonth() &&
+    left.getUTCDate() === right.getUTCDate()
+  );
+};
+
+const resetFortuneCookieForUser = async (userId) => {
+  await User.findByIdAndUpdate(userId, {
+    $set: {
+      "fortuneCookie.message": "",
+      "fortuneCookie.messageIndex": null,
+      "fortuneCookie.openedAt": null,
+    },
+  });
+
+  return {
+    message: "",
+    messageIndex: null,
+    openedAt: null,
+  };
+};
+
+const ensureFreshFortuneState = async (userId, fortune = {}) => {
+  if (!fortune?.openedAt) {
+    return {
+      message: fortune?.message || "",
+      messageIndex: typeof fortune?.messageIndex === "number" ? fortune.messageIndex : null,
+      openedAt: fortune?.openedAt || null,
+    };
+  }
+
+  const openedAtDate = new Date(fortune.openedAt);
+  const now = new Date();
+
+  if (isSameUTCDay(openedAtDate, now)) {
+    return {
+      message: fortune.message || "",
+      messageIndex: typeof fortune?.messageIndex === "number" ? fortune.messageIndex : null,
+      openedAt: fortune.openedAt,
+    };
+  }
+
+  return await resetFortuneCookieForUser(userId);
+};
+
+const buildFortuneResponse = (fortune = {}) => {
+  const openedAt = fortune?.openedAt || null;
+  return {
+    message: fortune?.message || "",
+    messageIndex: typeof fortune?.messageIndex === "number" ? fortune.messageIndex : null,
+    openedAt,
+    canOpen: !openedAt,
+  };
+};
+
 
 export async function getRecommendedUsers(req, res) {
   try {
@@ -120,6 +178,69 @@ export async function getMyFriends(req, res) {
     res.status(200).json(user.friends);
   } catch (error) {
     console.error("Error in getMyFriends controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getFortuneCookie(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select("fortuneCookie");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const fortuneState = await ensureFreshFortuneState(userId, user.fortuneCookie);
+
+    return res.status(200).json(buildFortuneResponse(fortuneState));
+  } catch (error) {
+    console.error("Error fetching fortune cookie", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function openFortuneCookie(req, res) {
+  try {
+    const userId = req.user.id;
+    const normalizedMessage = req.body?.message?.toString().trim();
+    const rawIndex = req.body?.messageIndex;
+    const parsedIndex = Number(rawIndex);
+    const hasValidIndex = Number.isInteger(parsedIndex) && parsedIndex >= 0;
+
+    if (!normalizedMessage || !hasValidIndex) {
+      return res.status(400).json({ message: "Invalid fortune payload" });
+    }
+
+    const user = await User.findById(userId).select("fortuneCookie");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const fortuneState = await ensureFreshFortuneState(userId, user.fortuneCookie);
+
+    if (fortuneState.openedAt) {
+      return res
+        .status(400)
+        .json({ message: "Fortune cookie already opened today" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          "fortuneCookie.message": normalizedMessage,
+          "fortuneCookie.messageIndex": parsedIndex,
+          "fortuneCookie.openedAt": new Date(),
+        },
+      },
+      { new: true, projection: { fortuneCookie: 1 } }
+    );
+
+    return res.status(200).json(buildFortuneResponse(updatedUser.fortuneCookie));
+  } catch (error) {
+    console.error("Error opening fortune cookie", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

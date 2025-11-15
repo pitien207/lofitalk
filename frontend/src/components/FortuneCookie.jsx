@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "../languages/useTranslation";
+import { getFortuneCookie, openFortuneCookie } from "../lib/api";
 
 const COOKIE_HALF_BASE =
   "absolute top-1/2 left-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-amber-100 via-amber-200 to-amber-400 shadow-2xl transition-all duration-500 ease-out";
@@ -17,20 +19,53 @@ const CONFETTI_COLORS = ["#FDBA74", "#F87171", "#FDE68A", "#34D399", "#A78BFA", 
 
 const FortuneCookie = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const fortunesRaw = t("sidebar.fortune.messages");
   const fortunes = Array.isArray(fortunesRaw) ? fortunesRaw : [];
+  const fallbackFortune = t("sidebar.fortune.fallback");
 
   const [phase, setPhase] = useState("idle"); // idle, cracking, open
   const [fortuneSeed, setFortuneSeed] = useState(0);
   const [confettiSeed, setConfettiSeed] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [revealedFortune, setRevealedFortune] = useState("");
+  const [revealedIndex, setRevealedIndex] = useState(null);
   const timersRef = useRef({ crack: null, confetti: null });
 
-  const fortuneText = useMemo(() => {
-    if (!fortunes.length) return t("sidebar.fortune.fallback");
+  const fortuneQuery = useQuery({
+    queryKey: ["fortuneCookie"],
+    queryFn: getFortuneCookie,
+    retry: false,
+  });
+
+  const fortuneData = fortuneQuery.data;
+  const canOpenToday = fortuneData?.canOpen ?? true;
+
+  const { mutate: saveFortune, isPending: isSavingFortune } = useMutation({
+    mutationFn: (payload) => openFortuneCookie(payload),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["fortuneCookie"], data);
+    },
+    onError: (error) => {
+      console.error("Failed to save fortune cookie", error);
+      setShowConfetti(false);
+      setRevealedFortune("");
+      setRevealedIndex(null);
+      setPhase("idle");
+      queryClient.invalidateQueries({ queryKey: ["fortuneCookie"] });
+    },
+  });
+
+  const nextFortune = useMemo(() => {
+    if (!fortunes.length) {
+      return { index: null, text: fallbackFortune };
+    }
     const index = Math.floor(Math.random() * fortunes.length);
-    return fortunes[index];
-  }, [fortunes, fortuneSeed, t]);
+    return {
+      index,
+      text: fortunes[index],
+    };
+  }, [fortunes, fortuneSeed, fallbackFortune]);
 
   const confettiPieces = useMemo(() => {
     return Array.from({ length: 14 }, (_, index) => {
@@ -50,6 +85,40 @@ const FortuneCookie = () => {
     });
   }, [confettiSeed]);
 
+  const slipIndex = revealedIndex ?? nextFortune.index;
+  const slipFortune = revealedFortune || nextFortune.text;
+  const displayFortune = revealedFortune || fallbackFortune;
+
+  useEffect(() => {
+    if (!fortuneData) return;
+
+    const storedIndex =
+      typeof fortuneData.messageIndex === "number" ? fortuneData.messageIndex : null;
+
+    if (storedIndex !== null && fortunes[storedIndex]) {
+      setRevealedFortune(fortunes[storedIndex]);
+      setRevealedIndex(storedIndex);
+      setPhase("open");
+      return;
+    }
+
+    if (fortuneData.message) {
+      setRevealedFortune(fortuneData.message);
+      setRevealedIndex(null);
+      setPhase("open");
+    } else if (fortuneData.canOpen) {
+      setRevealedFortune("");
+      setRevealedIndex(null);
+      setPhase((prev) => (prev === "cracking" ? prev : "idle"));
+    }
+  }, [fortuneData, fortunes]);
+
+  useEffect(() => {
+    if (fortuneData?.canOpen) {
+      setFortuneSeed((prev) => prev + 1);
+    }
+  }, [fortuneData?.canOpen]);
+
   useEffect(() => {
     return () => {
       if (timersRef.current.crack) clearTimeout(timersRef.current.crack);
@@ -59,27 +128,34 @@ const FortuneCookie = () => {
 
   const isCracking = phase === "cracking";
   const isOpen = phase === "open";
+  const isButtonDisabled =
+    fortuneQuery.isLoading || isSavingFortune || !canOpenToday || fortunes.length === 0;
 
   const handleCookieClick = () => {
-    if (phase !== "idle") return;
+    if (phase !== "idle" || isButtonDisabled) return;
+
+    const selectedFortune = slipFortune;
+    const selectedIndex = slipIndex;
+
+    if (selectedIndex === null || typeof selectedFortune !== "string") {
+      return;
+    }
+
     setPhase("cracking");
+
     if (timersRef.current.crack) clearTimeout(timersRef.current.crack);
     timersRef.current.crack = setTimeout(() => {
       setPhase("open");
       setConfettiSeed((prev) => prev + 1);
       setShowConfetti(true);
+      setRevealedFortune(selectedFortune);
+      setRevealedIndex(selectedIndex);
       if (timersRef.current.confetti) clearTimeout(timersRef.current.confetti);
       timersRef.current.confetti = setTimeout(() => {
         setShowConfetti(false);
       }, 1400);
+      saveFortune({ message: selectedFortune, messageIndex: selectedIndex });
     }, 650);
-  };
-
-  const handleReset = () => {
-    if (isCracking) return;
-    setPhase("idle");
-    setShowConfetti(false);
-    setFortuneSeed((prev) => prev + 1);
   };
 
   const leftHalfStyles = `${COOKIE_HALF_BASE} origin-right ${
@@ -103,10 +179,14 @@ const FortuneCookie = () => {
           <button
             type="button"
             onClick={handleCookieClick}
+            disabled={isButtonDisabled}
             className={`relative flex h-48 w-48 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 via-amber-200 to-amber-300 shadow-2xl transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
               isCracking ? "scale-110" : ""
-            } ${isOpen ? "scale-100" : "hover:scale-105"}`}
+            } ${isOpen ? "scale-100" : isButtonDisabled ? "" : "hover:scale-105"} ${
+              isButtonDisabled ? "cursor-not-allowed opacity-70" : ""
+            }`}
             aria-pressed={isOpen}
+            aria-disabled={isButtonDisabled}
             aria-label={t("sidebar.fortune.hint")}
           >
             <span
@@ -130,9 +210,9 @@ const FortuneCookie = () => {
             {SPARKLES.map((sparkle, index) => (
               <span
                 key={index}
-                className={`absolute block size-3 rounded-full bg-white/80 shadow ${isOpen ? "opacity-0" : "opacity-70"} ${
-                  isCracking ? "animate-ping" : ""
-                }`}
+                className={`absolute block size-3 rounded-full bg-white/80 shadow ${
+                  isOpen ? "opacity-0" : "opacity-70"
+                } ${isCracking ? "animate-ping" : ""}`}
                 style={{
                   ...sparkle,
                   animationDelay: sparkle.delay,
@@ -151,7 +231,7 @@ const FortuneCookie = () => {
                 isOpen ? "opacity-100 -translate-y-28 rotate-2" : "opacity-0 translate-y-6"
               }`}
             >
-              {fortuneText}
+              {slipFortune}
             </div>
 
             {showConfetti &&
@@ -172,23 +252,13 @@ const FortuneCookie = () => {
           </button>
 
           <p className="text-xs uppercase tracking-[0.2em] text-amber-600">
-            {isOpen ? t("sidebar.fortune.openedHint") : t("sidebar.fortune.hint")}
+            {canOpenToday ? t("sidebar.fortune.hint") : t("sidebar.fortune.openedHint")}
           </p>
 
           <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white/90 px-6 py-4 text-center text-base text-amber-900 shadow-lg transition-all duration-500">
-            <p>{fortuneText}</p>
+            <p>{displayFortune}</p>
             <p className="mt-3 text-sm text-amber-600">{t("sidebar.fortune.shareHint")}</p>
           </div>
-
-          {isOpen && (
-            <button
-              type="button"
-              onClick={handleReset}
-              className="btn btn-sm border-0 bg-amber-500 text-white hover:bg-amber-600"
-            >
-              {t("sidebar.fortune.newFortune")}
-            </button>
-          )}
         </div>
       </div>
     </div>
