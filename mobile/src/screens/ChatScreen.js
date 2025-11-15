@@ -14,6 +14,37 @@ import {
 import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
 
+const EMOJI_PALETTE = [
+  "😀",
+  "😁",
+  "😂",
+  "🤣",
+  "😊",
+  "😍",
+  "😎",
+  "🙂",
+  "🤗",
+  "🤩",
+  "😇",
+  "🤔",
+  "😢",
+  "😭",
+  "😡",
+  "😴",
+  "🙈",
+  "🙉",
+  "🙊",
+  "👍",
+  "👏",
+  "🙏",
+  "💪",
+  "💖",
+  "🔥",
+  "🌟",
+  "🎉",
+  "🎶",
+];
+
 const formatRelativeTime = (date) => {
   if (!date) return "";
   const target = new Date(date);
@@ -113,6 +144,7 @@ const ChatScreen = ({
   onSendMessage,
 }) => {
   const [messageText, setMessageText] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const renderChannelItem = ({ item }) => {
     const meta = buildChannelMeta(item, user?._id);
@@ -161,6 +193,12 @@ const ChatScreen = ({
     if (!messageText.trim()) return;
     onSendMessage(messageText.trim());
     setMessageText("");
+    setShowEmojiPicker(false);
+  };
+
+  const handleSelectEmoji = (emoji) => {
+    setMessageText((prev) => prev + emoji);
+    setShowEmojiPicker(false);
   };
 
   if (activeChannel && conversationMeta) {
@@ -214,7 +252,27 @@ const ChatScreen = ({
           )}
         />
 
+        {showEmojiPicker && (
+          <View style={styles.emojiPicker}>
+            {EMOJI_PALETTE.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.emojiOption}
+                onPress={() => handleSelectEmoji(emoji)}
+              >
+                <Text style={styles.emojiOptionText}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         <View style={styles.messageInputRow}>
+          <TouchableOpacity
+            style={styles.emojiToggle}
+            onPress={() => setShowEmojiPicker((prev) => !prev)}
+          >
+            <Text style={styles.emojiToggleText}>😊</Text>
+          </TouchableOpacity>
           <TextInput
             placeholder="Message..."
             placeholderTextColor="#A0A6B7"
@@ -467,6 +525,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     backgroundColor: "rgba(16,15,26,0.85)",
+  },
+  emojiToggle: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  emojiToggleText: {
+    fontSize: 24,
+  },
+  emojiPicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(16,15,26,0.95)",
+    marginBottom: 12,
+  },
+  emojiOption: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  emojiOptionText: {
+    fontSize: 22,
   },
   messageInput: {
     flex: 1,

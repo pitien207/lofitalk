@@ -124,6 +124,13 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const openProfileEditor = () => {
     setProfileForm(buildProfileFormState(user));
     setProfileError("");
+    setPasswordError("");
+    setPasswordMessage("");
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
     setEditModalVisible(true);
   };
 
@@ -131,6 +138,13 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     setEditModalVisible(false);
     setProfileError("");
     setProfileForm(buildProfileFormState(user));
+    setPasswordError("");
+    setPasswordMessage("");
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
   };
 
   const handleProfileFieldChange = (field, value) => {
@@ -503,57 +517,6 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
         <PillList items={pets} />
       </SectionCard>
 
-      <View style={styles.passwordCard}>
-        <Text style={styles.passwordTitle}>Change password</Text>
-        <Text style={styles.passwordSubtitle}>
-          Keep your account secure by updating it regularly.
-        </Text>
-        <TextInput
-          placeholder="Current password"
-          placeholderTextColor="#A0A6B7"
-          style={styles.passwordInput}
-          secureTextEntry
-          value={passwordForm.currentPassword}
-          onChangeText={(value) => handlePasswordFieldChange("currentPassword", value)}
-        />
-        <TextInput
-          placeholder="New password"
-          placeholderTextColor="#A0A6B7"
-          style={styles.passwordInput}
-          secureTextEntry
-          value={passwordForm.newPassword}
-          onChangeText={(value) => handlePasswordFieldChange("newPassword", value)}
-        />
-        <TextInput
-          placeholder="Confirm new password"
-          placeholderTextColor="#A0A6B7"
-          style={styles.passwordInput}
-          secureTextEntry
-          value={passwordForm.confirmPassword}
-          onChangeText={(value) => handlePasswordFieldChange("confirmPassword", value)}
-        />
-        {passwordError ? (
-          <Text style={styles.error}>{passwordError}</Text>
-        ) : null}
-        {passwordMessage ? (
-          <Text style={styles.passwordSuccess}>{passwordMessage}</Text>
-        ) : null}
-        <TouchableOpacity
-          style={[
-            buttonStyles.primaryButton,
-            passwordLoading && styles.disabledButton,
-          ]}
-          onPress={handlePasswordSubmit}
-          disabled={passwordLoading}
-        >
-          {passwordLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={buttonStyles.primaryButtonText}>Update password</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
       <TouchableOpacity
         style={[buttonStyles.primaryButton, styles.homeSignOut]}
         onPress={onSignOut}
@@ -806,6 +769,67 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   })}
                 </View>
 
+                <View style={styles.passwordCard}>
+                  <Text style={styles.passwordTitle}>Change password</Text>
+                  <Text style={styles.passwordSubtitle}>
+                    Keep your account secure by updating it regularly.
+                  </Text>
+
+                  <TextInput
+                    placeholder="Current password"
+                    placeholderTextColor="#A0A6B7"
+                    style={styles.passwordInput}
+                    secureTextEntry
+                    value={passwordForm.currentPassword}
+                    onChangeText={(value) =>
+                      handlePasswordFieldChange("currentPassword", value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="New password"
+                    placeholderTextColor="#A0A6B7"
+                    style={styles.passwordInput}
+                    secureTextEntry
+                    value={passwordForm.newPassword}
+                    onChangeText={(value) =>
+                      handlePasswordFieldChange("newPassword", value)
+                    }
+                  />
+                  <TextInput
+                    placeholder="Confirm new password"
+                    placeholderTextColor="#A0A6B7"
+                    style={styles.passwordInput}
+                    secureTextEntry
+                    value={passwordForm.confirmPassword}
+                    onChangeText={(value) =>
+                      handlePasswordFieldChange("confirmPassword", value)
+                    }
+                  />
+                  {passwordError ? (
+                    <Text style={styles.error}>{passwordError}</Text>
+                  ) : null}
+                  {passwordMessage ? (
+                    <Text style={styles.passwordSuccess}>{passwordMessage}</Text>
+                  ) : null}
+
+                  <TouchableOpacity
+                    style={[
+                      buttonStyles.primaryButton,
+                      passwordLoading && styles.disabledButton,
+                    ]}
+                    onPress={handlePasswordSubmit}
+                    disabled={passwordLoading}
+                  >
+                    {passwordLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={buttonStyles.primaryButtonText}>
+                        Update password
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
                 {profileError ? (
                   <Text style={styles.error}>{profileError}</Text>
                 ) : null}
@@ -982,12 +1006,13 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
   },
   editAvatarActions: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 12,
     width: "100%",
   },
   editAvatarButton: {
     flex: 1,
+    alignSelf: "stretch",
   },
   editInput: {
     borderWidth: 1,
@@ -1063,12 +1088,14 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   avatarActionRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     gap: 12,
     marginTop: 12,
+    width: "100%",
   },
   avatarActionButton: {
     flex: 1,
+    alignSelf: "stretch",
   },
   avatarSuccess: {
     color: "#9AE6B4",
