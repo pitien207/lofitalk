@@ -98,6 +98,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [avatarMessage, setAvatarMessage] = useState("");
   const [avatarError, setAvatarError] = useState("");
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [profileForm, setProfileForm] = useState(() => buildProfileFormState(user));
   const [profileError, setProfileError] = useState("");
   const [profileLoading, setProfileLoading] = useState(false);
@@ -272,13 +273,13 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
       onSignOut();
       return;
     }
-
-    const messages = {
-      language: "Language settings will be available soon.",
-      about: "LofiTalk mobile beta 1.0. Stay tuned for more updates.",
-    };
-
-    Alert.alert("LofiTalk", messages[item]);
+    if (item === "about") {
+      setAboutModalVisible(true);
+      return;
+    }
+    if (item === "language") {
+      Alert.alert("LofiTalk", "Language settings will be available soon.");
+    }
   };
 
   const handleAvatarUpdate = async (profilePic) => {
@@ -866,6 +867,40 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
           </KeyboardAvoidingView>
         </View>
       </Modal>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={aboutModalVisible}
+        onRequestClose={() => setAboutModalVisible(false)}
+      >
+        <View style={styles.aboutModalOverlay}>
+          <View style={styles.aboutModalCard}>
+            <Text style={styles.aboutTitle}>About LofiTalk</Text>
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Version</Text>
+              <Text style={styles.aboutValue}>v1.0.0</Text>
+            </View>
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Developer</Text>
+              <Text style={styles.aboutValue}>Nghia Pham</Text>
+            </View>
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Inspired by</Text>
+              <Text style={styles.aboutValue}>Codesistency</Text>
+            </View>
+            <Text style={styles.aboutFooter}>
+              LofiTalk mobile beta. Thanks for supporting our cozy community.
+            </Text>
+            <TouchableOpacity
+              style={[buttonStyles.primaryButton, styles.aboutCloseButton]}
+              onPress={() => setAboutModalVisible(false)}
+            >
+              <Text style={buttonStyles.primaryButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };
@@ -1154,6 +1189,49 @@ const styles = StyleSheet.create({
   passwordSuccess: {
     color: "#9AE6B4",
     marginBottom: 4,
+  },
+  aboutModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  aboutModalCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 28,
+    backgroundColor: BRAND_COLORS.card,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    padding: 24,
+    gap: 12,
+  },
+  aboutTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: BRAND_COLORS.text,
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  aboutRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  aboutLabel: {
+    color: BRAND_COLORS.muted,
+  },
+  aboutValue: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  aboutFooter: {
+    color: BRAND_COLORS.muted,
+    marginTop: 4,
+  },
+  aboutCloseButton: {
+    marginTop: 8,
   },
 });
 
