@@ -80,6 +80,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    accountType: {
+      type: String,
+      enum: ["standard", "plus", "admin"],
+      default: "standard",
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,

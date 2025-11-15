@@ -41,6 +41,11 @@ const buildFilterParams = (filterState) => {
   return params;
 };
 
+const sortOptionsByLabel = (options) =>
+  [...options].sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+  );
+
 const FriendsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -65,38 +70,61 @@ const FriendsPage = () => {
       {
         value: "Vietnam",
         label: t("onboarding.countryOptions.vietnam"),
-        cities: [
+        cities: sortOptionsByLabel([
+          { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
+          { value: "Hai Phong", label: t("onboarding.cityOptions.vietnam.haiphong") },
           { value: "Hanoi", label: t("onboarding.cityOptions.vietnam.hanoi") },
           { value: "Ho Chi Minh City", label: t("onboarding.cityOptions.vietnam.hcmc") },
-          { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
-        ],
+          { value: "Hue", label: t("onboarding.cityOptions.vietnam.hue") },
+          { value: "Nghe An", label: t("onboarding.cityOptions.vietnam.nghean") },
+          { value: "Ninh Binh", label: t("onboarding.cityOptions.vietnam.ninhbinh") },
+          { value: "Thanh Hoa", label: t("onboarding.cityOptions.vietnam.thanhhoa") },
+        ]),
       },
       {
         value: "Germany",
         label: t("onboarding.countryOptions.germany"),
-        cities: [
+        cities: sortOptionsByLabel([
           { value: "Berlin", label: t("onboarding.cityOptions.germany.berlin") },
-          { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
+          { value: "Bremen", label: t("onboarding.cityOptions.germany.bremen") },
+          { value: "Cologne", label: t("onboarding.cityOptions.germany.koln") },
+          { value: "Dresden", label: t("onboarding.cityOptions.germany.dresden") },
+          { value: "Frankfurt", label: t("onboarding.cityOptions.germany.frankfurt") },
           { value: "Hamburg", label: t("onboarding.cityOptions.germany.hamburg") },
-        ],
+          { value: "Leipzig", label: t("onboarding.cityOptions.germany.leipzig") },
+          { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
+          { value: "Nuremberg", label: t("onboarding.cityOptions.germany.nurnberg") },
+          { value: "Stuttgart", label: t("onboarding.cityOptions.germany.stuttgart") },
+        ]),
       },
       {
         value: "Japan",
         label: t("onboarding.countryOptions.japan"),
-        cities: [
-          { value: "Tokyo", label: t("onboarding.cityOptions.japan.tokyo") },
-          { value: "Osaka", label: t("onboarding.cityOptions.japan.osaka") },
+        cities: sortOptionsByLabel([
+          { value: "Fukuoka", label: t("onboarding.cityOptions.japan.fukuoka") },
+          { value: "Hiroshima", label: t("onboarding.cityOptions.japan.hiroshima") },
+          { value: "Kobe", label: t("onboarding.cityOptions.japan.kobe") },
           { value: "Kyoto", label: t("onboarding.cityOptions.japan.kyoto") },
-        ],
+          { value: "Nagoya", label: t("onboarding.cityOptions.japan.nagoya") },
+          { value: "Osaka", label: t("onboarding.cityOptions.japan.osaka") },
+          { value: "Sapporo", label: t("onboarding.cityOptions.japan.sapporo") },
+          { value: "Sendai", label: t("onboarding.cityOptions.japan.sendai") },
+          { value: "Tokyo", label: t("onboarding.cityOptions.japan.tokyo") },
+          { value: "Yokohama", label: t("onboarding.cityOptions.japan.yokohama") },
+        ]),
       },
       {
         value: "Australia",
         label: t("onboarding.countryOptions.australia"),
-        cities: [
-          { value: "Sydney", label: t("onboarding.cityOptions.australia.sydney") },
-          { value: "Melbourne", label: t("onboarding.cityOptions.australia.melbourne") },
+        cities: sortOptionsByLabel([
+          { value: "Adelaide", label: t("onboarding.cityOptions.australia.adelaide") },
           { value: "Brisbane", label: t("onboarding.cityOptions.australia.brisbane") },
-        ],
+          { value: "Canberra", label: t("onboarding.cityOptions.australia.canberra") },
+          { value: "Gold Coast", label: t("onboarding.cityOptions.australia.goldcoast") },
+          { value: "Melbourne", label: t("onboarding.cityOptions.australia.melbourne") },
+          { value: "Perth", label: t("onboarding.cityOptions.australia.perth") },
+          { value: "Sydney", label: t("onboarding.cityOptions.australia.sydney") },
+        ]),
       },
     ],
     [t]

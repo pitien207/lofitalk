@@ -17,6 +17,7 @@ import {
 import cardBackImg from "../pictures/cards/CardBacks.png";
 import "../tarot.css";
 import { useTranslation } from "../languages/useTranslation";
+import useAuthUser from "../hooks/useAuthUser";
 
 const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
 const ENERGY_MAX = 7;
@@ -42,6 +43,8 @@ const TarotPage = () => {
   const hasHydratedFromServer = useRef(false);
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { authUser } = useAuthUser();
+  const canRefillEnergy = ["plus", "admin"].includes(authUser?.accountType);
 
   const {
     data: energyData,
@@ -353,21 +356,23 @@ const TarotPage = () => {
                   </>
                 )}
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleRefillEnergy}
-                disabled={isRefilling}
-              >
-                {isRefilling ? (
-                  <>
-                    <LoaderIcon className="size-4 mr-2 animate-spin" />
-                    {t("tarot.buttons.refilling")}
-                  </>
-                ) : (
-                  t("tarot.buttons.refill")
-                )}
-              </button>
+              {canRefillEnergy && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleRefillEnergy}
+                  disabled={isRefilling}
+                >
+                  {isRefilling ? (
+                    <>
+                      <LoaderIcon className="size-4 mr-2 animate-spin" />
+                      {t("tarot.buttons.refilling")}
+                    </>
+                  ) : (
+                    t("tarot.buttons.refill")
+                  )}
+                </button>
+              )}
             </div>
 
             <div>
