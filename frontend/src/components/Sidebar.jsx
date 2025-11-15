@@ -4,6 +4,7 @@ import {
   BellIcon,
   CookieIcon,
   HomeIcon,
+  MessageSquareIcon,
   ShuffleIcon,
   ShieldIcon,
   SmartphoneIcon,
@@ -19,6 +20,8 @@ const Sidebar = () => {
   const currentPath = location.pathname;
   const { t } = useTranslation();
   const { hasPending } = usePendingNotifications();
+  const isChatRoute =
+    currentPath === "/chats" || currentPath.startsWith("/chat/");
 
   return (
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
@@ -50,6 +53,16 @@ const Sidebar = () => {
         >
           <UsersIcon className="size-5 text-base-content opacity-70" />
           <span>{t("sidebar.friends")}</span>
+        </Link>
+
+        <Link
+          to="/chats"
+          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+            isChatRoute ? "btn-active" : ""
+          }`}
+        >
+          <MessageSquareIcon className="size-5 text-base-content opacity-70" />
+          <span>{t("sidebar.chat")}</span>
         </Link>
 
         <Link

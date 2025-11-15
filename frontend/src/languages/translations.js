@@ -97,6 +97,7 @@ const english = {
     version: "Version",
     developer: "Developer",
     inspiredBy: "Inspired by",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable",
   },
   notifications: {
     title: "Notifications",
@@ -122,6 +123,7 @@ const english = {
     notifications: "Notifications",
     tarot: "Tarot",
     admin: "Admin",
+    chat: "Messages",
     fortune: {
       linkLabel: "Fortune Cookie",
       title: "Fortune cookie ritual",
@@ -194,6 +196,15 @@ const english = {
     mobileApp: {
       linkLabel: "Mobile App",
     },
+  },
+  chatHome: {
+    title: "Recent chats",
+    subtitle: "Pick a conversation to continue where you left off.",
+    empty: "No conversations yet",
+    emptyHint: "Start a chat from someone's profile to see it here.",
+    noMessages: "No messages yet",
+    openButton: "Open chat",
+    lastMessagePrefix: "Last message",
   },
   mobileAppPage: {
     heroBadge: "Mobile companion",
@@ -542,6 +553,8 @@ const vietnamese = {
     version: "Phiên bản",
     developer: "Nhà phát triển",
     inspiredBy: "Lấy cảm hứng từ",
+  
+    inspiredNames: "Codesistency / Fremdchat / avocadorable",
   },
   notifications: {
     title: "Thông báo",
@@ -567,6 +580,7 @@ const vietnamese = {
     notifications: "Thông báo",
     tarot: "Tarot",
     admin: "Quản trị",
+    chat: "Tin nhắn",
     fortune: {
       linkLabel: "Bánh quy may mắn",
       title: "Nghi thức bánh quy may mắn",
@@ -639,6 +653,15 @@ const vietnamese = {
     mobileApp: {
       linkLabel: "Ứng dụng di động",
     },
+  },
+  chatHome: {
+    title: "Tin nh?n g?n ?y",
+    subtitle: "Ch?n m?t cu?c tr� chuy?n d? ti?p t?c.",
+    empty: "Chua c� cu?c tr� chuy?n n�o",
+    emptyHint: "H�y m? chat t? h? s? b?n b� d? th?y cu?c tr� chuy?n t?i ?y.",
+    noMessages: "Chua c� tin nh?n",
+    openButton: "M? cu?c tr� chuy?n",
+    lastMessagePrefix: "Tin nh?n g?n nh?t",
   },
   mobileAppPage: {
     heroBadge: "Ứng dụng di động",
@@ -991,6 +1014,7 @@ const german = {
     version: "Version",
     developer: "Entwickler",
     inspiredBy: "Inspiriert von",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable",
   },
   notifications: {
     title: "Benachrichtigungen",
@@ -1016,6 +1040,7 @@ const german = {
     notifications: "Benachrichtigungen",
     tarot: "Tarot",
     admin: "Admin",
+    chat: "Nachrichten",
     fortune: {
       linkLabel: "Glückskeks",
       title: "Glückskeks-Ritual",
@@ -1088,6 +1113,15 @@ const german = {
     mobileApp: {
       linkLabel: "Mobile App",
     },
+  },
+  chatHome: {
+    title: "Aktuelle Chats",
+    subtitle: "W�hle ein Gespr�ch, um weiterzumachen.",
+    empty: "Noch keine Chats",
+    emptyHint: "Starte einen Chat �ber ein Profil, um ihn hier zu sehen.",
+    noMessages: "Noch keine Nachrichten",
+    openButton: "Chat �ffnen",
+    lastMessagePrefix: "Letzte Nachricht",
   },
   mobileAppPage: {
     heroBadge: "Mobile Begleitung",
@@ -1351,6 +1385,11 @@ export const translations = {
   Vietnamese: vietnamese,
   German: german,
 };
+
+
+
+
+
 
 
 

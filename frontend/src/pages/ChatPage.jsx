@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
-import useAuthUser from "../hooks/useAuthUser";
 import { useQuery } from "@tanstack/react-query";
+import { StreamChat } from "stream-chat";
+import toast from "react-hot-toast";
+
+import useAuthUser from "../hooks/useAuthUser";
 import { getStreamToken, getUserProfile } from "../lib/api";
 
 import {
@@ -12,8 +15,6 @@ import {
   Thread,
   Window,
 } from "stream-chat-react";
-import { StreamChat } from "stream-chat";
-import toast from "react-hot-toast";
 
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
@@ -58,18 +59,20 @@ const ChatPage = () => {
       }
 
       try {
-        console.log("Initializing stream chat client...");
-
         const client = StreamChat.getInstance(resolvedApiKey);
-
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
+        if (client.userID && client.userID !== authUser._id) {
+          await client.disconnectUser();
+        }
+        if (!client.userID) {
+          await client.connectUser(
+            {
+              id: authUser._id,
+              name: authUser.fullName,
+              image: authUser.profilePic,
+            },
+            tokenData.token
+          );
+        }
 
         //
         const channelId = [authUser._id, targetUserId].sort().join("-");

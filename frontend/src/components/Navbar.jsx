@@ -143,9 +143,11 @@ const Navbar = () => {
                       <span className="opacity-70">{t("nav.developer")}</span>
                       <span className="font-medium">Nghia Pham</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-3">
                       <span className="opacity-70">{t("nav.inspiredBy")}</span>
-                      <span className="font-medium">Codesistency</span>
+                      <span className="font-medium text-right">
+                        {t("nav.inspiredNames")}
+                      </span>
                     </div>
                   </div>
                 )}
