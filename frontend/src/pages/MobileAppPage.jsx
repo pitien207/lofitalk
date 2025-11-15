@@ -1,6 +1,7 @@
-import { ExternalLinkIcon, SmartphoneIcon } from "lucide-react";
+import { SmartphoneIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "../languages/useTranslation";
+import qrAndroid from "../pictures/others/QR_Android_App.png";
 
 const MobileAppPage = () => {
   const { t } = useTranslation();
@@ -29,21 +30,22 @@ const MobileAppPage = () => {
             <h1 className="text-4xl font-bold text-base-content">{t("mobileAppPage.heroTitle")}</h1>
             <p className="text-base text-base-content/80">{t("mobileAppPage.heroSubtitle")}</p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <a
-              href={isDownloadReady ? mobileAppUrl : undefined}
-              target="_blank"
-              rel="noreferrer"
-              className={`btn btn-primary flex items-center gap-2 ${
-                isDownloadReady ? "" : "btn-disabled"
-              }`}
-            >
-              <ExternalLinkIcon className="size-4" />
-              {isDownloadReady ? t("mobileAppPage.downloadButton") : t("mobileAppPage.downloadUnavailable")}
-            </a>
-            <p className="text-sm text-base-content/70">{t("mobileAppPage.downloadHint")}</p>
-          </div>
+          <p className="text-sm text-base-content/70 rounded-2xl border border-base-300 bg-base-100/80 px-4 py-2">
+            {t("mobileAppPage.availabilityNote")}
+          </p>
         </section>
+
+        {isDownloadReady && (
+          <section className="rounded-3xl border border-base-300 bg-base-100/90 p-6 shadow flex flex-col items-center gap-4">
+            <h2 className="text-xl font-semibold text-base-content">{t("mobileAppPage.qrTitle")}</h2>
+            <img
+              src={qrAndroid}
+              alt="Android APK QR code"
+              className="w-52 max-w-full rounded-2xl border border-base-300 bg-base-100 p-4"
+            />
+            <p className="text-center text-sm text-base-content/70">{t("mobileAppPage.qrDescription")}</p>
+          </section>
+        )}
 
         <section className="grid gap-6 rounded-3xl border border-base-300 bg-base-100/90 p-6 shadow">
           <h2 className="text-xl font-semibold text-base-content">{t("mobileAppPage.featuresTitle")}</h2>
