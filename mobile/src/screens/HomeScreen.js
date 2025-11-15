@@ -837,7 +837,13 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Inspired by</Text>
-              <Text style={styles.aboutValue}>Codesistency • Fremdchat • avocadorable</Text>
+              <Text style={styles.aboutValue}>
+                Codesistency • Fremdchat • avocadorable
+              </Text>
+            </View>
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Special thanks</Text>
+              <Text style={styles.aboutValue}>Sayed Sayedy</Text>
             </View>
             <Text style={styles.aboutFooter}>
               LofiTalk mobile companion. Take your cozy chats anywhere.
@@ -1186,3 +1192,4 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
+
