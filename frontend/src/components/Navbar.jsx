@@ -1,13 +1,18 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useMemo, useState } from "react";
+import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
+  CookieIcon,
+  HomeIcon,
   LogOutIcon,
   InfoIcon,
   LanguagesIcon,
+  MessageSquareIcon,
   PaletteIcon,
   Settings2Icon,
+  ShuffleIcon,
+  UsersIcon,
 } from "lucide-react";
 import useLogout from "../hooks/useLogout";
 import ThemeSelector from "./ThemeSelector";
@@ -17,6 +22,7 @@ import usePendingNotifications from "../hooks/usePendingNotifications";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
+  const location = useLocation();
   const [activeSetting, setActiveSetting] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { t, language, setLanguage } = useTranslation();
@@ -24,10 +30,47 @@ const Navbar = () => {
 
   const { logoutMutation } = useLogout();
 
+  const currentPath = location.pathname;
+  const mobileNavItems = useMemo(() => {
+    const items = [
+      { path: "/", icon: HomeIcon, label: t("sidebar.home") },
+      { path: "/friends", icon: UsersIcon, label: t("sidebar.friends") },
+      { path: "/chats", icon: MessageSquareIcon, label: t("sidebar.chat") },
+      { path: "/notifications", icon: BellIcon, label: t("sidebar.notifications") },
+      { path: "/tarot", icon: ShuffleIcon, label: t("sidebar.tarot") },
+      { path: "/fortune", icon: CookieIcon, label: t("sidebar.fortune.linkLabel") },
+    ];
+
+    if (authUser?.accountType === "admin") {
+      items.push({
+        path: "/admin",
+        icon: UsersIcon,
+        label: t("sidebar.admin"),
+      });
+    }
+
+    return items;
+  }, [authUser?.accountType, t]);
+
   return (
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-end w-full">
+        <div className="flex items-center justify-between w-full gap-4">
+          <div className="flex items-center gap-2 lg:hidden">
+            {mobileNavItems.map(({ path, icon: Icon, label }) => (
+              <Link
+                key={path}
+                to={path}
+                aria-label={label}
+                className={`btn btn-ghost btn-circle ${
+                  currentPath === path ? "btn-active" : ""
+                }`}
+              >
+                <Icon className="size-5 text-base-content opacity-80" />
+              </Link>
+            ))}
+          </div>
+
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
             <Link to={"/notifications"}>
               <button
@@ -41,7 +84,6 @@ const Navbar = () => {
               </button>
             </Link>
           </div>
-
           <div
             className={`dropdown dropdown-end ${
               settingsOpen ? "dropdown-open" : ""
