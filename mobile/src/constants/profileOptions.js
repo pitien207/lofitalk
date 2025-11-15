@@ -4,29 +4,68 @@ export const genderOptions = [
   { value: "female", label: "Female" },
   { value: "male", label: "Male" },
   { value: "non-binary", label: "Non-binary" },
-  { value: "prefer_not_say", label: "Prefer not say" },
+  { value: "prefer_not_say", label: "Prefer not to say" },
 ];
 
 export const countryCityOptions = [
   {
     value: "Vietnam",
     label: "Vietnam",
-    cities: ["Hanoi", "Ho Chi Minh City", "Da Nang"],
+    cities: [
+      "Da Nang",
+      "Hai Phong",
+      "Hanoi",
+      "Ho Chi Minh City",
+      "Hue",
+      "Nghe An",
+      "Ninh Binh",
+      "Thanh Hoa",
+    ],
   },
   {
     value: "Germany",
     label: "Germany",
-    cities: ["Berlin", "Munich", "Hamburg"],
+    cities: [
+      "Berlin",
+      "Bremen",
+      "Cologne",
+      "Dresden",
+      "Frankfurt",
+      "Hamburg",
+      "Leipzig",
+      "Munich",
+      "Nuremberg",
+      "Stuttgart",
+    ],
   },
   {
     value: "Japan",
     label: "Japan",
-    cities: ["Tokyo", "Osaka", "Kyoto"],
+    cities: [
+      "Fukuoka",
+      "Hiroshima",
+      "Kobe",
+      "Kyoto",
+      "Nagoya",
+      "Osaka",
+      "Sapporo",
+      "Sendai",
+      "Tokyo",
+      "Yokohama",
+    ],
   },
   {
     value: "Australia",
     label: "Australia",
-    cities: ["Sydney", "Melbourne", "Brisbane"],
+    cities: [
+      "Adelaide",
+      "Brisbane",
+      "Canberra",
+      "Gold Coast",
+      "Melbourne",
+      "Perth",
+      "Sydney",
+    ],
   },
 ];
 
@@ -38,15 +77,16 @@ export const educationOptions = [
 ];
 
 export const hobbyOptions = [
-  "Music",
+  "Music & concerts",
+  "Traveling",
+  "Cooking & baking",
+  "Video games",
   "Reading",
-  "Sports",
-  "Cooking",
-  "Travel",
-  "Movies",
-  "Gaming",
-  "Yoga",
-  "Design",
+  "Fitness & gym",
+  "Photography",
+  "Art & design",
+  "Movies & series",
+  "Hiking & outdoors",
 ];
 
-export const petOptions = ["Dog", "Cat", "Bird", "Fish", "Hamster", "Other"];
+export const petOptions = ["Dog", "Cat", "Hamster", "Bird", "Fish"];

@@ -26,6 +26,7 @@ import {
   hobbyOptions,
   petOptions,
 } from "../constants/profileOptions";
+import DropdownSelect from "../components/common/DropdownSelect";
 
 const OnboardingScreen = ({ user, onComplete }) => {
   const [formState, setFormState] = useState({
@@ -251,80 +252,35 @@ const OnboardingScreen = ({ user, onComplete }) => {
           numberOfLines={3}
         />
 
-        <Text style={styles.sectionLabel}>Gender*</Text>
-        <View style={styles.chipRow}>
-          {genderOptions.map((option) => {
-            const active = formState.gender === option.value;
-            return (
-              <TouchableOpacity
-                key={option.value}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => handleFieldChange("gender", option.value)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active && styles.chipTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <DropdownSelect
+          label="Gender*"
+          value={formState.gender}
+          placeholder="Select gender"
+          options={genderOptions}
+          onSelect={(value) => handleFieldChange("gender", value)}
+        />
 
-        <Text style={styles.sectionLabel}>Country*</Text>
-        <View style={styles.chipRow}>
-          {countryCityOptions.map((option) => {
-            const active = formState.country === option.value;
-            return (
-              <TouchableOpacity
-                key={option.value}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => handleCountrySelect(option.value)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active && styles.chipTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <DropdownSelect
+          label="Country*"
+          value={formState.country}
+          placeholder="Select country"
+          options={countryCityOptions}
+          onSelect={(value) => handleCountrySelect(value)}
+        />
 
-        <Text style={styles.sectionLabel}>City*</Text>
-        <View style={styles.chipRow}>
-          {availableCities.length === 0 ? (
-            <Text style={styles.helperText}>
-              Select a country to see cities.
-            </Text>
-          ) : (
-            availableCities.map((city) => {
-              const active = formState.city === city;
-              return (
-                <TouchableOpacity
-                  key={city}
-                  style={[styles.chip, active && styles.chipActive]}
-                  onPress={() => handleFieldChange("city", city)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      active && styles.chipTextActive,
-                    ]}
-                  >
-                    {city}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+        <DropdownSelect
+          label="City*"
+          value={formState.city}
+          placeholder={
+            availableCities.length ? "Select city" : "Select a country first"
+          }
+          options={availableCities.map((city) => ({
+            value: city,
+            label: city,
+          }))}
+          onSelect={(value) => handleFieldChange("city", value)}
+          disabled={!availableCities.length}
+        />
 
         <TextInput
           placeholder="Birth date (YYYY-MM-DD)*"
@@ -342,28 +298,16 @@ const OnboardingScreen = ({ user, onComplete }) => {
           style={styles.input}
         />
 
-        <Text style={styles.sectionLabel}>Education</Text>
-        <View style={styles.chipRow}>
-          {educationOptions.map((option) => {
-            const active = formState.education === option;
-            return (
-              <TouchableOpacity
-                key={option}
-                style={[styles.chip, active && styles.chipActive]}
-                onPress={() => handleFieldChange("education", option)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active && styles.chipTextActive,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <DropdownSelect
+          label="Education"
+          value={formState.education}
+          placeholder="Select education"
+          options={educationOptions.map((option) => ({
+            value: option,
+            label: option,
+          }))}
+          onSelect={(value) => handleFieldChange("education", value)}
+        />
 
         <Text style={styles.sectionLabel}>Hobbies</Text>
         <View style={styles.chipRow}>

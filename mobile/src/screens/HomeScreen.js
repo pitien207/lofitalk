@@ -43,6 +43,7 @@ import {
   hobbyOptions,
   petOptions,
 } from "../constants/profileOptions";
+import DropdownSelect from "../components/common/DropdownSelect";
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
@@ -608,82 +609,37 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   numberOfLines={3}
                 />
 
-                <Text style={styles.editSectionLabel}>Gender*</Text>
-                <View style={styles.editChipRow}>
-                  {genderOptions.map((option) => {
-                    const active = profileForm.gender === option.value;
-                    return (
-                      <TouchableOpacity
-                        key={option.value}
-                        style={[styles.editChip, active && styles.editChipActive]}
-                        onPress={() =>
-                          handleProfileFieldChange("gender", option.value)
-                        }
-                      >
-                        <Text
-                          style={[
-                            styles.editChipText,
-                            active && styles.editChipTextActive,
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <DropdownSelect
+                  label="Gender*"
+                  value={profileForm.gender}
+                  placeholder="Select gender"
+                  options={genderOptions}
+                  onSelect={(value) => handleProfileFieldChange("gender", value)}
+                />
 
-                <Text style={styles.editSectionLabel}>Country*</Text>
-                <View style={styles.editChipRow}>
-                  {countryCityOptions.map((option) => {
-                    const active = profileForm.country === option.value;
-                    return (
-                      <TouchableOpacity
-                        key={option.value}
-                        style={[styles.editChip, active && styles.editChipActive]}
-                        onPress={() => handleProfileCountrySelect(option.value)}
-                      >
-                        <Text
-                          style={[
-                            styles.editChipText,
-                            active && styles.editChipTextActive,
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <DropdownSelect
+                  label="Country*"
+                  value={profileForm.country}
+                  placeholder="Select country"
+                  options={countryCityOptions}
+                  onSelect={(value) => handleProfileCountrySelect(value)}
+                />
 
-                <Text style={styles.editSectionLabel}>City*</Text>
-                <View style={styles.editChipRow}>
-                  {availableCities.length === 0 ? (
-                    <Text style={styles.editHelperText}>
-                      Select a country to see cities.
-                    </Text>
-                  ) : (
-                    availableCities.map((city) => {
-                      const active = profileForm.city === city;
-                      return (
-                        <TouchableOpacity
-                          key={city}
-                          style={[styles.editChip, active && styles.editChipActive]}
-                          onPress={() => handleProfileFieldChange("city", city)}
-                        >
-                          <Text
-                            style={[
-                              styles.editChipText,
-                              active && styles.editChipTextActive,
-                            ]}
-                          >
-                            {city}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                  )}
-                </View>
+                <DropdownSelect
+                  label="City*"
+                  value={profileForm.city}
+                  placeholder={
+                    availableCities.length
+                      ? "Select city"
+                      : "Select a country first"
+                  }
+                  options={availableCities.map((city) => ({
+                    value: city,
+                    label: city,
+                  }))}
+                  disabled={!availableCities.length}
+                  onSelect={(value) => handleProfileFieldChange("city", value)}
+                />
 
                 <TextInput
                   placeholder="Birth date (YYYY-MM-DD)*"
@@ -701,28 +657,18 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   style={styles.editInput}
                 />
 
-                <Text style={styles.editSectionLabel}>Education</Text>
-                <View style={styles.editChipRow}>
-                  {educationOptions.map((option) => {
-                    const active = profileForm.education === option;
-                    return (
-                      <TouchableOpacity
-                        key={option}
-                        style={[styles.editChip, active && styles.editChipActive]}
-                        onPress={() => handleProfileFieldChange("education", option)}
-                      >
-                        <Text
-                          style={[
-                            styles.editChipText,
-                            active && styles.editChipTextActive,
-                          ]}
-                        >
-                          {option}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <DropdownSelect
+                  label="Education"
+                  value={profileForm.education}
+                  placeholder="Select education"
+                  options={educationOptions.map((option) => ({
+                    value: option,
+                    label: option,
+                  }))}
+                  onSelect={(value) =>
+                    handleProfileFieldChange("education", value)
+                  }
+                />
 
                 <Text style={styles.editSectionLabel}>Hobbies</Text>
                 <View style={styles.editChipRow}>
