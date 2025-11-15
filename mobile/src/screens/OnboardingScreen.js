@@ -215,7 +215,10 @@ const OnboardingScreen = ({ user, onComplete }) => {
 
                 if (!result.canceled && result.assets?.length) {
                   const asset = result.assets[0];
-                  if (asset.base64) {
+                  if (
+                    asset.base64 &&
+                    asset.base64.length * (3 / 4) <= 200 * 1024
+                  ) {
                     const dataUri = `data:${asset.type || "image/jpeg"};base64,${
                       asset.base64
                     }`;
@@ -224,6 +227,8 @@ const OnboardingScreen = ({ user, onComplete }) => {
                       profilePic: dataUri,
                     }));
                     setError("");
+                  } else {
+                    Alert.alert("Avatar too large", "Avatar must be under 200 KB.");
                   }
                 }
               }}

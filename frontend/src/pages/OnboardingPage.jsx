@@ -354,7 +354,7 @@ const OnboardingPage = () => {
       return;
     }
 
-    if (file.size > 100 * 1024) {
+    if (file.size > 200 * 1024) {
       toast.error(t("language.uploadSizeError"));
       event.target.value = "";
       return;

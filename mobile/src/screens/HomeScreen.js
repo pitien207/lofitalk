@@ -341,6 +341,10 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     if (!result.canceled && result.assets?.length) {
       const asset = result.assets[0];
       if (asset.base64) {
+        if (asset.base64.length * (3 / 4) > 200 * 1024) {
+          Alert.alert("Avatar too large", "Avatar must be under 200 KB.");
+          return;
+        }
         const dataUri = `data:${asset.type || "image/jpeg"};base64,${
           asset.base64
         }`;

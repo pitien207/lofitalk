@@ -376,7 +376,7 @@ const english = {
   language: {
     randomAvatarToast: "Random profile picture generated!",
     uploadError: "Please upload an image file",
-    uploadSizeError: "Payload must be under 100 KB",
+    uploadSizeError: "Payload must be under 200 KB",
     uploadSuccess: "Profile picture updated!",
   },
   tarot: {
@@ -833,7 +833,7 @@ const vietnamese = {
   language: {
     randomAvatarToast: "Đã tạo ảnh đại diện ngẫu nhiên!",
     uploadError: "Vui lòng tải lên tệp hình ảnh",
-    uploadSizeError: "Dung lượng phải dưới 100 KB",
+    uploadSizeError: "Dung lượng phải dưới 200 KB",
     uploadSuccess: "Ảnh đại diện đã được cập nhật!",
   },
   tarot: {
@@ -1294,7 +1294,7 @@ const german = {
   language: {
     randomAvatarToast: "Zufälliger Avatar wurde erstellt!",
     uploadError: "Bitte lade eine Bilddatei hoch",
-    uploadSizeError: "Die Datei muss kleiner als 100 KB sein",
+    uploadSizeError: "Die Datei muss kleiner als 200 KB sein",
     uploadSuccess: "Profilbild aktualisiert!",
   },
   tarot: {

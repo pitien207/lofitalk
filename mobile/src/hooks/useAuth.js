@@ -44,11 +44,6 @@ const useAuth = () => {
       }
       setPassword("");
 
-      Alert.alert(
-        "Login successful",
-        `Welcome back ${data.user?.fullName || "friend"}!`
-      );
-
       return data;
     } catch (err) {
       const message =
