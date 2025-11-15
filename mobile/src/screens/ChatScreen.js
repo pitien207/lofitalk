@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   StyleSheet,
   Text,
@@ -13,6 +14,10 @@ import {
 } from "react-native";
 import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
+
+const DEFAULT_CALL_BASE_URL =
+  process.env.EXPO_PUBLIC_WEB_APP_URL || "https://lofitalk.onrender.com";
+const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
 
 const EMOJI_PALETTE = [
   "😀",
@@ -130,6 +135,33 @@ const resolveImageSource = (value) => {
   return value;
 };
 
+const segmentMessageText = (text = "") => {
+  const segments = [];
+  let lastIndex = 0;
+
+  text.replace(URL_REGEX, (match, offset) => {
+    if (offset > lastIndex) {
+      segments.push({
+        type: "text",
+        content: text.slice(lastIndex, offset),
+      });
+    }
+    segments.push({ type: "link", content: match });
+    lastIndex = offset + match.length;
+    return match;
+  });
+
+  if (lastIndex < text.length) {
+    segments.push({ type: "text", content: text.slice(lastIndex) });
+  }
+
+  if (!segments.length) {
+    segments.push({ type: "text", content: text || "..." });
+  }
+
+  return segments;
+};
+
 const ChatScreen = ({
   user,
   chatLoading,
@@ -145,6 +177,11 @@ const ChatScreen = ({
 }) => {
   const [messageText, setMessageText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const handleLinkPress = (url) => {
+    if (!url) return;
+    Linking.openURL(url).catch(() => null);
+  };
 
   const renderChannelItem = ({ item }) => {
     const meta = buildChannelMeta(item, user?._id);
@@ -201,6 +238,21 @@ const ChatScreen = ({
     setShowEmojiPicker(false);
   };
 
+  const handleSendCallLink = async () => {
+    if (!activeChannel) return;
+    const normalizedBase = DEFAULT_CALL_BASE_URL.replace(/\/$/, "");
+    const callUrl = `${normalizedBase}/call/${activeChannel.id}`;
+
+    try {
+      await activeChannel.sendMessage({
+        text: `Join this call: ${callUrl}`,
+      });
+      Linking.openURL(callUrl).catch(() => null);
+    } catch (error) {
+      console.log("Call link error:", error);
+    }
+  };
+
   if (activeChannel && conversationMeta) {
     return (
       <KeyboardAvoidingView
@@ -212,16 +264,22 @@ const ChatScreen = ({
           <TouchableOpacity style={styles.backButton} onPress={onBackToList}>
             <Text style={styles.backButtonText}>◀</Text>
           </TouchableOpacity>
-        <Image
-          source={resolveImageSource(conversationMeta.avatar)}
-          style={styles.chatAvatar}
-        />
-          <View style={{ flex: 1 }}>
+          <Image
+            source={resolveImageSource(conversationMeta.avatar)}
+            style={styles.chatAvatar}
+          />
+          <View style={styles.chatMeta}>
             <Text style={styles.chatName}>{conversationMeta.name}</Text>
             <Text style={styles.chatStatus}>
               {conversationMeta.online ? "Online now" : "Offline"}
             </Text>
           </View>
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={handleSendCallLink}
+          >
+            <Text style={styles.callButtonText}>Call</Text>
+          </TouchableOpacity>
         </View>
 
         <FlatList
@@ -243,7 +301,19 @@ const ChatScreen = ({
                   item.isOwn && styles.messageTextOwn,
                 ]}
               >
-                {item.text || "..."}
+                {segmentMessageText(item.text).map((segment, index) =>
+                  segment.type === "link" ? (
+                    <Text
+                      key={`${segment.content}-${index}`}
+                      style={styles.messageLink}
+                      onPress={() => handleLinkPress(segment.content)}
+                    >
+                      {segment.content}
+                    </Text>
+                  ) : (
+                    <Text key={`seg-${index}`}>{segment.content}</Text>
+                  )
+                )}
               </Text>
               <Text style={styles.messageTime}>
                 {formatRelativeTime(item.createdAt)}
@@ -471,6 +541,9 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 20,
   },
+  chatMeta: {
+    flex: 1,
+  },
   chatName: {
     color: BRAND_COLORS.text,
     fontSize: 18,
@@ -479,6 +552,18 @@ const styles = StyleSheet.create({
   chatStatus: {
     color: BRAND_COLORS.muted,
     fontSize: 13,
+  },
+  callButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  callButtonText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "700",
   },
   messageList: {
     flex: 1,
@@ -509,6 +594,10 @@ const styles = StyleSheet.create({
   },
   messageTextOwn: {
     color: "#1F1F1F",
+  },
+  messageLink: {
+    color: BRAND_COLORS.secondary,
+    textDecorationLine: "underline",
   },
   messageTime: {
     fontSize: 11,
