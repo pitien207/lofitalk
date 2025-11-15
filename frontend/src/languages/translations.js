@@ -114,6 +114,7 @@ const english = {
     friends: "Friends",
     notifications: "Notifications",
     tarot: "Tarot",
+    admin: "Admin",
   },
   profile: {
     yearsOld: "years old",
@@ -318,6 +319,34 @@ const english = {
       readingFailed: "Unable to get the reading, please try again.",
     },
   },
+  admin: {
+    title: "Admin Console",
+    subtitle: "Review user accounts and adjust privileges.",
+    filters: {
+      searchLabel: "Search",
+      searchPlaceholder: "Search by name...",
+      typeLabel: "Filter by type",
+      allTypes: "All types",
+    },
+    users: {
+      heading: "Accounts",
+      name: "Name",
+      email: "Email",
+      accountType: "Account type",
+      empty: "No users to display.",
+      noResults: "No users match your filters.",
+      visibleCount: "Showing {visible} of {total} matches.",
+    },
+    accountTypes: {
+      standard: "Standard",
+      plus: "Plus",
+      admin: "Admin",
+    },
+    messages: {
+      updated: "Account type updated.",
+      updateFailed: "Unable to update account type.",
+    },
+  },
 };
 
 const vietnamese = {
@@ -430,6 +459,7 @@ const vietnamese = {
     friends: "Bạn bè",
     notifications: "Thông báo",
     tarot: "Tarot",
+    admin: "Quản trị",
   },
   profile: {
     yearsOld: "tuổi",
@@ -636,6 +666,34 @@ const vietnamese = {
       readingFailed: "Không thể lấy kết quả, hãy thử lại.",
     },
   },
+  admin: {
+    title: "Bảng điều khiển Admin",
+    subtitle: "Xem danh sách người dùng và cập nhật quyền truy cập.",
+    filters: {
+      searchLabel: "Tìm kiếm",
+      searchPlaceholder: "Nhập tên...",
+      typeLabel: "Lọc theo loại tài khoản",
+      allTypes: "Tất cả",
+    },
+    users: {
+      heading: "Tài khoản",
+      name: "Tên",
+      email: "Email",
+      accountType: "Loại tài khoản",
+      empty: "Chưa có người dùng.",
+      noResults: "Không tìm thấy người dùng phù hợp.",
+      visibleCount: "Đang hiển thị {visible}/{total} người dùng.",
+    },
+    accountTypes: {
+      standard: "Tiêu chuẩn",
+      plus: "Plus",
+      admin: "Admin",
+    },
+    messages: {
+      updated: "Đã cập nhật loại tài khoản.",
+      updateFailed: "Không thể cập nhật loại tài khoản.",
+    },
+  },
 };
 
 const german = {
@@ -750,6 +808,7 @@ const german = {
     friends: "Freunde",
     notifications: "Benachrichtigungen",
     tarot: "Tarot",
+    admin: "Admin",
   },
   profile: {
     yearsOld: "Jahre alt",
@@ -955,6 +1014,34 @@ const german = {
       refillFailed: "Energie kann nicht aufgefüllt werden.",
       readingFailed:
         "Lesung konnte nicht abgerufen werden. Versuche es erneut.",
+    },
+  },
+  admin: {
+    title: "Adminbereich",
+    subtitle: "Verwalte Benutzerkonten und Berechtigungen.",
+    filters: {
+      searchLabel: "Suche",
+      searchPlaceholder: "Nach Namen suchen...",
+      typeLabel: "Nach Kontotyp filtern",
+      allTypes: "Alle Typen",
+    },
+    users: {
+      heading: "Benutzer",
+      name: "Name",
+      email: "E-Mail",
+      accountType: "Kontotyp",
+      empty: "Keine Benutzer vorhanden.",
+      noResults: "Keine Benutzer entsprechen den Filtern.",
+      visibleCount: "{visible} von {total} Treffern werden angezeigt.",
+    },
+    accountTypes: {
+      standard: "Standard",
+      plus: "Plus",
+      admin: "Admin",
+    },
+    messages: {
+      updated: "Kontotyp aktualisiert.",
+      updateFailed: "Kontotyp konnte nicht aktualisiert werden.",
     },
   },
 };

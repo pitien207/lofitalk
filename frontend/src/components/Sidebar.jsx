@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, HomeIcon, UsersIcon, ShuffleIcon } from "lucide-react";
+import { BellIcon, HomeIcon, UsersIcon, ShuffleIcon, ShieldIcon } from "lucide-react";
 import logo from "../pictures/others/LofiTalk_logo.png";
 import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
@@ -68,6 +68,18 @@ const Sidebar = () => {
           <ShuffleIcon className="size-5 text-base-content opacity-70" />
           <span>{t("sidebar.tarot")}</span>
         </Link>
+
+        {authUser?.accountType === "admin" && (
+          <Link
+            to="/admin"
+            className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+              currentPath === "/admin" ? "btn-active" : ""
+            }`}
+          >
+            <ShieldIcon className="size-5 text-base-content opacity-70" />
+            <span>{t("sidebar.admin")}</span>
+          </Link>
+        )}
       </nav>
 
       {/* USER PROFILE SECTION */}

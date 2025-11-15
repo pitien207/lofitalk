@@ -135,3 +135,15 @@ export async function declineFriendRequest(requestId) {
   const response = await axiosInstance.put(`/users/friend-request/${requestId}/decline`);
   return response.data;
 }
+
+export async function getAdminUsers() {
+  const response = await axiosInstance.get("/admin/users");
+  return response.data;
+}
+
+export async function updateUserAccountType(userId, accountType) {
+  const response = await axiosInstance.put(`/admin/users/${userId}/account-type`, {
+    accountType,
+  });
+  return response.data;
+}

@@ -10,6 +10,7 @@ import ChatPage from "./pages/ChatPage.jsx";
 import OnboardingPage from "./pages/OnboardingPage.jsx";
 import TarotPage from "./pages/TarotPage.jsx";
 import UserProfilePage from "./pages/UserProfilePage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 
 import { Toaster } from "react-hot-toast";
 
@@ -24,6 +25,7 @@ const App = () => {
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;
+  const isAdmin = authUser?.accountType === "admin";
 
   if (isLoading) return <PageLoader />;
 
@@ -130,6 +132,18 @@ const App = () => {
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            isAuthenticated && isOnboarded && isAdmin ? (
+              <Layout showSidebar={true}>
+                <AdminPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : isOnboarded ? "/" : "/onboarding"} />
             )
           }
         />
