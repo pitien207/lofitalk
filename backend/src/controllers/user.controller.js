@@ -33,6 +33,37 @@ const extractNumericHeight = (heightString = '') => {
   return match ? parseFloat(match[1]) : null;
 };
 
+const ONLINE_THRESHOLD_MINUTES = parseInt(process.env.USER_ONLINE_MINUTES || '5', 10);
+const ONLINE_THRESHOLD_MS = ONLINE_THRESHOLD_MINUTES * 60 * 1000;
+
+const getLastActiveDate = (userLike) => {
+  if (!userLike?.lastActiveAt) return null;
+  const date = new Date(userLike.lastActiveAt);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const isUserCurrentlyOnline = (userLike) => {
+  if (!userLike?.isOnline) return false;
+  const lastActive = getLastActiveDate(userLike);
+  if (!lastActive) return false;
+  return Date.now() - lastActive.getTime() <= ONLINE_THRESHOLD_MS;
+};
+
+const toPlainObject = (value) => {
+  if (!value) return value;
+  if (typeof value.toObject === 'function') {
+    return value.toObject();
+  }
+  return { ...value };
+};
+
+const withPresence = (userLike) => {
+  if (!userLike) return null;
+  const base = toPlainObject(userLike);
+  base.isOnline = isUserCurrentlyOnline(userLike);
+  return base;
+};
+
 const isSameUTCDay = (left, right) => {
   if (!left || !right) return false;
   return (
@@ -159,8 +190,10 @@ export async function getRecommendedUsers(req, res) {
       return meetsHeight && hobbiesMatch && petsMatch;
     });
 
+    const normalizedUsers = filtered.slice(0, 5).map(withPresence);
+
     res.status(200).json({
-      users: filtered.slice(0, 5),
+      users: normalizedUsers,
       energy: currentEnergy,
     });
   } catch (error) {
@@ -173,9 +206,16 @@ export async function getMyFriends(req, res) {
   try {
     const user = await User.findById(req.user.id)
       .select("friends")
-      .populate("friends", "fullName profilePic country city");
+      .populate(
+        "friends",
+        "fullName profilePic country city location isOnline lastActiveAt"
+      );
 
-    res.status(200).json(user.friends);
+    const friendsWithPresence = (user?.friends || []).map((friend) =>
+      withPresence(friend)
+    );
+
+    res.status(200).json(friendsWithPresence);
   } catch (error) {
     console.error("Error in getMyFriends controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -378,7 +418,7 @@ export async function getUserProfile(req, res) {
 
     const user = await User.findById(id)
       .select(
-        "fullName profilePic bio gender birthDate country city height education hobbies pets friends location createdAt"
+        "fullName profilePic bio gender birthDate country city height education hobbies pets friends location createdAt isOnline lastActiveAt"
       )
       .lean();
 
@@ -397,8 +437,11 @@ export async function getUserProfile(req, res) {
 
     const { friends, ...rest } = user;
 
+    const normalizedOnlineStatus = isUserCurrentlyOnline(user);
+
     res.status(200).json({
       ...rest,
+      isOnline: normalizedOnlineStatus,
       isSelf,
       isFriend,
       pendingRequestSent: Boolean(pendingSent),

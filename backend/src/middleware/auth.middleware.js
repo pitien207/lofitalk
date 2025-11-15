@@ -3,6 +3,10 @@ import User from "../models/User.js";
 
 const ENERGY_MAX = 7;
 const DAILY_ENERGY_GAIN = 1;
+const PRESENCE_TOUCH_INTERVAL_MS = parseInt(
+  process.env.USER_PRESENCE_TOUCH_MS || "60000",
+  10
+);
 
 const refreshDailyEnergy = (user) => {
   if (typeof user.energy !== "number" || user.energy > ENERGY_MAX) {
@@ -61,7 +65,19 @@ export const protectRoute = async (req, res, next) => {
         .json({ message: "Not authorized, user not found" });
     }
 
-    const shouldSave = refreshDailyEnergy(user);
+    const now = new Date();
+    const lastActiveAt = user.lastActiveAt ? new Date(user.lastActiveAt) : null;
+    const shouldTouchPresence =
+      !user.isOnline ||
+      !lastActiveAt ||
+      now.getTime() - lastActiveAt.getTime() >= PRESENCE_TOUCH_INTERVAL_MS;
+
+    if (shouldTouchPresence) {
+      user.isOnline = true;
+      user.lastActiveAt = now;
+    }
+
+    const shouldSave = refreshDailyEnergy(user) || shouldTouchPresence;
     if (shouldSave) {
       await user.save();
     }

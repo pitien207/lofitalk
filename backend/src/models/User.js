@@ -80,6 +80,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+    },
     accountType: {
       type: String,
       enum: ["standard", "plus", "admin"],

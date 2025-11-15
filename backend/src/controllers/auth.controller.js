@@ -132,6 +132,10 @@ export async function login(req, res) {
     if (!isPasswordCorrect)
       return res.status(401).json({ message: "Invalid email or password" });
 
+    user.isOnline = true;
+    user.lastActiveAt = new Date();
+    await user.save();
+
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",
     });
@@ -145,9 +149,28 @@ export async function login(req, res) {
   }
 }
 
-export function logout(req, res) {
-  res.clearCookie("jwt");
-  res.status(200).json({ success: true, message: "Logout successful" });
+export async function logout(req, res) {
+  try {
+    const token = req.cookies?.jwt;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        if (decoded?.userId) {
+          await User.findByIdAndUpdate(decoded.userId, {
+            $set: {
+              isOnline: false,
+              lastActiveAt: new Date(),
+            },
+          });
+        }
+      } catch (error) {
+        console.log("Failed to update user presence on logout:", error.message);
+      }
+    }
+  } finally {
+    res.clearCookie("jwt");
+    res.status(200).json({ success: true, message: "Logout successful" });
+  }
 }
 
 export async function verifySignupCode(req, res) {

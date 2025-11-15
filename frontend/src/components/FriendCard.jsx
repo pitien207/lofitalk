@@ -1,13 +1,28 @@
 import { Link } from "react-router";
 import { MapPinIcon } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
+import { useTranslation } from "../languages/useTranslation";
+import { formatRelativeTimeFromNow } from "../utils/time";
 
 const FriendCard = ({ friend }) => {
+  const { t, language } = useTranslation();
   const locationText =
     [friend.city, friend.country].filter(Boolean).join(", ") ||
     friend.location ||
     "";
   const flagSrc = getCountryFlag(friend.country, friend.city, friend.location);
+
+  let presenceLabel = t("common.presence.offlineUnknown");
+  if (friend?.isOnline) {
+    presenceLabel = t("common.presence.online");
+  } else if (friend?.lastActiveAt) {
+    const relative = formatRelativeTimeFromNow(friend.lastActiveAt, language);
+    presenceLabel = relative
+      ? t("common.presence.offline", { timeAgo: relative })
+      : t("common.presence.offlineUnknown");
+  }
+
+  const presenceDotClass = friend?.isOnline ? "bg-success" : "bg-base-300";
 
   return (
     <div className="card bg-base-200 hover:shadow-md transition-shadow">
@@ -17,10 +32,16 @@ const FriendCard = ({ friend }) => {
           to={`/profile/${friend._id}`}
           className="flex items-center gap-3 mb-3 hover:text-primary transition-colors"
         >
-          <div className="avatar size-12">
+          <div className="relative avatar size-12">
             <img src={friend.profilePic} alt={friend.fullName} />
+            <span
+              className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-200 ${presenceDotClass}`}
+            />
           </div>
-          <h3 className="font-semibold truncate">{friend.fullName}</h3>
+          <div className="flex flex-col">
+            <h3 className="font-semibold truncate">{friend.fullName}</h3>
+            <p className="text-xs text-base-content/70">{presenceLabel}</p>
+          </div>
         </Link>
 
         {locationText && (

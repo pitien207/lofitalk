@@ -9,6 +9,11 @@ const english = {
     loading: "Loading...",
     prev: "Previous",
     next: "Next",
+    presence: {
+      online: "Online now",
+      offline: "Last active {timeAgo}",
+      offlineUnknown: "Last active recently",
+    },
   },
   auth: {
     signupLogoTagline: "Slow down and find your cozy space to chat.",
@@ -449,6 +454,11 @@ const vietnamese = {
     loading: "Đang tải...",
     prev: "Trang trước",
     next: "Trang sau",
+    presence: {
+      online: "Đang hoạt động",
+      offline: "Hoạt động {timeAgo}",
+      offlineUnknown: "Hoạt động gần đây",
+    },
   },
   auth: {
     signupLogoTagline: "Không gian thư giãn để trò chuyện mỗi ngày.",
@@ -891,6 +901,11 @@ const german = {
     loading: "Wird geladen...",
     prev: "Zurück",
     next: "Weiter",
+    presence: {
+      online: "Jetzt online",
+      offline: "Zuletzt aktiv {timeAgo}",
+      offlineUnknown: "Kürzlich aktiv",
+    },
   },
   auth: {
     signupLogoTagline: "Finde deinen ruhigen Ort für entspannte Gespräche.",
@@ -1336,5 +1351,7 @@ export const translations = {
   Vietnamese: vietnamese,
   German: german,
 };
+
+
 
 

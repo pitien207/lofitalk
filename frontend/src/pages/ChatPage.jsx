@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery } from "@tanstack/react-query";
-import { getStreamToken } from "../lib/api";
+import { getStreamToken, getUserProfile } from "../lib/api";
 
 import {
   Channel,
-  ChannelHeader,
   Chat,
   MessageInput,
   MessageList,
@@ -19,6 +18,8 @@ import toast from "react-hot-toast";
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
 import EmojiPickerButton from "../components/EmojiPickerButton";
+import { useTranslation } from "../languages/useTranslation";
+import { formatRelativeTimeFromNow } from "../utils/time";
 
 const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -30,11 +31,19 @@ const ChatPage = () => {
   const [loading, setLoading] = useState(true);
 
   const { authUser } = useAuthUser();
+  const { t, language } = useTranslation();
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
     queryFn: getStreamToken,
     enabled: !!authUser, // this will run only when authUser is available
+  });
+
+  const { data: chatPartner, isLoading: isPartnerLoading } = useQuery({
+    queryKey: ["user-profile", targetUserId],
+    queryFn: () => getUserProfile(targetUserId),
+    enabled: Boolean(authUser && targetUserId),
+    staleTime: 30 * 1000,
   });
 
   useEffect(() => {
@@ -90,9 +99,10 @@ const ChatPage = () => {
 
   const handleVideoCall = () => {
     if (channel) {
-      const callUrl = process.env.NODE_ENV === "production"
-        ? `https://lofitalk.onrender.com/call/${channel.id}`
-        : `${window.location.origin}/call/${channel.id}`;
+      const callUrl =
+        process.env.NODE_ENV === "production"
+          ? `https://lofitalk.onrender.com/call/${channel.id}`
+          : `${window.location.origin}/call/${channel.id}`;
 
       channel.sendMessage({
         text: `I've started a video call. Join me here: ${callUrl}`,
@@ -102,20 +112,65 @@ const ChatPage = () => {
     }
   };
 
+  const presenceText = useMemo(() => {
+    if (!chatPartner) return "";
+    if (chatPartner.isOnline) return t("common.presence.online");
+    if (chatPartner.lastActiveAt) {
+      const relative = formatRelativeTimeFromNow(
+        chatPartner.lastActiveAt,
+        language
+      );
+      return relative
+        ? t("common.presence.offline", { timeAgo: relative })
+        : t("common.presence.offlineUnknown");
+    }
+    return t("common.presence.offlineUnknown");
+  }, [chatPartner, language, t]);
+
+  const presenceDotClass = chatPartner?.isOnline ? "bg-success" : "bg-base-300";
+  const partnerInitial =
+    chatPartner?.fullName?.trim().charAt(0)?.toUpperCase() || "?";
+  const partnerName = chatPartner?.fullName || t("common.loading");
+
   if (loading || !chatClient || !channel) return <ChatLoader />;
 
   return (
     <div className="h-[93vh]">
       <Chat client={chatClient}>
         <Channel channel={channel} EmojiPicker={EmojiPickerButton}>
-          <div className="w-full relative">
-            <CallButton handleVideoCall={handleVideoCall} />
-            <Window>
-              <ChannelHeader />
-              <MessageList />
-              <MessageInput focus />
-            </Window>
-          </div>
+          <Window>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-200 bg-base-100/90 px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative">
+                  {chatPartner?.profilePic ? (
+                    <img
+                      src={chatPartner.profilePic}
+                      alt={chatPartner.fullName}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-base-200 text-sm font-semibold text-base-content/70">
+                      {partnerInitial}
+                    </div>
+                  )}
+                  {chatPartner && (
+                    <span
+                      className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-100 ${presenceDotClass}`}
+                    />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{partnerName}</p>
+                  <p className="text-xs text-base-content/70">
+                    {isPartnerLoading && !chatPartner ? t("common.loading") : presenceText}
+                  </p>
+                </div>
+              </div>
+              <CallButton handleVideoCall={handleVideoCall} />
+            </div>
+            <MessageList />
+            <MessageInput focus />
+          </Window>
           <Thread />
         </Channel>
       </Chat>
