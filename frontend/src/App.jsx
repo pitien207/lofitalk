@@ -12,6 +12,7 @@ import TarotPage from "./pages/TarotPage.jsx";
 import UserProfilePage from "./pages/UserProfilePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import FortuneCookiePage from "./pages/FortuneCookiePage.jsx";
+import MobileAppPage from "./pages/MobileAppPage.jsx";
 
 import { Toaster } from "react-hot-toast";
 
@@ -119,6 +120,18 @@ const App = () => {
             isAuthenticated && isOnboarded ? (
               <Layout showSidebar={true}>
                 <FortuneCookiePage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/mobile-app"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <MobileAppPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />

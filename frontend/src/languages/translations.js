@@ -186,6 +186,30 @@ const english = {
         "Trust that rest today fuels creativity tomorrow.",
       ],
     },
+    mobileApp: {
+      linkLabel: "Mobile App",
+    },
+  },
+  mobileAppPage: {
+    heroBadge: "Mobile companion",
+    heroTitle: "LofiTalk, always within reach",
+    heroSubtitle:
+      "Stay connected with your cozy conversations, tarot refills, and gentle reminders wherever you are.",
+    downloadButton: "Open mobile app",
+    downloadUnavailable: "Download link coming soon",
+    downloadHint: "Works on iOS and Android via our beta launcher.",
+    featuresTitle: "Designed for slow, mindful connections",
+    features: [
+      "Real-time push notifications so you never miss a calm check-in.",
+      "Full sync with your web profile, tarot energy, and fortune cookies.",
+      "Lightweight interface that keeps chats and voice notes smooth everywhere.",
+    ],
+    stepsTitle: "How to get the beta build",
+    steps: [
+      "Tap the button above to open the LofiTalk mobile link.",
+      "Follow the installation prompts for your platform and allow the beta profile.",
+      "Sign in with the same account you use on the web to keep everything in sync.",
+    ],
   },
   profile: {
     yearsOld: "years old",
@@ -602,6 +626,30 @@ const vietnamese = {
         "Tin rằng nghỉ ngơi hôm nay nuôi dưỡng sáng tạo ngày mai.",
       ],
     },
+    mobileApp: {
+      linkLabel: "Ứng dụng di động",
+    },
+  },
+  mobileAppPage: {
+    heroBadge: "Ứng dụng di động",
+    heroTitle: "LofiTalk bên bạn mọi lúc",
+    heroSubtitle:
+      "Mang theo những cuộc trò chuyện nhẹ nhàng, năng lượng tarot và lời nhắc dễ thương dù bạn ở đâu.",
+    downloadButton: "Mở ứng dụng di động",
+    downloadUnavailable: "Link tải sẽ có sớm",
+    downloadHint: "Hoạt động trên iOS và Android thông qua bản beta riêng.",
+    featuresTitle: "Tạo ra cho nhịp kết nối chậm rãi",
+    features: [
+      "Thông báo đẩy theo thời gian thực để bạn không bỏ lỡ lời hỏi thăm nhẹ nhàng nào.",
+      "Đồng bộ đầy đủ với hồ sơ web, năng lượng tarot và fortune cookie của bạn.",
+      "Giao diện gọn nhẹ giữ cho chat và ghi âm mượt mà ở mọi nơi.",
+    ],
+    stepsTitle: "Cách nhận bản beta",
+    steps: [
+      "Bấm nút phía trên để mở liên kết ứng dụng LofiTalk.",
+      "Làm theo hướng dẫn cài đặt cho thiết bị của bạn và chấp nhận hồ sơ beta.",
+      "Đăng nhập bằng cùng tài khoản bạn dùng trên web để giữ mọi thứ đồng bộ.",
+    ],
   },
   profile: {
     yearsOld: "tuổi",
@@ -1022,6 +1070,30 @@ const german = {
         "Vertrau darauf, dass Ruhe heute die Kreativität von morgen nährt.",
       ],
     },
+    mobileApp: {
+      linkLabel: "Mobile App",
+    },
+  },
+  mobileAppPage: {
+    heroBadge: "Mobile Begleitung",
+    heroTitle: "LofiTalk immer griffbereit",
+    heroSubtitle:
+      "Bleib mit deinen gemütlichen Gesprächen, Tarot-Energie und sanften Erinnerungen verbunden – egal wo du bist.",
+    downloadButton: "Mobile App öffnen",
+    downloadUnavailable: "Download-Link folgt bald",
+    downloadHint: "Funktioniert auf iOS und Android über unseren Beta-Launcher.",
+    featuresTitle: "Gemacht für langsame, achtsame Verbindungen",
+    features: [
+      "Echtzeit-Push-Benachrichtigungen, damit du keinen ruhigen Check-in verpasst.",
+      "Vollständige Synchronisierung mit deinem Webprofil, Tarot-Energie und Glückskeksen.",
+      "Leichtes Interface, das Chats und Sprachnachrichten überall flüssig hält.",
+    ],
+    stepsTitle: "So erhältst du den Beta-Build",
+    steps: [
+      "Tippe auf den Button oben, um den mobilen LofiTalk-Link zu öffnen.",
+      "Folge den Installationsschritten für deine Plattform und erlaube das Beta-Profil.",
+      "Melde dich mit demselben Konto wie im Web an, damit alles synchron bleibt.",
+    ],
   },
   profile: {
     yearsOld: "Jahre alt",

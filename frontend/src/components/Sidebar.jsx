@@ -1,6 +1,14 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, CookieIcon, HomeIcon, ShuffleIcon, ShieldIcon, UsersIcon } from "lucide-react";
+import {
+  BellIcon,
+  CookieIcon,
+  HomeIcon,
+  ShuffleIcon,
+  ShieldIcon,
+  SmartphoneIcon,
+  UsersIcon,
+} from "lucide-react";
 import logo from "../pictures/others/LofiTalk_logo.png";
 import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
@@ -90,6 +98,16 @@ const Sidebar = () => {
             <span>{t("sidebar.admin")}</span>
           </Link>
         )}
+
+        <Link
+          to="/mobile-app"
+          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+            currentPath === "/mobile-app" ? "btn-active" : ""
+          }`}
+        >
+          <SmartphoneIcon className="size-5 text-base-content opacity-70" />
+          <span>{t("sidebar.mobileApp.linkLabel")}</span>
+        </Link>
       </nav>
 
       {/* USER PROFILE SECTION */}
