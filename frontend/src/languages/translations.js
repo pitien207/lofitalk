@@ -117,6 +117,30 @@ const english = {
     notifications: "Notifications",
     tarot: "Tarot",
     admin: "Admin",
+    fortune: {
+      linkLabel: "Fortune Cookie",
+      title: "Fortune cookie ritual",
+      subtitle: "Crack it open for a tiny note of encouragement.",
+      pageDescription:
+        "Each click shuffles a gentle reminder written with cozy care. Slow down, breathe in, and let the message guide your next move.",
+      hint: "Tap to crack it open",
+      openedHint: "Reset below for another mindful note.",
+      newFortune: "Reset cookie",
+      fallback: "Slow down, breathe in, and trust your pace.",
+      shareHint: "Love this note? Share it with a friend who needs the same vibe.",
+      ritualSteps: [
+        "Set a soft intention or question in your mind.",
+        "Tap the glowing cookie and watch it crack with light.",
+        "Keep the note close and pass the calm energy forward.",
+      ],
+      messages: [
+        "Today is a gentle day to share something small but true.",
+        "Your calm presence already changes the room.",
+        "Reach out to one friend and see where the chat drifts.",
+        "Sip tea, slow down, and let ideas grow quietly.",
+        "Someone is grateful you exist—even if they forgot to say it.",
+      ],
+    },
   },
   profile: {
     yearsOld: "years old",
@@ -464,6 +488,30 @@ const vietnamese = {
     notifications: "Thông báo",
     tarot: "Tarot",
     admin: "Quản trị",
+    fortune: {
+      linkLabel: "Bánh quy may mắn",
+      title: "Nghi thức bánh quy may mắn",
+      subtitle: "Bấm mở bánh để nhận một lời nhắn dễ thương.",
+      pageDescription:
+        "Mỗi lần bấm là một lời nhắc nhẹ nhàng được viết riêng cho nhịp sống chậm. Hít sâu, mỉm cười và để lời nhắn dẫn lối.",
+      hint: "Chạm để bẻ đôi",
+      openedHint: "Muốn lời nhắn khác? Đặt lại bên dưới nhé.",
+      newFortune: "Đặt lại bánh",
+      fallback: "Hít sâu, mỉm cười và tin vào nhịp sống của bạn.",
+      shareHint: "Thích lời nhắn này? Chia sẻ cho một người bạn cũng cần vibes ấy nhé.",
+      ritualSteps: [
+        "Khẽ đặt ra một mong muốn hay câu hỏi trong đầu.",
+        "Chạm vào chiếc bánh phát sáng và xem nó tách ra đầy nhiệm màu.",
+        "Giữ lời nhắn bên mình và lan tỏa năng lượng bình yên ấy.",
+      ],
+      messages: [
+        "Hôm nay rất hợp để chia sẻ một điều nhỏ nhưng chân thành.",
+        "Sự bình yên của bạn khiến căn phòng dịu lại rồi đấy.",
+        "Hãy nhắn cho một người bạn và xem câu chuyện sẽ trôi về đâu.",
+        "Nhâm nhi tách trà, chậm lại và để ý tưởng nảy mầm.",
+        "Có người biết ơn vì bạn tồn tại, dù họ quên nói điều đó.",
+      ],
+    },
   },
   profile: {
     yearsOld: "tuổi",
@@ -815,6 +863,30 @@ const german = {
     notifications: "Benachrichtigungen",
     tarot: "Tarot",
     admin: "Admin",
+    fortune: {
+      linkLabel: "Glückskeks",
+      title: "Glückskeks-Ritual",
+      subtitle: "Klick ihn an und hol dir eine kleine Ermutigung.",
+      pageDescription:
+        "Jeder Klick bringt eine sanfte Erinnerung für einen langsameren Tag. Atme tief ein, entspann dich und lass dich leiten.",
+      hint: "Tippe, um ihn zu knacken",
+      openedHint: "Noch eine Nachricht? Setz ihn unten zurück.",
+      newFortune: "Keks zurücksetzen",
+      fallback: "Atme ruhig ein und vertraue deinem Tempo.",
+      shareHint: "Magst du diese Botschaft? Schick sie an jemanden mit gleichem Vibe.",
+      ritualSteps: [
+        "Formuliere eine leise Intention oder Frage in Gedanken.",
+        "Tippe auf den leuchtenden Keks und beobachte den magischen Riss.",
+        "Bewahre die Nachricht auf und gib die entspannte Energie weiter.",
+      ],
+      messages: [
+        "Heute ist ein guter Tag, um etwas Kleines aber Echtes zu teilen.",
+        "Deine Ruhe verändert schon jetzt die Stimmung im Raum.",
+        "Melde dich bei einem Freund und schau, wohin das Gespräch treibt.",
+        "Trink einen Tee, verlangsame dich und lass Gedanken leise wachsen.",
+        "Jemand ist dankbar, dass es dich gibt – auch wenn er es nicht ausspricht.",
+      ],
+    },
   },
   profile: {
     yearsOld: "Jahre alt",

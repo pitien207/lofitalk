@@ -11,6 +11,7 @@ import OnboardingPage from "./pages/OnboardingPage.jsx";
 import TarotPage from "./pages/TarotPage.jsx";
 import UserProfilePage from "./pages/UserProfilePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+import FortuneCookiePage from "./pages/FortuneCookiePage.jsx";
 
 import { Toaster } from "react-hot-toast";
 
@@ -106,6 +107,18 @@ const App = () => {
             isAuthenticated && isOnboarded ? (
               <Layout showSidebar={true}>
                 <TarotPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/fortune"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <FortuneCookiePage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
