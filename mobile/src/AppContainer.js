@@ -22,6 +22,7 @@ const AppContainer = () => {
     loading,
     error,
     user,
+    isHydrating,
     login,
     signOut,
     handleEmailChange,
@@ -105,6 +106,22 @@ const AppContainer = () => {
       disconnectChat();
     }
   }, [connectChat, disconnectChat, user]);
+
+  useEffect(() => {
+    if (user && friends.length === 0) {
+      loadFriends().catch(() => null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, friends.length]);
+
+  if (isHydrating) {
+    return (
+      <View style={styles.screen}>
+        <StatusBar style="light" />
+        <AppBackground />
+      </View>
+    );
+  }
 
   if (showIntro) {
     return (
