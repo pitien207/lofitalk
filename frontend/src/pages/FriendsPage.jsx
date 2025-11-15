@@ -2,11 +2,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import toast from "react-hot-toast";
 import {
   getOutgoingFriendReqs,
   getRecommendedUsers,
-  getTarotEnergy,
   getUserFriends,
   sendFriendRequest,
 } from "../lib/api";
@@ -20,7 +18,6 @@ import { getCountryFlag } from "../utils/flags";
 import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 import { useTranslation } from "../languages/useTranslation";
-import "../tarot.css";
 
 const createEmptyFilters = () => ({
   gender: "",
@@ -44,8 +41,6 @@ const buildFilterParams = (filterState) => {
   return params;
 };
 
-const ENERGY_MAX = 7;
-
 const FriendsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -53,7 +48,6 @@ const FriendsPage = () => {
   const [filters, setFilters] = useState(() => createEmptyFilters());
   const [appliedFilters, setAppliedFilters] = useState(() => createEmptyFilters());
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
-  const [energy, setEnergy] = useState(null);
   const [filterAttempt, setFilterAttempt] = useState(0);
 
   const genderOptions = useMemo(
@@ -148,40 +142,6 @@ const FriendsPage = () => {
   const selectedCountry = countryCityOptions.find((country) => country.value === filters.country);
   const availableCities = selectedCountry?.cities || [];
 
-  const { data: energyData, isLoading: loadingEnergy } = useQuery({
-    queryKey: ["tarotEnergy"],
-    queryFn: getTarotEnergy,
-  });
-
-  useEffect(() => {
-    if (typeof energyData?.energy === "number") {
-      setEnergy(energyData.energy);
-    }
-  }, [energyData]);
-  const resolvedEnergy =
-    typeof energy === "number"
-      ? energy
-      : typeof energyData?.energy === "number"
-      ? energyData.energy
-      : null;
-  const normalizedEnergy = Math.max(
-    0,
-    Math.min(resolvedEnergy ?? 0, ENERGY_MAX)
-  );
-  const lastRefillLabel = energyData?.lastRefill
-    ? new Date(energyData.lastRefill).toLocaleDateString()
-    : t("tarot.energy.pendingDate");
-  const energyDisplayValue =
-    resolvedEnergy === null
-      ? (loadingEnergy ? "..." : "--")
-      : resolvedEnergy;
-  const energySummary = t("tarot.energy.summary", {
-    current: energyDisplayValue,
-    max: ENERGY_MAX,
-  });
-  const regenHint = t("tarot.energy.regenHint", { date: lastRefillLabel });
-
-
   const filterParams = useMemo(
     () => (hasAppliedFilters ? buildFilterParams(appliedFilters) : {}),
     [appliedFilters, hasAppliedFilters]
@@ -204,16 +164,6 @@ const FriendsPage = () => {
     queryKey: ["users", filterParams, filterAttempt],
     queryFn: () => getRecommendedUsers(filterParams),
     enabled: hasAppliedFilters && filterAttempt > 0,
-    onSuccess: (data) => {
-      if (typeof data?.energy === "number") {
-        setEnergy(data.energy);
-      }
-      queryClient.setQueryData(["tarotEnergy"], (prev) => {
-        if (!prev) return prev;
-        return { ...prev, energy: data?.energy ?? prev.energy };
-      });
-      queryClient.invalidateQueries({ queryKey: ["tarotEnergy"] });
-    },
   });
 
   const recommendedUsers = hasAppliedFilters
@@ -246,19 +196,6 @@ const FriendsPage = () => {
 
   const handleApplyFilters = (event) => {
     event.preventDefault();
-    if (resolvedEnergy !== null && resolvedEnergy <= 0) {
-      toast.error(t("friends.filters.energyError"));
-      return;
-    }
-    const baseEnergy =
-      typeof energy === "number"
-        ? energy
-        : typeof energyData?.energy === "number"
-        ? energyData.energy
-        : null;
-    if (baseEnergy !== null) {
-      setEnergy(Math.max(baseEnergy - 1, 0));
-    }
     setAppliedFilters({ ...filters });
     setHasAppliedFilters(true);
     setFilterAttempt((prev) => prev + 1);
@@ -270,9 +207,6 @@ const FriendsPage = () => {
     setAppliedFilters(reset);
     setHasAppliedFilters(false);
     setFilterAttempt(0);
-    setEnergy((prev) =>
-      typeof energyData?.energy === "number" ? energyData.energy : prev
-    );
   };
 
   return (
@@ -316,37 +250,6 @@ const FriendsPage = () => {
 
           <div className="card bg-base-200 border border-white/5 shadow-sm mb-8">
             <form className="p-4 sm:p-6 space-y-4" onSubmit={handleApplyFilters}>
-              <div className="flex flex-col gap-2 text-sm">
-                <span className="font-semibold">
-                  {t("friends.filters.energyTitle")}
-                </span>
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold">{energySummary}</div>
-                  <div className="energy-bar">
-                    <div
-                      className="energy-bar__fill"
-                      style={{
-                        width: `${(normalizedEnergy / ENERGY_MAX) * 100}%`,
-                      }}
-                    />
-                    <div className="energy-bar__icons">
-                      {Array.from({ length: ENERGY_MAX }).map((_, idx) => (
-                        <span
-                          key={`energy-${idx}`}
-                          className={`energy-orb ${
-                            idx < normalizedEnergy ? "energy-orb--active" : ""
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-[11px] opacity-60">{regenHint}</p>
-                </div>
-                <p className="text-xs opacity-70">
-                  {t("friends.filters.energyHint")}
-                </p>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="form-control">
                   <label className="label">
@@ -483,7 +386,6 @@ const FriendsPage = () => {
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={resolvedEnergy !== null && resolvedEnergy <= 0}
                   >
                     {t("friends.filters.apply")}
                   </button>

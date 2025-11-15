@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
 const ENERGY_MAX = 7;
-const DAILY_ENERGY_GAIN = 3;
+const DAILY_ENERGY_GAIN = 1;
 
 const refreshDailyEnergy = (user) => {
   if (typeof user.energy !== "number" || user.energy > ENERGY_MAX) {

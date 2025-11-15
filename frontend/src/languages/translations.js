@@ -246,10 +246,10 @@ const english = {
   },
   tarot: {
     title: "Tarot Reading",
-    subtitle: "Accumulate {required} energy (+3 per day) before drawing cards.",
+    subtitle: "Accumulate {required} energy (+1 per day) before drawing cards.",
     energy: {
       summary: "Energy: {current}/{max}",
-      regenHint: "+3 energy per day. Last refill: {date}",
+      regenHint: "+1 energy per day. Last refill: {date}",
       pendingDate: "...",
     },
     buttons: {
@@ -540,10 +540,10 @@ const vietnamese = {
   tarot: {
     title: "Trải bài Tarot",
     subtitle:
-      "Cần tích lũy đủ {required} năng lượng (mỗi ngày +3) trước khi bốc bài.",
+      "Cần tích lũy đủ {required} năng lượng (mỗi ngày +1) trước khi bốc bài.",
     energy: {
       summary: "Năng lượng: {current}/{max}",
-      regenHint: "+3 năng lượng mỗi ngày. Lần hồi gần nhất: {date}",
+      regenHint: "+1 năng lượng mỗi ngày. Lần hồi gần nhất: {date}",
       pendingDate: "...",
     },
     buttons: {
@@ -837,10 +837,10 @@ const german = {
   },
   tarot: {
     title: "Tarot-Lesung",
-    subtitle: "Sammle {required} Energie (+3 pro Tag), bevor du Karten ziehst.",
+    subtitle: "Sammle {required} Energie (+1 pro Tag), bevor du Karten ziehst.",
     energy: {
       summary: "Energie: {current}/{max}",
-      regenHint: "+3 Energie pro Tag. Letzte Aufladung: {date}",
+      regenHint: "+1 Energie pro Tag. Letzte Aufladung: {date}",
       pendingDate: "...",
     },
     buttons: {

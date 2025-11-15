@@ -44,14 +44,7 @@ export async function getRecommendedUsers(req, res) {
     }
 
     const currentEnergy = Math.max(0, viewer.energy ?? 0);
-    if (currentEnergy <= 0) {
-      return res.status(400).json({
-        message: 'Not enough energy. Refill in Tarot to run filters again.',
-        energy: currentEnergy,
-      });
-    }
-
-    await User.findByIdAndUpdate(viewerId, { $inc: { energy: -1 } });
+    // Temporarily disable energy gating/consumption for friend filters.
 
     const friendIds = (viewer.friends || []).map((friendId) => toObjectId(friendId));
     const excludedIds = [toObjectId(viewerId), ...friendIds];
@@ -108,11 +101,9 @@ export async function getRecommendedUsers(req, res) {
       return meetsHeight && hobbiesMatch && petsMatch;
     });
 
-    const remainingEnergy = Math.max(0, currentEnergy - 1);
-
     res.status(200).json({
       users: filtered.slice(0, 5),
-      energy: remainingEnergy,
+      energy: currentEnergy,
     });
   } catch (error) {
     console.error('Error in getRecommendedUsers controller', error.message);
