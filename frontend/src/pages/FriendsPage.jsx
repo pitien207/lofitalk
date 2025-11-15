@@ -54,6 +54,7 @@ const FriendsPage = () => {
   const [appliedFilters, setAppliedFilters] = useState(() => createEmptyFilters());
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [filterAttempt, setFilterAttempt] = useState(0);
+  const [friendsPage, setFriendsPage] = useState(1);
 
   const genderOptions = useMemo(
     () => [
@@ -180,6 +181,23 @@ const FriendsPage = () => {
     queryFn: getUserFriends,
   });
 
+  useEffect(() => {
+    setFriendsPage(1);
+  }, [friends.length]);
+
+  const FRIENDS_PER_PAGE = 10;
+  const totalFriendPages = Math.max(1, Math.ceil(friends.length / FRIENDS_PER_PAGE));
+  const boundedFriendsPage = Math.min(friendsPage, totalFriendPages);
+  useEffect(() => {
+    if (friendsPage !== boundedFriendsPage) {
+      setFriendsPage(boundedFriendsPage);
+    }
+  }, [boundedFriendsPage, friendsPage]);
+  const paginatedFriends = friends.slice(
+    (boundedFriendsPage - 1) * FRIENDS_PER_PAGE,
+    boundedFriendsPage * FRIENDS_PER_PAGE
+  );
+
   const { data: outgoingFriendReqs } = useQuery({
     queryKey: ["outgoingFriendReqs"],
     queryFn: getOutgoingFriendReqs,
@@ -257,10 +275,37 @@ const FriendsPage = () => {
         ) : friends.length === 0 ? (
           <NoFriendsFound />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {friends.map((friend) => (
-              <FriendCard key={friend._id} friend={friend} />
-            ))}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {paginatedFriends.map((friend) => (
+                <FriendCard key={friend._id} friend={friend} />
+              ))}
+            </div>
+            {friends.length > FRIENDS_PER_PAGE && (
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => setFriendsPage((page) => Math.max(1, page - 1))}
+                  disabled={boundedFriendsPage === 1}
+                >
+                  {t("common.prev") || "Prev"}
+                </button>
+                <span className="text-sm font-semibold">
+                  {boundedFriendsPage} / {totalFriendPages}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() =>
+                    setFriendsPage((page) => Math.min(totalFriendPages, page + 1))
+                  }
+                  disabled={boundedFriendsPage === totalFriendPages}
+                >
+                  {t("common.next") || "Next"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

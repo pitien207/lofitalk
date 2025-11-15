@@ -7,6 +7,8 @@
 const english = {
   common: {
     loading: "Loading...",
+    prev: "Previous",
+    next: "Next",
   },
   auth: {
     signupLogoTagline: "Slow down and find your cozy space to chat.",
@@ -352,6 +354,8 @@ const english = {
 const vietnamese = {
   common: {
     loading: "Đang tải...",
+    prev: "Trang trước",
+    next: "Trang sau",
   },
   auth: {
     signupLogoTagline: "Không gian thư giãn để trò chuyện mỗi ngày.",
@@ -699,6 +703,8 @@ const vietnamese = {
 const german = {
   common: {
     loading: "Wird geladen...",
+    prev: "Zurück",
+    next: "Weiter",
   },
   auth: {
     signupLogoTagline: "Finde deinen ruhigen Ort für entspannte Gespräche.",
