@@ -833,10 +833,10 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Inspired by</Text>
-              <Text style={styles.aboutValue}>Codesistency</Text>
+              <Text style={styles.aboutValue}>Codesistency • Fremdchat • avocadorable</Text>
             </View>
             <Text style={styles.aboutFooter}>
-              LofiTalk mobile beta. Thanks for supporting our cozy community.
+              LofiTalk mobile companion. Take your cozy chats anywhere.
             </Text>
             <TouchableOpacity
               style={[buttonStyles.primaryButton, styles.aboutCloseButton]}

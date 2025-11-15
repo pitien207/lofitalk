@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Image, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
@@ -13,6 +13,7 @@ import useFriends from "./hooks/useFriends";
 import useChat from "./hooks/useChat";
 import { MENU_ITEMS } from "./constants";
 import { BRAND_COLORS } from "./theme/colors";
+import Logo from "../assets/LofiTalk_logo.png";
 
 const AppContainer = () => {
   const {
@@ -54,6 +55,8 @@ const AppContainer = () => {
     sendMessage,
   } = useChat();
   const [activePage, setActivePage] = useState("home");
+  const [showIntro, setShowIntro] = useState(true);
+  const introOpacity = useRef(new Animated.Value(1)).current;
 
   const handleLogin = async () => {
     const data = await login();
@@ -85,12 +88,39 @@ const AppContainer = () => {
   };
 
   useEffect(() => {
+    const animation = Animated.timing(introOpacity, {
+      toValue: 0,
+      duration: 500,
+      delay: 900,
+      useNativeDriver: true,
+    });
+    animation.start(({ finished }) => finished && setShowIntro(false));
+    return () => animation.stop();
+  }, [introOpacity]);
+
+  useEffect(() => {
     if (user) {
       connectChat(user);
     } else {
       disconnectChat();
     }
   }, [connectChat, disconnectChat, user]);
+
+  if (showIntro) {
+    return (
+      <View style={styles.screen}>
+        <StatusBar style="light" />
+        <AppBackground />
+        <Animated.View style={[styles.introContent, { opacity: introOpacity }]}>
+          <View style={styles.introGlowOne} />
+          <View style={styles.introGlowTwo} />
+          <Image source={Logo} style={styles.introLogo} />
+          <Text style={styles.introTagline}>LofiTalk</Text>
+          <Text style={styles.introTaglineSub}>Cozy chats • Calm company</Text>
+        </Animated.View>
+      </View>
+    );
+  }
 
   if (!user) {
     return (
@@ -181,6 +211,45 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 32,
     paddingBottom: 120,
+  },
+  introContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    position: "relative",
+  },
+  introLogo: {
+    width: 96,
+    height: 96,
+    borderRadius: 32,
+  },
+  introTagline: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: BRAND_COLORS.text,
+    letterSpacing: 1,
+  },
+  introTaglineSub: {
+    fontSize: 14,
+    color: BRAND_COLORS.muted,
+    letterSpacing: 1,
+  },
+  introGlowOne: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    top: "25%",
+  },
+  introGlowTwo: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: "rgba(255,200,150,0.08)",
+    bottom: "30%",
   },
 });
 
