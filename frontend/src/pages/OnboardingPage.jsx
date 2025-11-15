@@ -31,6 +31,7 @@ const OnboardingPage = () => {
   const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const canUploadAvatar = authUser?.accountType === "admin";
 
   const parsedBirthDate = authUser?.birthDate
     ? new Date(authUser.birthDate)
@@ -341,10 +342,15 @@ const OnboardingPage = () => {
   };
 
   const handleUploadClick = () => {
+    if (!canUploadAvatar) return;
     fileInputRef.current?.click();
   };
 
   const handleProfilePicUpload = (event) => {
+    if (!canUploadAvatar) {
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -361,10 +367,10 @@ const OnboardingPage = () => {
     }
 
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormState((prev) => ({ ...prev, profilePic: reader.result }));
-      toast.success(t("language.uploadSuccess"));
-    };
+      reader.onloadend = () => {
+        setFormState((prev) => ({ ...prev, profilePic: reader.result }));
+        toast.success(t("language.uploadSuccess"));
+      };
     reader.readAsDataURL(file);
   };
 
@@ -398,31 +404,35 @@ const OnboardingPage = () => {
               </div>
 
               {/* Generate Random Avatar BTN */}
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRandomAvatar}
-                  className="btn btn-accent"
-                >
-                  <ShuffleIcon className="size-4 mr-2" />
-                  {t("onboarding.randomAvatar")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUploadClick}
-                  className="btn btn-outline"
-                >
-                  <UploadIcon className="size-4 mr-2" />
-                  {t("onboarding.uploadPhoto")}
-                </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  onChange={handleProfilePicUpload}
-                  className="hidden"
-                />
-              </div>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRandomAvatar}
+                    className="btn btn-accent"
+                  >
+                    <ShuffleIcon className="size-4 mr-2" />
+                    {t("onboarding.randomAvatar")}
+                  </button>
+                  {canUploadAvatar && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleUploadClick}
+                        className="btn btn-outline"
+                      >
+                        <UploadIcon className="size-4 mr-2" />
+                        {t("onboarding.uploadPhoto")}
+                      </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleProfilePicUpload}
+                        className="hidden"
+                      />
+                    </>
+                  )}
+                </div>
             </div>
 
             {/* FULL NAME */}

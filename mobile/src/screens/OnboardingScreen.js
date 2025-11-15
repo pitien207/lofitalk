@@ -47,6 +47,7 @@ const OnboardingScreen = ({ user, onComplete }) => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const canUploadAvatar = user?.accountType === "admin";
 
   const availableCities = useMemo(() => {
     return (
@@ -124,6 +125,51 @@ const OnboardingScreen = ({ user, onComplete }) => {
     }
   };
 
+  const handleAvatarUploadFromLibrary = async () => {
+    if (!canUploadAvatar) return;
+    setAvatarLoading(true);
+    try {
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert(
+          "Permission needed",
+          "Please allow access to your photos to upload an avatar."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+        if (
+          asset.base64 &&
+          asset.base64.length * (3 / 4) <= 200 * 1024
+        ) {
+          const dataUri = `data:${asset.type || "image/jpeg"};base64,${
+            asset.base64
+          }`;
+          setFormState((prev) => ({
+            ...prev,
+            profilePic: dataUri,
+          }));
+          setError("");
+        } else {
+          Alert.alert("Avatar too large", "Avatar must be under 200 KB.");
+        }
+      }
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -188,54 +234,21 @@ const OnboardingScreen = ({ user, onComplete }) => {
                 Random avatar
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                buttonStyles.secondaryOutlineButton,
-                styles.avatarButton,
-                avatarLoading && styles.disabledButton,
-              ]}
-              onPress={async () => {
-                const permissionResult =
-                  await ImagePicker.requestMediaLibraryPermissionsAsync();
-                if (!permissionResult.granted) {
-                  Alert.alert(
-                    "Permission needed",
-                    "Please allow access to your photos to upload an avatar."
-                  );
-                  return;
-                }
-
-                const result = await ImagePicker.launchImageLibraryAsync({
-                  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                  allowsEditing: true,
-                  aspect: [1, 1],
-                  quality: 0.6,
-                  base64: true,
-                });
-
-                if (!result.canceled && result.assets?.length) {
-                  const asset = result.assets[0];
-                  if (
-                    asset.base64 &&
-                    asset.base64.length * (3 / 4) <= 200 * 1024
-                  ) {
-                    const dataUri = `data:${asset.type || "image/jpeg"};base64,${
-                      asset.base64
-                    }`;
-                    setFormState((prev) => ({
-                      ...prev,
-                      profilePic: dataUri,
-                    }));
-                    setError("");
-                  } else {
-                    Alert.alert("Avatar too large", "Avatar must be under 200 KB.");
-                  }
-                }
-              }}
-              disabled={avatarLoading}
-            >
-              <Text style={buttonStyles.secondaryOutlineText}>Upload photo</Text>
-            </TouchableOpacity>
+            {canUploadAvatar && (
+              <TouchableOpacity
+                style={[
+                  buttonStyles.secondaryOutlineButton,
+                  styles.avatarButton,
+                  avatarLoading && styles.disabledButton,
+                ]}
+                onPress={handleAvatarUploadFromLibrary}
+                disabled={avatarLoading}
+              >
+                <Text style={buttonStyles.secondaryOutlineText}>
+                  Upload photo
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

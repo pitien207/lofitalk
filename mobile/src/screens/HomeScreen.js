@@ -103,6 +103,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [profileForm, setProfileForm] = useState(() => buildProfileFormState(user));
   const [profileError, setProfileError] = useState("");
   const [profileLoading, setProfileLoading] = useState(false);
+  const canUploadAvatar = user?.accountType === "admin";
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
   const birthDate = formatDate(user?.birthDate);
@@ -199,6 +200,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   };
 
   const handleProfileAvatarUploadLocal = async () => {
+    if (!canUploadAvatar) return;
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -320,6 +322,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   };
 
   const handleUploadAvatar = async () => {
+    if (!canUploadAvatar) return;
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
@@ -480,19 +483,21 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             >
               <Text style={buttonStyles.primaryButtonText}>Random avatar</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                buttonStyles.secondaryOutlineButton,
-                styles.avatarActionButton,
-                avatarLoading && styles.disabledButton,
-              ]}
-              onPress={handleUploadAvatar}
-              disabled={avatarLoading}
-            >
-              <Text style={buttonStyles.secondaryOutlineText}>
-                Upload photo
-              </Text>
-            </TouchableOpacity>
+            {canUploadAvatar && (
+              <TouchableOpacity
+                style={[
+                  buttonStyles.secondaryOutlineButton,
+                  styles.avatarActionButton,
+                  avatarLoading && styles.disabledButton,
+                ]}
+                onPress={handleUploadAvatar}
+                disabled={avatarLoading}
+              >
+                <Text style={buttonStyles.secondaryOutlineText}>
+                  Upload photo
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
           {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
           {avatarMessage ? (
@@ -581,17 +586,19 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                         Random avatar
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        buttonStyles.secondaryOutlineButton,
-                        styles.editAvatarButton,
-                      ]}
-                      onPress={handleProfileAvatarUploadLocal}
-                    >
-                      <Text style={buttonStyles.secondaryOutlineText}>
-                        Upload photo
-                      </Text>
-                    </TouchableOpacity>
+                    {canUploadAvatar && (
+                      <TouchableOpacity
+                        style={[
+                          buttonStyles.secondaryOutlineButton,
+                          styles.editAvatarButton,
+                        ]}
+                        onPress={handleProfileAvatarUploadLocal}
+                      >
+                        <Text style={buttonStyles.secondaryOutlineText}>
+                          Upload photo
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
 

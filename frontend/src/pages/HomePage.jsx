@@ -53,6 +53,7 @@ const HomePage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const fileInputRef = useRef(null);
+  const canUploadAvatar = authUser?.accountType === "admin";
 
   const [formState, setFormState] = useState({
     fullName: "",
@@ -410,9 +411,16 @@ const HomePage = () => {
     toast.success(t("language.randomAvatarToast"));
   };
 
-  const handleUploadClick = () => fileInputRef.current?.click();
+  const handleUploadClick = () => {
+    if (!canUploadAvatar) return;
+    fileInputRef.current?.click();
+  };
 
   const handleProfilePicUpload = (event) => {
+    if (!canUploadAvatar) {
+      event.target.value = "";
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -566,31 +574,35 @@ const HomePage = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRandomAvatar}
-                  className="btn btn-accent btn-sm"
-                >
-                  <ShuffleIcon className="size-4 mr-1.5" />
-                  {t("onboarding.randomAvatar")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleUploadClick}
-                  className="btn btn-outline btn-sm"
-                >
-                  <UploadIcon className="size-4 mr-1.5" />
-                  {t("onboarding.uploadPhoto")}
-                </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={handleProfilePicUpload}
-                />
-              </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRandomAvatar}
+                    className="btn btn-accent btn-sm"
+                  >
+                    <ShuffleIcon className="size-4 mr-1.5" />
+                    {t("onboarding.randomAvatar")}
+                  </button>
+                  {canUploadAvatar && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleUploadClick}
+                        className="btn btn-outline btn-sm"
+                      >
+                        <UploadIcon className="size-4 mr-1.5" />
+                        {t("onboarding.uploadPhoto")}
+                      </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleProfilePicUpload}
+                      />
+                    </>
+                  )}
+                </div>
 
               <div className="form-control">
                 <label className="label">
