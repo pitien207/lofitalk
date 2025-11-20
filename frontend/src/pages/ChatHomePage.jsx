@@ -93,6 +93,8 @@ const ChatHomePage = () => {
           client.on("message.new", refresh),
           client.on("channel.updated", refresh),
           client.on("channel.visible", refresh),
+          client.on("user.presence.changed", refresh),
+          client.on("user.updated", refresh),
         ];
       } catch (error) {
         console.error("Error initializing chat list:", error);
@@ -124,6 +126,9 @@ const ChatHomePage = () => {
       otherMember?.user?.id ||
       channel.id?.split("-").find((id) => id !== authUser?._id);
 
+    const isOnline = Boolean(otherMember?.user?.online);
+    const presenceDotClass = isOnline ? "bg-success" : "bg-base-300";
+
     const partnerName =
       otherMember?.user?.name ||
       channel?.data?.name ||
@@ -149,13 +154,22 @@ const ChatHomePage = () => {
         disabled={!partnerId}
         className="flex w-full items-center gap-3 px-3 py-3 transition hover:bg-base-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {partnerImage ? (
-          <img src={partnerImage} alt={partnerName} className="h-12 w-12 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-base-200 text-sm font-semibold text-base-content/70">
-            {partnerName?.charAt(0) ?? "?"}
-          </div>
-        )}
+        <div className="relative">
+          {partnerImage ? (
+            <img
+              src={partnerImage}
+              alt={partnerName}
+              className="h-12 w-12 rounded-full object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-base-200 text-sm font-semibold text-base-content/70">
+              {partnerName?.charAt(0) ?? "?"}
+            </div>
+          )}
+          <span
+            className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-100 ${presenceDotClass}`}
+          />
+        </div>
         <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
           <div className="min-w-0 text-left">
             <p className="font-semibold truncate">{partnerName}</p>

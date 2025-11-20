@@ -182,6 +182,8 @@ const FriendsPage = () => {
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
     queryFn: getUserFriends,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
@@ -204,6 +206,8 @@ const FriendsPage = () => {
   const { data: outgoingFriendReqs } = useQuery({
     queryKey: ["outgoingFriendReqs"],
     queryFn: getOutgoingFriendReqs,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const {

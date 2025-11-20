@@ -132,6 +132,13 @@ const AppContainer = () => {
   }, [connectChat, disconnectChat, user]);
 
   useEffect(() => {
+    if (activePage === "friends" && user) {
+      loadFriends().catch(() => null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePage, user]);
+
+  useEffect(() => {
     if (user && friends.length === 0) {
       loadFriends().catch(() => null);
     }

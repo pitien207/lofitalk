@@ -264,10 +264,13 @@ const ChatScreen = ({
           <TouchableOpacity style={styles.backButton} onPress={onBackToList}>
             <Text style={styles.backButtonText}>◀</Text>
           </TouchableOpacity>
-          <Image
-            source={resolveImageSource(conversationMeta.avatar)}
-            style={styles.chatAvatar}
-          />
+          <View style={styles.chatAvatarWrapper}>
+            <Image
+              source={resolveImageSource(conversationMeta.avatar)}
+              style={styles.chatAvatar}
+            />
+            {conversationMeta.online && <View style={styles.onlineDot} />}
+          </View>
           <View style={styles.chatMeta}>
             <Text style={styles.chatName}>{conversationMeta.name}</Text>
             <Text style={styles.chatStatus}>
@@ -291,31 +294,43 @@ const ChatScreen = ({
           renderItem={({ item }) => (
             <View
               style={[
-                styles.messageBubble,
-                item.isOwn ? styles.messageOwn : styles.messageRemote,
+                styles.messageItem,
+                item.isOwn ? styles.messageItemOwn : styles.messageItemRemote,
               ]}
             >
-              <Text
+              <View
                 style={[
-                  styles.messageText,
-                  item.isOwn && styles.messageTextOwn,
+                  styles.messageBubble,
+                  item.isOwn ? styles.messageOwn : styles.messageRemote,
                 ]}
               >
-                {segmentMessageText(item.text).map((segment, index) =>
-                  segment.type === "link" ? (
-                    <Text
-                      key={`${segment.content}-${index}`}
-                      style={styles.messageLink}
-                      onPress={() => handleLinkPress(segment.content)}
-                    >
-                      {segment.content}
-                    </Text>
-                  ) : (
-                    <Text key={`seg-${index}`}>{segment.content}</Text>
-                  )
-                )}
-              </Text>
-              <Text style={styles.messageTime}>
+                <Text
+                  style={[
+                    styles.messageText,
+                    item.isOwn && styles.messageTextOwn,
+                  ]}
+                >
+                  {segmentMessageText(item.text).map((segment, index) =>
+                    segment.type === "link" ? (
+                      <Text
+                        key={`${segment.content}-${index}`}
+                        style={styles.messageLink}
+                        onPress={() => handleLinkPress(segment.content)}
+                      >
+                        {segment.content}
+                      </Text>
+                    ) : (
+                      <Text key={`seg-${index}`}>{segment.content}</Text>
+                    )
+                  )}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.messageTime,
+                  item.isOwn && styles.messageTimeOwn,
+                ]}
+              >
                 {formatRelativeTime(item.createdAt)}
               </Text>
             </View>
@@ -536,6 +551,9 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.text,
     fontWeight: "700",
   },
+  chatAvatarWrapper: {
+    position: "relative",
+  },
   chatAvatar: {
     width: 48,
     height: 48,
@@ -573,12 +591,24 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingBottom: 16,
   },
+  messageItem: {
+    maxWidth: "80%",
+    marginBottom: 12,
+  },
+  messageItemOwn: {
+    alignSelf: "flex-end",
+    alignItems: "flex-end",
+  },
+  messageItemRemote: {
+    alignSelf: "flex-start",
+    alignItems: "flex-start",
+  },
   messageBubble: {
     maxWidth: "80%",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,
-    marginBottom: 12,
+    marginBottom: 4,
   },
   messageOwn: {
     alignSelf: "flex-end",
@@ -601,8 +631,11 @@ const styles = StyleSheet.create({
   },
   messageTime: {
     fontSize: 11,
-    marginTop: 4,
+    marginTop: 2,
     color: "rgba(255,255,255,0.6)",
+  },
+  messageTimeOwn: {
+    color: "rgba(255,255,255,0.75)",
   },
   messageInputRow: {
     flexDirection: "row",
