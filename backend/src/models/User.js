@@ -150,16 +150,6 @@ const userSchema = new mongoose.Schema(
         default: null,
       },
     },
-    friendFilterUsage: {
-      date: {
-        type: Date,
-        default: null,
-      },
-      count: {
-        type: Number,
-        default: 0,
-      },
-    },
   },
   { timestamps: true }
 );

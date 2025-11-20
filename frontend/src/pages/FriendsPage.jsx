@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
-  getFriendFilterStatus,
   getOutgoingFriendReqs,
   getRecommendedUsers,
   getUserFriends,
@@ -59,7 +58,6 @@ const FriendsPage = () => {
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [filterAttempt, setFilterAttempt] = useState(0);
   const [friendsPage, setFriendsPage] = useState(1);
-  const [remainingFilters, setRemainingFilters] = useState(3);
 
   const genderOptions = useMemo(
     () => [
@@ -186,14 +184,6 @@ const FriendsPage = () => {
     queryFn: getUserFriends,
   });
 
-  const { data: filterStatus } = useQuery({
-    queryKey: ["friendFilterStatus"],
-    queryFn: getFriendFilterStatus,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    staleTime: Infinity,
-  });
-
   useEffect(() => {
     setFriendsPage(1);
   }, [friends.length]);
@@ -225,11 +215,8 @@ const FriendsPage = () => {
     queryFn: () => getRecommendedUsers(filterParams),
     enabled: false,
     onError: (err) => {
-      if (typeof err?.response?.data?.remaining === "number") {
-        setRemainingFilters(Math.max(0, err.response.data.remaining));
-      }
       toast.error(
-        err?.response?.data?.message || t("friends.filters.limitError")
+        err?.response?.data?.message || t("friends.filters.applyError")
       );
     },
   });
@@ -237,18 +224,6 @@ const FriendsPage = () => {
   const recommendedUsers = hasAppliedFilters
     ? recommendationData?.users ?? []
     : [];
-
-  useEffect(() => {
-    if (filterStatus && typeof filterStatus.remaining === "number") {
-      setRemainingFilters(Math.max(0, filterStatus.remaining));
-    }
-  }, [filterStatus]);
-
-  useEffect(() => {
-    if (typeof recommendationData?.remaining === "number") {
-      setRemainingFilters(Math.max(0, recommendationData.remaining));
-    }
-  }, [recommendationData]);
 
   useEffect(() => {
     if (hasAppliedFilters && filterAttempt > 0) {
@@ -289,11 +264,6 @@ const FriendsPage = () => {
 
   const handleApplyFilters = (event) => {
     event.preventDefault();
-
-    if (remainingFilters !== Infinity && remainingFilters <= 0) {
-      toast.error(t("friends.filters.limitError"));
-      return;
-    }
 
     setAppliedFilters({ ...filters });
     setHasAppliedFilters(true);
@@ -505,11 +475,6 @@ const FriendsPage = () => {
                 <div className="flex-1 space-y-1">
                   <p className="text-sm opacity-70 leading-relaxed">
                     {t("friends.filters.applyHint")}
-                  </p>
-                  <p className="text-xs opacity-70">
-                    {t("friends.filters.remainingLabel", {
-                      count: remainingFilters === Infinity ? "∞" : Math.max(0, remainingFilters),
-                    })}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end sm:items-center w-full sm:w-auto">
