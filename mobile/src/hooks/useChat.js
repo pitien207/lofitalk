@@ -87,7 +87,10 @@ const useChat = () => {
         const apiKey = tokenResponse?.apiKey || FALLBACK_STREAM_API_KEY;
 
         if (!token || !apiKey) {
-          throw new Error("Unable to fetch chat credentials");
+          setChatError(
+            "Chat credentials missing. Please check Stream API config."
+          );
+          return;
         }
 
         const streamClient = StreamChat.getInstance(apiKey);

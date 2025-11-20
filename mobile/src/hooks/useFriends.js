@@ -1,6 +1,31 @@
 import { useState } from "react";
-import { fetchFriends, fetchFriendProfile } from "../services/friendService";
+import {
+  fetchFriends,
+  fetchFriendProfile,
+  fetchRecommendedUsers,
+  sendFriendRequest,
+} from "../services/friendService";
 import { ensureFriendsData } from "../utils/profile";
+
+const createEmptyFilters = () => ({
+  gender: "",
+  country: "",
+  city: "",
+  heightMin: "",
+  education: "",
+  hobby: "",
+  pet: "",
+});
+
+const buildFilterParams = (filters) => {
+  const params = {};
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && `${value}`.trim() !== "") {
+      params[key] = value;
+    }
+  });
+  return params;
+};
 
 const useFriends = () => {
   const [friends, setFriends] = useState([]);
@@ -8,6 +33,11 @@ const useFriends = () => {
   const [friendProfile, setFriendProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState(null);
+  const [filters, setFilters] = useState(createEmptyFilters());
+  const [recommended, setRecommended] = useState([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
+  const [recommendedError, setRecommendedError] = useState(null);
+  const [requestingId, setRequestingId] = useState(null);
 
   const setInitialFriends = (rawFriends) => {
     setFriends(ensureFriendsData(rawFriends));
@@ -56,6 +86,53 @@ const useFriends = () => {
   const resetAllFriends = () => {
     setFriends([]);
     resetSelection();
+    setFilters(createEmptyFilters());
+    setRecommended([]);
+    setRecommendedError(null);
+    setRecommendedLoading(false);
+    setRequestingId(null);
+  };
+
+  const updateFilter = (key, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === "country" ? { city: "" } : {}),
+    }));
+  };
+
+  const resetFilters = () => {
+    setFilters(createEmptyFilters());
+    setRecommended([]);
+    setRecommendedError(null);
+  };
+
+  const applyFilters = async () => {
+    setRecommendedLoading(true);
+    setRecommendedError(null);
+    try {
+      const params = buildFilterParams(filters);
+      const users = await fetchRecommendedUsers(params);
+      setRecommended(users || []);
+      return users;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Unable to load recommendations.";
+      setRecommendedError(message);
+      throw error;
+    } finally {
+      setRecommendedLoading(false);
+    }
+  };
+
+  const sendRequest = async (userId) => {
+    if (!userId) return;
+    setRequestingId(userId);
+    try {
+      await sendFriendRequest(userId);
+    } finally {
+      setRequestingId(null);
+    }
   };
 
   return {
@@ -64,11 +141,20 @@ const useFriends = () => {
     friendProfile,
     profileLoading,
     profileError,
+    filters,
+    recommended,
+    recommendedLoading,
+    recommendedError,
+    requestingId,
     loadFriends,
     setInitialFriends,
     selectFriend,
     resetSelection,
     resetAllFriends,
+    updateFilter,
+    resetFilters,
+    applyFilters,
+    sendRequest,
   };
 };
 

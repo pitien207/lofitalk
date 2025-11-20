@@ -1,6 +1,7 @@
 export const MENU_ITEMS = [
   { key: "home", label: "Homepage", icon: "🏠" },
   { key: "friends", label: "Friends", icon: "👥" },
+  { key: "discover", label: "Discover", icon: "✨" },
   { key: "chat", label: "Chat", icon: "💬" },
 ];
 

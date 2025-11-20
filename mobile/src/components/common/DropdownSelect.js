@@ -61,7 +61,11 @@ const DropdownSelect = ({
       ) : null}
       {open && (
         <View style={styles.dropdown}>
-          <ScrollView contentContainerStyle={styles.dropdownContent}>
+          <ScrollView
+            contentContainerStyle={styles.dropdownContent}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
             {options.map((option) => (
               <TouchableOpacity
                 key={option.value}
@@ -89,6 +93,7 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     gap: 6,
+    zIndex: 20,
   },
   label: {
     color: BRAND_COLORS.text,
@@ -128,8 +133,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.08)",
     backgroundColor: "rgba(15, 14, 25, 0.98)",
-    maxHeight: 220,
+    maxHeight: 260,
     overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   dropdownContent: {
     paddingVertical: 6,

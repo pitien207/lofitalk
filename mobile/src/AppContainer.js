@@ -6,6 +6,7 @@ import HomeScreen from "./screens/HomeScreen";
 import FriendsScreen from "./screens/FriendsScreen";
 import ChatScreen from "./screens/ChatScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
+import DiscoverScreen from "./screens/DiscoverScreen";
 import BottomNav from "./components/navigation/BottomNav";
 import AppBackground from "./components/layout/AppBackground";
 import useAuth from "./hooks/useAuth";
@@ -35,11 +36,20 @@ const AppContainer = () => {
     friendProfile,
     profileLoading,
     profileError,
+    filters,
+    recommended,
+    recommendedLoading,
+    recommendedError,
+    requestingId,
     loadFriends,
     setInitialFriends,
     selectFriend,
     resetSelection,
     resetAllFriends,
+    updateFilter,
+    resetFilters,
+    applyFilters,
+    sendRequest,
   } = useFriends();
   const {
     channels,
@@ -189,9 +199,27 @@ const AppContainer = () => {
             friendProfile={friendProfile}
             profileLoading={profileLoading}
             profileError={profileError}
+            filters={filters}
+            recommended={recommended}
+            recommendedLoading={recommendedLoading}
+            recommendedError={recommendedError}
+            requestingId={requestingId}
             onFriendSelect={selectFriend}
             onResetFriendSelection={resetSelection}
             onNavigateHome={() => handleNavChange("home")}
+          />
+        )}
+        {activePage === "discover" && (
+          <DiscoverScreen
+            filters={filters}
+            recommended={recommended}
+            recommendedLoading={recommendedLoading}
+            recommendedError={recommendedError}
+            requestingId={requestingId}
+            onFilterChange={updateFilter}
+            onResetFilters={resetFilters}
+            onApplyFilters={applyFilters}
+            onSendRequest={sendRequest}
           />
         )}
         {activePage === "chat" && (

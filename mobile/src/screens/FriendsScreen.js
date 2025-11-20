@@ -119,7 +119,6 @@ const FriendsScreen = ({
     </ScrollView>
   );
 };
-
 const FriendProfile = ({ profile, loading, error }) => {
   if (loading) {
     return (
