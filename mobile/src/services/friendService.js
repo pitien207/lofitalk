@@ -27,3 +27,19 @@ export const sendFriendRequest = async (friendId) => {
   const { data } = await api.post(`/users/friend-request/${friendId}`);
   return data;
 };
+
+export const cancelFriendRequest = async (friendId) => {
+  if (!friendId) {
+    throw new Error("friendId is required to cancel a request");
+  }
+
+  const { data } = await api.delete(
+    `/users/friend-request/${friendId}/cancel`
+  );
+  return data;
+};
+
+export const fetchOutgoingFriendRequests = async () => {
+  const { data } = await api.get("/users/outgoing-friend-requests");
+  return data;
+};

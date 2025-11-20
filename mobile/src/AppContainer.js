@@ -50,6 +50,8 @@ const AppContainer = () => {
     resetFilters,
     applyFilters,
     sendRequest,
+    cancelRequest,
+    hasPendingRequest,
   } = useFriends();
   const {
     channels,
@@ -229,6 +231,8 @@ const AppContainer = () => {
             onApplyFilters={applyFilters}
             onSendRequest={sendRequest}
             onViewProfile={handleViewProfileFromDiscover}
+            onCancelRequest={cancelRequest}
+            hasPendingRequest={hasPendingRequest}
           />
         )}
         {activePage === "chat" && (

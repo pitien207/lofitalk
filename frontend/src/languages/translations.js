@@ -66,6 +66,8 @@ const english = {
     requestSent: "Request Sent",
     cancelRequest: "Cancel Request",
     sendRequest: "Send Friend Request",
+    pendingFromThem:
+      "This user already sent you a request. Please respond in Notifications.",
   },
   chatHome: {
     empty: "No conversations yet",
@@ -105,7 +107,7 @@ const english = {
     version: "Version",
     developer: "Developer",
     inspiredBy: "Inspired by",
-    inspiredNames: "Codesistency / Fremdchat / avocadorable / Sayedsayedy",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable / SayedSayedy",
   },
   notifications: {
     title: "Notifications",
@@ -574,7 +576,7 @@ const vietnamese = {
     version: "Phiên bản",
     developer: "Nhà phát triển",
     inspiredBy: "Lấy cảm hứng từ",
-    inspiredNames: "Codesistency / Fremdchat / avocadorable / Sayed Sayedy",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable / SayedSayedy",
   },
   notifications: {
     title: "Thông báo",

@@ -31,6 +31,8 @@ const DiscoverScreen = ({
   onApplyFilters,
   onSendRequest,
   onViewProfile,
+  onCancelRequest,
+  hasPendingRequest,
 }) => {
   const genderOptions = useMemo(
     () => [
@@ -185,8 +187,11 @@ const DiscoverScreen = ({
         loading={recommendedLoading}
         error={recommendedError}
         onSendRequest={onSendRequest}
+        onCancelRequest={onCancelRequest}
+        hasPendingRequest={hasPendingRequest}
         requestingId={requestingId}
         onViewProfile={onViewProfile}
+        onIncomingRequestLabel="This user sent you a request. Please respond in Notifications."
       />
     </ScrollView>
   );
@@ -308,8 +313,11 @@ const RecommendationsList = ({
   loading,
   error,
   onSendRequest,
+  onCancelRequest,
+  hasPendingRequest,
   requestingId,
   onViewProfile,
+  onIncomingRequestLabel,
 }) => (
   <View style={styles.recommendationsWrapper}>
     <Text style={styles.recommendationsTitle}>Recommendations</Text>
@@ -330,47 +338,82 @@ const RecommendationsList = ({
       </View>
     ) : (
       <View style={styles.recommendationList}>
-        {items.map((user) => (
-          <View key={user._id} style={styles.recommendationCard}>
-            <TouchableOpacity
-              style={styles.recommendationContent}
-              activeOpacity={0.85}
+        {items.map((user) => {
+          const isPending = hasPendingRequest?.(user._id);
+          const isRequesting = requestingId === user._id;
+          const incomingRequest = Boolean(user.pendingRequestReceived);
+          const label = isRequesting
+            ? isPending
+              ? "Cancelling..."
+              : "Sending..."
+            : isPending
+              ? "Cancel request"
+              : "Send request";
+
+          return (
+            <View key={user._id} style={styles.recommendationCard}>
+              <TouchableOpacity
+                style={styles.recommendationContent}
+                activeOpacity={0.85}
               onPress={() => onViewProfile?.(user._id)}
             >
-              <View style={styles.avatarWrapper}>
-                <Image
-                  source={resolveImageSource(user.profilePic)}
-                  style={styles.avatar}
-                />
-                {user.isOnline && <View style={styles.onlineDot} />}
-              </View>
-              <View style={styles.meta}>
-                <Text style={styles.name}>{user.fullName}</Text>
-                <Text style={styles.location}>
-                  {user.location || formatLocation(user) || "Somewhere cozy"}
+                <View style={styles.avatarWrapper}>
+                  <Image
+                    source={resolveImageSource(user.profilePic)}
+                    style={styles.avatar}
+                  />
+                  {user.isOnline && <View style={styles.onlineDot} />}
+                </View>
+                <View style={styles.meta}>
+                  <Text style={styles.name}>{user.fullName}</Text>
+                  <Text style={styles.location}>
+                    {user.location || formatLocation(user) || "Somewhere cozy"}
+                  </Text>
+                  <Text style={styles.bio} numberOfLines={2}>
+                    {user.bio || "Say hi and start a conversation."}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              {incomingRequest ? (
+                <Text style={styles.incomingLabel}>
+                  {onIncomingRequestLabel ||
+                    "This user sent you a request. Please respond in Notifications."}
                 </Text>
-                <Text style={styles.bio} numberOfLines={2}>
-                  {user.bio || "Say hi and start a conversation."}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                buttonStyles.primaryButton,
-                styles.requestButton,
-                requestingId === user._id && styles.disabledButton,
-              ]}
-              onPress={() => onSendRequest(user._id).catch(() => null)}
-              disabled={requestingId === user._id}
-            >
-              {requestingId === user._id ? (
-                <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={buttonStyles.primaryButtonText}>Send request</Text>
+                <TouchableOpacity
+                  style={[
+                    isPending
+                      ? buttonStyles.secondaryOutlineButton
+                      : buttonStyles.primaryButton,
+                    styles.requestButton,
+                    isRequesting && styles.disabledButton,
+                  ]}
+                  onPress={() =>
+                    (isPending
+                      ? onCancelRequest?.(user._id)
+                      : onSendRequest?.(user._id)
+                    ).catch(() => null)
+                  }
+                  disabled={isRequesting}
+                >
+                  {isRequesting ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text
+                      style={
+                        isPending
+                          ? buttonStyles.secondaryOutlineText
+                          : buttonStyles.primaryButtonText
+                      }
+                    >
+                      {label}
+                    </Text>
+                  )}
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-          </View>
-        ))}
+            </View>
+          );
+        })}
       </View>
     )}
   </View>
@@ -525,6 +568,11 @@ const styles = StyleSheet.create({
   },
   requestButton: {
     marginTop: 10,
+  },
+  incomingLabel: {
+    marginTop: 8,
+    color: BRAND_COLORS.muted,
+    fontSize: 13,
   },
   disabledButton: {
     opacity: 0.6,

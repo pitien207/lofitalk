@@ -519,6 +519,7 @@ const FriendsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendedUsers.map((user) => {
                 const hasRequestBeenSent = outgoingRequestsIds.has(user._id);
+                const hasIncomingRequest = Boolean(user.pendingRequestReceived);
                 const locationText =
                   [user.city, user.country].filter(Boolean).join(', ') ||
                   user.location ||
@@ -578,41 +579,48 @@ const FriendsPage = () => {
                         {user.bio?.trim() ? user.bio : "\u00A0"}
                       </p>
 
-                      <button
-                        className={`btn w-full mt-2 ${
-                          hasRequestBeenSent ? "btn-outline" : "btn-primary"
-                        }`}
-                        onClick={() =>
-                          hasRequestBeenSent
-                            ? cancelRequestMutation(user._id)
-                            : sendRequestMutation(user._id)
-                        }
-                        disabled={
-                          hasRequestBeenSent ? isCancelling : isPending
-                        }
-                      >
-                        {hasRequestBeenSent ? (
-                          <>
-                            {isCancelling ? (
-                              <LoaderIcon className="size-4 mr-2 animate-spin" />
-                            ) : (
-                              <XCircleIcon className="size-4 mr-2" />
-                            )}
-                            {isCancelling
-                              ? t("profile.saving")
-                              : t("home.cancelRequest")}
-                          </>
-                        ) : (
-                          <>
-                            {isPending ? (
-                              <LoaderIcon className="size-4 mr-2 animate-spin" />
-                            ) : (
-                              <UserPlusIcon className="size-4 mr-2" />
-                            )}
-                            {t("home.sendRequest")}
-                          </>
-                        )}
-                      </button>
+                      {hasIncomingRequest ? (
+                        <p className="text-xs opacity-70 mt-1">
+                          {t("home.pendingFromThem") ||
+                            "This user sent you a request. Please respond in Notifications."}
+                        </p>
+                      ) : (
+                        <button
+                          className={`btn w-full mt-2 ${
+                            hasRequestBeenSent ? "btn-outline" : "btn-primary"
+                          }`}
+                          onClick={() =>
+                            hasRequestBeenSent
+                              ? cancelRequestMutation(user._id)
+                              : sendRequestMutation(user._id)
+                          }
+                          disabled={
+                            hasRequestBeenSent ? isCancelling : isPending
+                          }
+                        >
+                          {hasRequestBeenSent ? (
+                            <>
+                              {isCancelling ? (
+                                <LoaderIcon className="size-4 mr-2 animate-spin" />
+                              ) : (
+                                <XCircleIcon className="size-4 mr-2" />
+                              )}
+                              {isCancelling
+                                ? t("profile.saving")
+                                : t("home.cancelRequest")}
+                            </>
+                          ) : (
+                            <>
+                              {isPending ? (
+                                <LoaderIcon className="size-4 mr-2 animate-spin" />
+                              ) : (
+                                <UserPlusIcon className="size-4 mr-2" />
+                              )}
+                              {t("home.sendRequest")}
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );

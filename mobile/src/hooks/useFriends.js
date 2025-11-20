@@ -4,6 +4,8 @@ import {
   fetchFriendProfile,
   fetchRecommendedUsers,
   sendFriendRequest,
+  cancelFriendRequest,
+  fetchOutgoingFriendRequests,
 } from "../services/friendService";
 import { ensureFriendsData } from "../utils/profile";
 
@@ -38,6 +40,7 @@ const useFriends = () => {
   const [recommendedLoading, setRecommendedLoading] = useState(false);
   const [recommendedError, setRecommendedError] = useState(null);
   const [requestingId, setRequestingId] = useState(null);
+  const [hasSentRequest, setHasSentRequest] = useState(new Set());
 
   const setInitialFriends = (rawFriends) => {
     setFriends(ensureFriendsData(rawFriends));
@@ -91,6 +94,7 @@ const useFriends = () => {
     setRecommendedError(null);
     setRecommendedLoading(false);
     setRequestingId(null);
+    setHasSentRequest(new Set());
   };
 
   const updateFilter = (key, value) => {
@@ -107,13 +111,36 @@ const useFriends = () => {
     setRecommendedError(null);
   };
 
+  const syncOutgoingRequests = async () => {
+    try {
+      const outgoing = await fetchOutgoingFriendRequests();
+      const next = new Set(
+        (outgoing || []).map((req) => req?.recipient?._id).filter(Boolean)
+      );
+      setHasSentRequest(next);
+    } catch (_err) {
+      // non-blocking
+    }
+  };
+
   const applyFilters = async () => {
     setRecommendedLoading(true);
     setRecommendedError(null);
     try {
+      await syncOutgoingRequests().catch(() => null);
       const params = buildFilterParams(filters);
       const users = await fetchRecommendedUsers(params);
       setRecommended(users || []);
+      const flagged = new Set(
+        (users || [])
+          .filter((user) => user?.pendingRequestSent)
+          .map((user) => user._id)
+      );
+      setHasSentRequest((prev) => {
+        const merged = new Set(prev);
+        flagged.forEach((id) => merged.add(id));
+        return merged;
+      });
       return users;
     } catch (error) {
       const message =
@@ -126,14 +153,53 @@ const useFriends = () => {
   };
 
   const sendRequest = async (userId) => {
-    if (!userId) return;
+    if (!userId) return false;
     setRequestingId(userId);
     try {
       await sendFriendRequest(userId);
+      setHasSentRequest((prev) => new Set(prev).add(userId));
+      return true;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Unable to send friend request.";
+      setRecommendedError(message);
+      return false;
     } finally {
+      await syncOutgoingRequests().catch(() => null);
       setRequestingId(null);
     }
   };
+
+  const cancelRequest = async (userId) => {
+    if (!userId) return false;
+    setRequestingId(userId);
+    try {
+      await cancelFriendRequest(userId);
+      setHasSentRequest((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+      return true;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Unable to cancel friend request.";
+      setRecommendedError(message);
+      if (error?.response?.status === 404) {
+        setHasSentRequest((prev) => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      }
+      return false;
+    } finally {
+      await syncOutgoingRequests().catch(() => null);
+      setRequestingId(null);
+    }
+  };
+
+  const hasPendingRequest = (userId) => hasSentRequest.has(userId);
 
   return {
     friends,
@@ -146,6 +212,7 @@ const useFriends = () => {
     recommendedLoading,
     recommendedError,
     requestingId,
+    hasPendingRequest,
     loadFriends,
     setInitialFriends,
     selectFriend,
@@ -155,6 +222,7 @@ const useFriends = () => {
     resetFilters,
     applyFilters,
     sendRequest,
+    cancelRequest,
   };
 };
 
