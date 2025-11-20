@@ -5,6 +5,7 @@ import {
   cancelFriendRequest,
   declineFriendRequest,
   deleteFriendRequest,
+  getFriendFilterStatus,
   getFriendRequests,
   getFortuneCookie,
   getMyFriends,
@@ -22,6 +23,7 @@ const router = express.Router();
 router.use(protectRoute);
 
 router.get("/", getRecommendedUsers);
+router.get("/friend-filter-status", getFriendFilterStatus);
 router.get("/friends", getMyFriends);
 router.get("/profile/:id", getUserProfile);
 router.get("/fortune-cookie", getFortuneCookie);

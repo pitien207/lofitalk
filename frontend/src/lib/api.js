@@ -54,6 +54,11 @@ export async function getRecommendedUsers(filters = {}) {
   return response.data;
 }
 
+export async function getFriendFilterStatus() {
+  const response = await axiosInstance.get("/users/friend-filter-status");
+  return response.data;
+}
+
 export async function getOutgoingFriendReqs() {
   const response = await axiosInstance.get("/users/outgoing-friend-requests");
   return response.data;

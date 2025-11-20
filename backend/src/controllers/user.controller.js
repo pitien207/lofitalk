@@ -73,6 +73,23 @@ const isSameUTCDay = (left, right) => {
   );
 };
 
+const MAX_RECOMMENDATIONS = 3;
+const MAX_FILTERS_PER_DAY = 3;
+
+const getFriendFilterUsage = (user) => {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const usageDate =
+    user?.friendFilterUsage?.date &&
+    new Date(user.friendFilterUsage.date).toISOString().slice(0, 10);
+  const usageCount =
+    usageDate === todayKey ? user?.friendFilterUsage?.count ?? 0 : 0;
+
+  return {
+    todayKey,
+    usageCount,
+  };
+};
+
 const resetFortuneCookieForUser = async (userId) => {
   await User.findByIdAndUpdate(userId, {
     $set: {
@@ -122,18 +139,70 @@ const buildFortuneResponse = (fortune = {}) => {
   };
 };
 
+export async function getFriendFilterStatus(req, res) {
+  try {
+    const viewerId = req.user._id || req.user.id;
+    const viewer = await User.findById(viewerId).select("friendFilterUsage accountType");
+
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const usageDate =
+      viewer.friendFilterUsage?.date &&
+      new Date(viewer.friendFilterUsage.date).toISOString().slice(0, 10);
+    const isAdmin = req.user?.accountType === "admin";
+    const usageCount = isAdmin
+      ? 0
+      : usageDate === todayKey
+        ? viewer.friendFilterUsage?.count ?? 0
+        : 0;
+
+    return res.status(200).json({
+      date: todayKey,
+      used: usageCount,
+      remaining: isAdmin ? Infinity : Math.max(0, MAX_FILTERS_PER_DAY - usageCount),
+      total: isAdmin ? Infinity : MAX_FILTERS_PER_DAY,
+    });
+  } catch (error) {
+    console.error("Error fetching friend filter status", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
 
 export async function getRecommendedUsers(req, res) {
   try {
     const viewerId = req.user._id || req.user.id;
-    const viewer = await User.findById(viewerId).select('friends energy');
+    const viewer = await User.findById(viewerId).select(
+      "friends energy friendFilterUsage"
+    );
 
     if (!viewer) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const currentEnergy = Math.max(0, viewer.energy ?? 0);
-    // Temporarily disable energy gating/consumption for friend filters.
+
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const usageDate =
+      viewer.friendFilterUsage?.date &&
+      new Date(viewer.friendFilterUsage.date).toISOString().slice(0, 10);
+    const isAdmin = req.user?.accountType === "admin";
+    const usageCount = isAdmin
+      ? 0
+      : usageDate === todayKey
+        ? viewer.friendFilterUsage?.count ?? 0
+        : 0;
+
+    if (!isAdmin && usageCount >= MAX_FILTERS_PER_DAY) {
+      return res.status(429).json({
+        message: "Daily friend filter limit reached. Try again tomorrow.",
+        remaining: 0,
+        total: MAX_FILTERS_PER_DAY,
+        used: usageCount,
+      });
+    }
 
     const friendIds = (viewer.friends || []).map((friendId) => toObjectId(friendId));
     const excludedIds = [toObjectId(viewerId), ...friendIds];
@@ -190,15 +259,29 @@ export async function getRecommendedUsers(req, res) {
       return meetsHeight && hobbiesMatch && petsMatch;
     });
 
-    const normalizedUsers = filtered.slice(0, 5).map(withPresence);
+    const nextCount = isAdmin ? usageCount : usageCount + 1;
+    const normalizedUsers = filtered.slice(0, MAX_RECOMMENDATIONS).map(withPresence);
+
+    if (!isAdmin) {
+      await User.findByIdAndUpdate(viewerId, {
+        friendFilterUsage: {
+          date: new Date(),
+          count: nextCount,
+        },
+      });
+    }
 
     res.status(200).json({
       users: normalizedUsers,
       energy: currentEnergy,
+      remaining: isAdmin ? Infinity : Math.max(0, MAX_FILTERS_PER_DAY - nextCount),
+      used: isAdmin ? 0 : nextCount,
+      total: isAdmin ? Infinity : MAX_FILTERS_PER_DAY,
+      usageDate: todayKey,
     });
   } catch (error) {
-    console.error('Error in getRecommendedUsers controller', error.message);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Error in getRecommendedUsers controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 }
 

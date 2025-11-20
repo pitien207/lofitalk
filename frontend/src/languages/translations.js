@@ -78,7 +78,7 @@ const english = {
       energyTitle: "Shared energy (with Tarot)",
       energyHint: "Each filter attempt consumes 1 energy.",
       applyHint:
-        "Filters apply to recommendations. Up to 5 matching profiles are shown per energy.",
+        "Filters apply to recommendations. Up to 3 matching profiles are shown per energy (max 3 times per day).",
       emptyState:
         "Set your vibe filters and apply them to discover new friends.",
       reset: "Reset",
@@ -93,6 +93,9 @@ const english = {
       petLabel: "Pet",
       anyOption: "Any",
       energyError: "Not enough energy. Please refill in Tarot.",
+      limitError:
+        "You've used all 3 filter attempts for today. Please try again tomorrow.",
+      remainingLabel: "Filters left today: {count}/3",
     },
   },
 
@@ -547,7 +550,7 @@ const vietnamese = {
       energyTitle: "Năng lượng dùng chung (cùng Tarot)",
       energyHint: "Mỗi lọc sẽ tiêu tốn 1 năng lượng.",
       applyHint:
-        "Bộ lọc áp dụng cho gợi ý. Tối đa 5 bạn bè phù hợp được hiển thị cho mỗi năng lượng.",
+        "Bộ lọc áp dụng cho gợi ý. Tối đa 3 bạn bè phù hợp được hiển thị cho mỗi năng lượng (tối đa 3 lần mỗi ngày).",
       emptyState: "Hãy chọn bộ lọc phù hợp rồi áp dụng để khám phá bạn mới.",
       reset: "Đặt lại",
       apply: "Áp dụng bộ lọc",
@@ -561,6 +564,9 @@ const vietnamese = {
       petLabel: "Thú cưng",
       anyOption: "Bất kỳ",
       energyError: "Không đủ năng lượng. Hãy nạp thêm trong Tarot.",
+      limitError:
+        "Bạn đã dùng hết 3 lượt lọc bạn bè hôm nay. Hãy thử lại vào ngày mai nhé.",
+      remainingLabel: "Số lượt lọc còn lại hôm nay: {count}/3",
     },
   },
 
@@ -1017,7 +1023,7 @@ const german = {
       energyTitle: "Geteilte Energie (mit Tarot)",
       energyHint: "Jeder Filterversuch verbraucht 1 Energie.",
       applyHint:
-        "Filter gelten für Empfehlungen. Bis zu 5 passende Profile pro Energie.",
+        "Filter gelten für Empfehlungen. Bis zu 3 passende Profile pro Energie (max. 3x pro Tag).",
       emptyState:
         "Stell deine Vibe-Filter ein und wende sie an, um neue Freunde zu entdecken.",
       reset: "Zurücksetzen",
@@ -1032,6 +1038,9 @@ const german = {
       petLabel: "Haustier",
       anyOption: "Beliebig",
       energyError: "Nicht genug Energie. Bitte im Tarot auffüllen.",
+      limitError:
+        "Du hast deine 3 Filterversuche für heute aufgebraucht. Bitte versuche es morgen erneut.",
+      remainingLabel: "Verbleibende Filter heute: {count}/3",
     },
   },
 

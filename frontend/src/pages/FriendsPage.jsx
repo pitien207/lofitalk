@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
+  getFriendFilterStatus,
   getOutgoingFriendReqs,
   getRecommendedUsers,
   getUserFriends,
@@ -20,6 +21,7 @@ import { getCountryFlag } from "../utils/flags";
 import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 import { useTranslation } from "../languages/useTranslation";
+import toast from "react-hot-toast";
 
 const createEmptyFilters = () => ({
   gender: "",
@@ -57,6 +59,7 @@ const FriendsPage = () => {
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [filterAttempt, setFilterAttempt] = useState(0);
   const [friendsPage, setFriendsPage] = useState(1);
+  const [remainingFilters, setRemainingFilters] = useState(3);
 
   const genderOptions = useMemo(
     () => [
@@ -183,6 +186,14 @@ const FriendsPage = () => {
     queryFn: getUserFriends,
   });
 
+  const { data: filterStatus } = useQuery({
+    queryKey: ["friendFilterStatus"],
+    queryFn: getFriendFilterStatus,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
     setFriendsPage(1);
   }, [friends.length]);
@@ -207,16 +218,43 @@ const FriendsPage = () => {
 
   const {
     data: recommendationData,
-    isLoading: loadingRecommendations,
+    isFetching: loadingRecommendations,
+    refetch: fetchRecommendations,
   } = useQuery({
     queryKey: ["users", filterParams, filterAttempt],
     queryFn: () => getRecommendedUsers(filterParams),
-    enabled: hasAppliedFilters && filterAttempt > 0,
+    enabled: false,
+    onError: (err) => {
+      if (typeof err?.response?.data?.remaining === "number") {
+        setRemainingFilters(Math.max(0, err.response.data.remaining));
+      }
+      toast.error(
+        err?.response?.data?.message || t("friends.filters.limitError")
+      );
+    },
   });
 
   const recommendedUsers = hasAppliedFilters
     ? recommendationData?.users ?? []
     : [];
+
+  useEffect(() => {
+    if (filterStatus && typeof filterStatus.remaining === "number") {
+      setRemainingFilters(Math.max(0, filterStatus.remaining));
+    }
+  }, [filterStatus]);
+
+  useEffect(() => {
+    if (typeof recommendationData?.remaining === "number") {
+      setRemainingFilters(Math.max(0, recommendationData.remaining));
+    }
+  }, [recommendationData]);
+
+  useEffect(() => {
+    if (hasAppliedFilters && filterAttempt > 0) {
+      fetchRecommendations();
+    }
+  }, [hasAppliedFilters, filterAttempt, filterParams, fetchRecommendations]);
 
   const { mutate: sendRequestMutation, isPending } = useMutation({
     mutationFn: sendFriendRequest,
@@ -251,6 +289,12 @@ const FriendsPage = () => {
 
   const handleApplyFilters = (event) => {
     event.preventDefault();
+
+    if (remainingFilters !== Infinity && remainingFilters <= 0) {
+      toast.error(t("friends.filters.limitError"));
+      return;
+    }
+
     setAppliedFilters({ ...filters });
     setHasAppliedFilters(true);
     setFilterAttempt((prev) => prev + 1);
@@ -457,17 +501,28 @@ const FriendsPage = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm opacity-70">
-                  {t("friends.filters.applyHint")}
-                </p>
-                <div className="flex gap-3 justify-end">
-                  <button type="button" className="btn btn-ghost" onClick={handleResetFilters}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm opacity-70 leading-relaxed">
+                    {t("friends.filters.applyHint")}
+                  </p>
+                  <p className="text-xs opacity-70">
+                    {t("friends.filters.remainingLabel", {
+                      count: remainingFilters === Infinity ? "∞" : Math.max(0, remainingFilters),
+                    })}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end sm:items-center w-full sm:w-auto">
+                  <button
+                    type="button"
+                    className="btn btn-ghost w-full sm:w-auto"
+                    onClick={handleResetFilters}
+                  >
                     {t("friends.filters.reset")}
                   </button>
                   <button
                     type="submit"
-                    className="btn btn-primary"
+                    className="btn btn-primary w-full sm:w-auto"
                   >
                     {t("friends.filters.apply")}
                   </button>
