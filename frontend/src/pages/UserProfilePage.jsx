@@ -1,13 +1,17 @@
 ﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
-import { getUserProfile, removeFriend, sendFriendRequest } from "../lib/api";
+import {
+  cancelFriendRequest,
+  getUserProfile,
+  removeFriend,
+  sendFriendRequest,
+} from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
 import toast from "react-hot-toast";
 import {
   CalendarIcon,
   MapPinIcon,
-  HeartIcon,
   QuoteIcon,
   BookOpenIcon,
   PawPrintIcon,
@@ -15,6 +19,7 @@ import {
   MessageSquareIcon,
   UserMinusIcon,
   UserPlusIcon,
+  XCircleIcon,
 } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 
@@ -54,9 +59,25 @@ const UserProfilePage = () => {
       toast.success(t("profile.requestSentToast"));
       queryClient.invalidateQueries({ queryKey: ["user-profile", id] });
       queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || t("profile.requestError"));
+    },
+  });
+
+  const { mutate: cancelRequest, isPending: cancelling } = useMutation({
+    mutationFn: (targetId) => cancelFriendRequest(targetId),
+    onSuccess: () => {
+      toast.success(t("profile.requestCancelToast"));
+      queryClient.invalidateQueries({ queryKey: ["user-profile", id] });
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
+    },
+    onError: (err) => {
+      toast.error(
+        err?.response?.data?.message || t("profile.requestCancelError")
+      );
     },
   });
 
@@ -129,26 +150,37 @@ const UserProfilePage = () => {
     }
 
     let label = t("profile.addFriend");
-    let disabled = sending;
+    let disabled = sending || cancelling;
+    let onClick = () => sendRequest(user._id);
+    let icon = <UserPlusIcon className="size-4 mr-2" />;
+
     if (user.pendingRequestSent) {
-      label = t("profile.requestSentStatus");
-      disabled = true;
+      label = cancelling ? t("profile.saving") : t("profile.cancelRequest");
+      icon = cancelling ? (
+        <LoaderIcon className="size-4 mr-2 animate-spin" />
+      ) : (
+        <XCircleIcon className="size-4 mr-2" />
+      );
+      onClick = () => cancelRequest(user._id);
     } else if (user.pendingRequestReceived) {
       label = t("profile.respondRequest");
       disabled = true;
+      icon = <UserPlusIcon className="size-4 mr-2" />;
+    } else if (sending) {
+      icon = <LoaderIcon className="size-4 mr-2 animate-spin" />;
     }
+
+    const buttonClass = `btn ${
+      user.pendingRequestSent ? "btn-outline" : "btn-primary"
+    }`;
 
     return (
       <button
-        className="btn btn-primary"
-        onClick={() => sendRequest(user._id)}
+        className={buttonClass}
+        onClick={onClick}
         disabled={disabled}
       >
-        {sending && !disabled ? (
-          <LoaderIcon className="size-4 mr-2 animate-spin" />
-        ) : (
-          <UserPlusIcon className="size-4 mr-2" />
-        )}
+        {icon}
         {label}
       </button>
     );

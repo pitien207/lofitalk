@@ -6,11 +6,13 @@ import {
   getOutgoingFriendReqs,
   getRecommendedUsers,
   getUserFriends,
+  cancelFriendRequest,
   sendFriendRequest,
 } from "../lib/api";
 import {
-  CheckCircleIcon,
+  LoaderIcon,
   MapPinIcon,
+  XCircleIcon,
   UserPlusIcon,
   UsersIcon,
 } from "lucide-react";
@@ -222,14 +224,21 @@ const FriendsPage = () => {
       queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
   });
 
+  const { mutate: cancelRequestMutation, isPending: isCancelling } =
+    useMutation({
+      mutationFn: cancelFriendRequest,
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
+    });
+
   useEffect(() => {
     const outgoingIds = new Set();
     if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
       outgoingFriendReqs.forEach((req) => {
         outgoingIds.add(req.recipient._id);
       });
-      setOutgoingRequestsIds(outgoingIds);
     }
+    setOutgoingRequestsIds(outgoingIds);
   }, [outgoingFriendReqs]);
 
   const updateFilterField = (field, value) => {
@@ -533,25 +542,53 @@ const FriendsPage = () => {
                             </div>
                           )}
                         </div>
-                      </Link>
+                  </Link>
 
-                      {user.bio && <p className="text-sm opacity-70">{user.bio}</p>}
+                      <p
+                        className="text-sm opacity-70"
+                        style={{
+                          minHeight: "2.5rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {user.bio?.trim() ? user.bio : "\u00A0"}
+                      </p>
 
                       <button
                         className={`btn w-full mt-2 ${
-                          hasRequestBeenSent ? 'btn-disabled' : 'btn-primary'
-                        } `}
-                        onClick={() => sendRequestMutation(user._id)}
-                        disabled={hasRequestBeenSent || isPending}
+                          hasRequestBeenSent ? "btn-outline" : "btn-primary"
+                        }`}
+                        onClick={() =>
+                          hasRequestBeenSent
+                            ? cancelRequestMutation(user._id)
+                            : sendRequestMutation(user._id)
+                        }
+                        disabled={
+                          hasRequestBeenSent ? isCancelling : isPending
+                        }
                       >
                         {hasRequestBeenSent ? (
                           <>
-                            <CheckCircleIcon className="size-4 mr-2" />
-                            {t("home.requestSent")}
+                            {isCancelling ? (
+                              <LoaderIcon className="size-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircleIcon className="size-4 mr-2" />
+                            )}
+                            {isCancelling
+                              ? t("profile.saving")
+                              : t("home.cancelRequest")}
                           </>
                         ) : (
                           <>
-                            <UserPlusIcon className="size-4 mr-2" />
+                            {isPending ? (
+                              <LoaderIcon className="size-4 mr-2 animate-spin" />
+                            ) : (
+                              <UserPlusIcon className="size-4 mr-2" />
+                            )}
                             {t("home.sendRequest")}
                           </>
                         )}

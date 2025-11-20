@@ -336,6 +336,34 @@ export async function sendFriendRequest(req, res) {
   }
 }
 
+export async function cancelFriendRequest(req, res) {
+  try {
+    const senderId = req.user.id;
+    const { id: recipientId } = req.params;
+
+    const pendingRequest = await FriendRequest.findOne({
+      sender: senderId,
+      recipient: recipientId,
+      status: "pending",
+    });
+
+    if (!pendingRequest) {
+      return res
+        .status(404)
+        .json({ message: "Pending friend request not found" });
+    }
+
+    await pendingRequest.deleteOne();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Friend request cancelled" });
+  } catch (error) {
+    console.error("Error cancelling friend request", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export async function acceptFriendRequest(req, res) {
   try {
     const { id: requestId } = req.params;
@@ -445,6 +473,7 @@ export async function getUserProfile(req, res) {
       isSelf,
       isFriend,
       pendingRequestSent: Boolean(pendingSent),
+      pendingRequestSentId: pendingSent?._id ?? null,
       pendingRequestReceived: Boolean(pendingReceived),
     });
   } catch (error) {
