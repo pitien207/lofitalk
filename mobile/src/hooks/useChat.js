@@ -179,6 +179,53 @@ const useChat = () => {
     [channels, cleanupChannelListeners]
   );
 
+  const startDirectChat = useCallback(
+    async (targetUserId) => {
+      if (!clientRef.current || !currentUserIdRef.current || !targetUserId) {
+        return;
+      }
+
+      setSelectingChannel(true);
+      setChatError(null);
+      cleanupChannelListeners();
+
+      const members = [currentUserIdRef.current, targetUserId].sort();
+      const channelId = members.join("--");
+
+      try {
+        const channel = clientRef.current.channel("messaging", channelId, {
+          members,
+        });
+        await channel.watch({ presence: true });
+        setChannels((prev) => {
+          const exists = prev.some((c) => c.id === channel.id);
+          return exists ? prev : [channel, ...prev];
+        });
+        setActiveChannel(channel);
+        setMessages([...channel.state.messages]);
+        channel.markRead();
+
+        const subscription = channel.on((event) => {
+          if (
+            event.type === "message.new" ||
+            event.type === "message.updated" ||
+            event.type === "message.deleted"
+          ) {
+            setMessages([...channel.state.messages]);
+            setChannels((prev) => [...prev]);
+          }
+        });
+        channelSubscriptionRef.current = subscription;
+      } catch (error) {
+        console.log("Open direct channel error:", error);
+        setChatError("Unable to start chat right now");
+      } finally {
+        setSelectingChannel(false);
+      }
+    },
+    [cleanupChannelListeners]
+  );
+
   const closeChannel = useCallback(() => {
     cleanupChannelListeners();
     setActiveChannel(null);
@@ -218,6 +265,7 @@ const useChat = () => {
     disconnectChat,
     refreshChannels,
     openChannel,
+    startDirectChat,
     closeChannel,
     sendMessage,
   };

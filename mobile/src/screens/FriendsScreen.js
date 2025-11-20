@@ -39,6 +39,7 @@ const FriendsScreen = ({
   onFriendSelect,
   onResetFriendSelection,
   onNavigateHome,
+  onStartChat,
 }) => {
   const showProfile = Boolean(selectedFriend);
 
@@ -76,6 +77,7 @@ const FriendsScreen = ({
           profile={friendProfile || selectedFriend}
           loading={profileLoading}
           error={profileError}
+          onStartChat={onStartChat}
         />
       ) : friends.length === 0 ? (
         <View style={styles.emptyState}>
@@ -119,7 +121,7 @@ const FriendsScreen = ({
     </ScrollView>
   );
 };
-const FriendProfile = ({ profile, loading, error }) => {
+const FriendProfile = ({ profile, loading, error, onStartChat }) => {
   if (loading) {
     return (
       <View style={styles.profileStateBox}>
@@ -173,7 +175,10 @@ const FriendProfile = ({ profile, loading, error }) => {
           <Text style={styles.friendProfileBio}>"{profile.bio}"</Text>
         )}
         <View style={styles.friendProfileActions}>
-          <TouchableOpacity style={buttonStyles.primaryButton}>
+          <TouchableOpacity
+            style={buttonStyles.primaryButton}
+            onPress={() => onStartChat?.(profile._id)}
+          >
             <Text style={buttonStyles.primaryButtonText}>Message</Text>
           </TouchableOpacity>
           <TouchableOpacity style={buttonStyles.secondaryOutlineButton}>

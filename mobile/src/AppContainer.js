@@ -62,6 +62,7 @@ const AppContainer = () => {
     disconnectChat,
     refreshChannels,
     openChannel,
+    startDirectChat,
     closeChannel,
     sendMessage,
   } = useChat();
@@ -96,6 +97,17 @@ const AppContainer = () => {
   const handleNavChange = (page) => {
     resetSelection();
     setActivePage(page);
+  };
+
+  const handleViewProfileFromDiscover = (targetUserId) => {
+    if (!targetUserId) return;
+    selectFriend({ _id: targetUserId });
+    setActivePage("friends");
+  };
+
+  const handleStartChatWith = async (targetUserId) => {
+    await startDirectChat(targetUserId);
+    setActivePage("chat");
   };
 
   useEffect(() => {
@@ -199,14 +211,10 @@ const AppContainer = () => {
             friendProfile={friendProfile}
             profileLoading={profileLoading}
             profileError={profileError}
-            filters={filters}
-            recommended={recommended}
-            recommendedLoading={recommendedLoading}
-            recommendedError={recommendedError}
-            requestingId={requestingId}
             onFriendSelect={selectFriend}
             onResetFriendSelection={resetSelection}
             onNavigateHome={() => handleNavChange("home")}
+            onStartChat={handleStartChatWith}
           />
         )}
         {activePage === "discover" && (
@@ -220,6 +228,7 @@ const AppContainer = () => {
             onResetFilters={resetFilters}
             onApplyFilters={applyFilters}
             onSendRequest={sendRequest}
+            onViewProfile={handleViewProfileFromDiscover}
           />
         )}
         {activePage === "chat" && (

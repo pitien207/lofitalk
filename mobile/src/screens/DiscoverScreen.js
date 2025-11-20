@@ -30,6 +30,7 @@ const DiscoverScreen = ({
   onResetFilters,
   onApplyFilters,
   onSendRequest,
+  onViewProfile,
 }) => {
   const genderOptions = useMemo(
     () => [
@@ -185,6 +186,7 @@ const DiscoverScreen = ({
         error={recommendedError}
         onSendRequest={onSendRequest}
         requestingId={requestingId}
+        onViewProfile={onViewProfile}
       />
     </ScrollView>
   );
@@ -307,6 +309,7 @@ const RecommendationsList = ({
   error,
   onSendRequest,
   requestingId,
+  onViewProfile,
 }) => (
   <View style={styles.recommendationsWrapper}>
     <Text style={styles.recommendationsTitle}>Recommendations</Text>
@@ -329,22 +332,28 @@ const RecommendationsList = ({
       <View style={styles.recommendationList}>
         {items.map((user) => (
           <View key={user._id} style={styles.recommendationCard}>
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={resolveImageSource(user.profilePic)}
-                style={styles.avatar}
-              />
-              {user.isOnline && <View style={styles.onlineDot} />}
-            </View>
-            <View style={styles.meta}>
-              <Text style={styles.name}>{user.fullName}</Text>
-              <Text style={styles.location}>
-                {user.location || formatLocation(user) || "Somewhere cozy"}
-              </Text>
-              <Text style={styles.bio} numberOfLines={2}>
-                {user.bio || "Say hi and start a conversation."}
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.recommendationContent}
+              activeOpacity={0.85}
+              onPress={() => onViewProfile?.(user._id)}
+            >
+              <View style={styles.avatarWrapper}>
+                <Image
+                  source={resolveImageSource(user.profilePic)}
+                  style={styles.avatar}
+                />
+                {user.isOnline && <View style={styles.onlineDot} />}
+              </View>
+              <View style={styles.meta}>
+                <Text style={styles.name}>{user.fullName}</Text>
+                <Text style={styles.location}>
+                  {user.location || formatLocation(user) || "Somewhere cozy"}
+                </Text>
+                <Text style={styles.bio} numberOfLines={2}>
+                  {user.bio || "Say hi and start a conversation."}
+                </Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 buttonStyles.primaryButton,
@@ -470,6 +479,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
     padding: 14,
+    gap: 10,
+  },
+  recommendationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   avatarWrapper: {
     marginRight: 12,
