@@ -4,7 +4,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { LoaderIcon, RotateCcwIcon, ShuffleIcon } from "lucide-react";
+import { LoaderIcon, RotateCcwIcon } from "lucide-react";
+import toast from "react-hot-toast";
 
 import {
   consumeTarotEnergy,
@@ -21,6 +22,7 @@ import useAuthUser from "../hooks/useAuthUser";
 
 const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
 const ENERGY_MAX = 7;
+const QUESTIONS_FORM_ID = "tarot-questions-form";
 
 const TarotPage = () => {
   const deck = useMemo(() => {
@@ -37,8 +39,9 @@ const TarotPage = () => {
   const [questions, setQuestions] = useState(["", "", ""]);
   const [drawnCards, setDrawnCards] = useState([null, null, null]);
   const [readingResult, setReadingResult] = useState(null);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [isRevealing, setIsRevealing] = useState(false);
+  const [flippingIndex, setFlippingIndex] = useState(null);
+  const [hasConsumedEnergyThisRound, setHasConsumedEnergyThisRound] =
+    useState(false);
   const animationTimeoutRef = useRef(null);
   const hasHydratedFromServer = useRef(false);
   const queryClient = useQueryClient();
@@ -85,15 +88,19 @@ const TarotPage = () => {
     },
   });
 
-  const { mutate: requestReading, isPending: isReadingPending, error } =
-    useMutation({
-      mutationFn: getTarotReading,
-      onSuccess: (response) => {
-        const result = response?.result || response?.data?.result || response;
-        setReadingResult(result);
-        queryClient.invalidateQueries({ queryKey: ["tarotLatest"] });
-      },
-    });
+  const { mutate: requestReading, isPending: isReadingPending } = useMutation({
+    mutationFn: getTarotReading,
+    onSuccess: (response) => {
+      const result = response?.result || response?.data?.result || response;
+      setReadingResult(result);
+      queryClient.invalidateQueries({ queryKey: ["tarotLatest"] });
+    },
+    onError: (err) => {
+      toast.error(
+        err?.response?.data?.message || t("tarot.errors.readingFailed")
+      );
+    },
+  });
 
   const { mutate: clearLatestMutation, isPending: isClearing } = useMutation({
     mutationFn: clearTarotLatest,
@@ -139,88 +146,93 @@ const TarotPage = () => {
     hasHydratedFromServer.current = true;
   }, [latestData, deck]);
 
-  const triggerFlipAnimation = () => {
+  const triggerFlipAnimation = (index) => {
     if (animationTimeoutRef.current) {
       clearTimeout(animationTimeoutRef.current);
     }
-    setIsRevealing(true);
-    animationTimeoutRef.current = setTimeout(() => setIsRevealing(false), 800);
+    setFlippingIndex(index);
+    animationTimeoutRef.current = setTimeout(() => setFlippingIndex(null), 800);
   };
 
-  const handleDrawCards = async () => {
-    setErrorMsg("");
+  const handleCardClick = async (index) => {
+    if (drawnCards[index] || isConsuming) return;
 
     if (!currentSituation.trim()) {
-      setErrorMsg("Vui lòng ghi rõ Hoàn cảnh hiện tại trước khi rút bài.");
+      toast.error(t("tarot.errors.needSituationBeforeDraw"));
       return;
     }
 
     if (questions.some((question) => !question.trim())) {
-      setErrorMsg(t("tarot.errors.needQuestionsBeforeDraw"));
+      toast.error(t("tarot.errors.needQuestionsBeforeDraw"));
       return;
     }
 
-    if (isLoadingEnergy) {
-      setErrorMsg(t("tarot.errors.loadingEnergy"));
+    if (!hasConsumedEnergyThisRound && isLoadingEnergy) {
+      toast.error(t("tarot.errors.loadingEnergy"));
       return;
     }
 
-    if (energy < ENERGY_MAX) {
-      setErrorMsg(
+    if (!hasConsumedEnergyThisRound && energy < ENERGY_MAX) {
+      toast.error(
         t("tarot.errors.needEnergy", { required: ENERGY_MAX, current: energy })
       );
       return;
     }
 
     if (!deck.length) {
-      setErrorMsg(t("tarot.errors.noDeck"));
+      toast.error(t("tarot.errors.noDeck"));
       return;
     }
 
     try {
-      await consumeEnergy();
+      if (!hasConsumedEnergyThisRound) {
+        await consumeEnergy();
+        setHasConsumedEnergyThisRound(true);
+      }
     } catch (err) {
-      setErrorMsg(
+      toast.error(
         err?.response?.data?.message || t("tarot.errors.consumeFailed")
       );
       return;
     }
 
-    const pool = [...deck];
-    const picks = [];
+    const usedNames = drawnCards
+      .filter((card) => Boolean(card?.name))
+      .map((card) => card?.name);
+    const pool = deck.filter((card) => !usedNames.includes(card.name));
 
-    for (let i = 0; i < 3 && pool.length; i++) {
-      const idx = Math.floor(Math.random() * pool.length);
-      const reversed = Math.random() < 0.5;
-      picks.push({ ...pool[idx], reversed });
-      pool.splice(idx, 1);
-    }
-
-    if (picks.length !== 3) {
-      setErrorMsg(t("tarot.errors.notEnoughCards"));
+    if (!pool.length) {
+      toast.error(t("tarot.errors.notEnoughCards"));
       return;
     }
 
-    setDrawnCards(picks);
-    triggerFlipAnimation();
+    const idx = Math.floor(Math.random() * pool.length);
+    const reversed = Math.random() < 0.5;
+    const selectedCard = { ...pool[idx], reversed };
+
+    setDrawnCards((prev) => {
+      const next = [...prev];
+      next[index] = selectedCard;
+      return next;
+    });
+    triggerFlipAnimation(index);
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setErrorMsg("");
 
     if (!currentSituation.trim()) {
-      setErrorMsg("Vui lòng ghi rõ Hoàn cảnh hiện tại trước khi xin lời khuyên.");
+      toast.error(t("tarot.errors.needSituation"));
       return;
     }
 
     if (questions.some((question) => !question.trim())) {
-      setErrorMsg(t("tarot.errors.needQuestions"));
+      toast.error(t("tarot.errors.needQuestions"));
       return;
     }
 
     if (drawnCards.some((card) => !card)) {
-      setErrorMsg(t("tarot.errors.needDrawnCards"));
+      toast.error(t("tarot.errors.needDrawnCards"));
       return;
     }
 
@@ -237,15 +249,14 @@ const TarotPage = () => {
     setQuestions(["", "", ""]);
     setCurrentSituation("");
     setReadingResult(null);
-    setErrorMsg("");
+    setHasConsumedEnergyThisRound(false);
     clearLatestMutation();
   };
 
   const handleRefillEnergy = () => {
-    setErrorMsg("");
     refillEnergyMutation(undefined, {
       onError: (err) =>
-        setErrorMsg(
+        toast.error(
           err?.response?.data?.message || t("tarot.errors.refillFailed")
         ),
     });
@@ -260,7 +271,7 @@ const TarotPage = () => {
     if (!cleanedRawText) return null;
     try {
       return JSON.parse(cleanedRawText);
-    } catch (err) {
+    } catch {
       return null;
     }
   }, [cleanedRawText]);
@@ -283,6 +294,9 @@ const TarotPage = () => {
       .replace(/\\n/g, "\n")
       .trim();
   }, [cleanedRawText, parsedFromRaw, displayedReadings]);
+
+  const hasThreeCards = drawnCards.every((card) => Boolean(card));
+  const canShowResults = Boolean(readingResult) && hasThreeCards;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -324,23 +338,6 @@ const TarotPage = () => {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="btn btn-outline"
-                onClick={handleDrawCards}
-                disabled={isConsuming || isLoadingEnergy}
-              >
-                {isConsuming ? (
-                  <>
-                    <LoaderIcon className="size-4 mr-2 animate-spin" />
-                    {t("tarot.buttons.consuming")}
-                  </>
-                ) : (
-                  <>
-                    <ShuffleIcon className="size-4 mr-2" /> {t("tarot.buttons.draw")}
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
                 className="btn btn-ghost"
                 onClick={handleClearTable}
                 disabled={isClearing}
@@ -376,14 +373,35 @@ const TarotPage = () => {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold mb-3">{t("tarot.cards.title")}</h2>
+              <h2 className="text-lg font-semibold mb-2">{t("tarot.cards.title")}</h2>
+              <p className="text-xs opacity-70 mb-4">
+                {isConsuming
+                  ? t("tarot.buttons.consuming")
+                  : t("tarot.cards.tapHint")}
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {drawnCards.map((card, index) => (
-                  <div key={index} className="tarot-card-slot">
+                  <div
+                    key={index}
+                    className={`tarot-card-slot ${!card ? "tarot-card-slot--clickable" : ""}`}
+                  >
                     <div
+                      role="button"
+                      tabIndex={card ? -1 : 0}
+                      aria-disabled={Boolean(card)}
                       className={`tarot-card ${
-                        isRevealing ? "tarot-card--flip" : ""
-                      }`}
+                        flippingIndex === index ? "tarot-card--flip" : ""
+                      } ${!card ? "tarot-card--interactive" : ""}`}
+                      onClick={() => handleCardClick(index)}
+                      onKeyDown={(event) => {
+                        if (
+                          !card &&
+                          (event.key === "Enter" || event.key === " ")
+                        ) {
+                          event.preventDefault();
+                          handleCardClick(index);
+                        }
+                      }}
                     >
                       <img
                         src={card ? card.src : cardBackImg}
@@ -410,7 +428,102 @@ const TarotPage = () => {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="flex justify-center">
+              <button
+                type="submit"
+                form={QUESTIONS_FORM_ID}
+                className="btn btn-primary"
+                disabled={isReadingPending || !hasThreeCards}
+              >
+                {isReadingPending ? (
+                  <>
+                    <LoaderIcon className="size-4 mr-2 animate-spin" />{" "}
+                    {t("tarot.questions.submitting")}
+                  </>
+                ) : (
+                  t("tarot.questions.submit")
+                )}
+              </button>
+            </div>
+
+            {canShowResults && (
+              <div className="rounded-2xl border border-base-300 bg-base-100 p-4 space-y-4">
+                <h2 className="text-lg font-semibold">{t("tarot.results.title")}</h2>
+                {displayedReadings?.length ? (
+                  <>
+                    <div className="space-y-3">
+                      {displayedReadings.map((item, index) => {
+                        const baseName = String(item.card || "").replace(
+                          /\s*\(reversed\)\s*$/i,
+                          ""
+                        );
+                        const matched = deck.find(
+                          (card) => card.name === baseName
+                        );
+                        const reversed = /\(reversed\)/i.test(
+                          String(item.card || "")
+                        );
+
+                        return (
+                          <div
+                            key={index}
+                            className="p-4 border border-base-300 rounded bg-base-100"
+                          >
+                            <div className="flex items-start gap-3">
+                              {matched && (
+                                <img
+                                  src={matched.src}
+                                  alt={item.card}
+                                  className={`w-16 h-24 object-cover rounded ${
+                                    reversed ? "rotate-180" : ""
+                                  }`}
+                                />
+                              )}
+                              <div>
+                                <p className="text-sm opacity-70">
+                                  {t("tarot.results.questionPrefix", {
+                                    index: index + 1,
+                                  })}{" "}
+                                  {item.question}
+                                </p>
+                                <p className="font-semibold mt-1">
+                                  {t("tarot.results.cardLabel")}: {item.card}
+                                </p>
+                                <p className="mt-1">{item.message}</p>
+                                <p className="mt-1 text-primary">
+                                  {t("tarot.results.adviceLabel")}: {item.advice}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {overallMessage && (
+                      <div className="alert">
+                        <span>{overallMessage}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  fallbackText && (
+                    <div className="alert alert-info">
+                      <div>
+                        <p className="font-semibold">{t("tarot.results.aiTitle")}</p>
+                        <p className="text-sm whitespace-pre-line">{fallbackText}</p>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            <form
+              id={QUESTIONS_FORM_ID}
+              onSubmit={handleSubmit}
+              className="space-y-4"
+            >
               <div>
                 <h2 className="text-lg font-semibold mb-2">
                   {t("tarot.questions.title")}
@@ -460,113 +573,9 @@ const TarotPage = () => {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isReadingPending}
-              >
-                {isReadingPending ? (
-                  <>
-                    <LoaderIcon className="size-4 mr-2 animate-spin" />{" "}
-                    {t("tarot.questions.submitting")}
-                  </>
-                ) : (
-                  t("tarot.questions.submit")
-                )}
-              </button>
-
-              {errorMsg && (
-                <div className="alert alert-warning">
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              {error && (
-                <div className="alert alert-error">
-                  <span>
-                    {error?.response?.data?.message ||
-                      t("tarot.errors.readingFailed")}
-                  </span>
-                </div>
-              )}
             </form>
           </div>
         </div>
-
-        {readingResult && (
-          <div className="card bg-base-200 shadow">
-            <div className="card-body space-y-4">
-              <h2 className="text-xl font-semibold">{t("tarot.results.title")}</h2>
-              {displayedReadings?.length ? (
-                <>
-                  <div className="space-y-3">
-                    {displayedReadings.map((item, index) => {
-                      const baseName = String(item.card || "").replace(
-                        /\s*\(reversed\)\s*$/i,
-                        ""
-                      );
-                      const matched = deck.find(
-                        (card) => card.name === baseName
-                      );
-                      const reversed = /\(reversed\)/i.test(
-                        String(item.card || "")
-                      );
-
-                      return (
-                        <div
-                          key={index}
-                          className="p-4 border border-base-300 rounded bg-base-100"
-                        >
-                          <div className="flex items-start gap-3">
-                            {matched && (
-                              <img
-                                src={matched.src}
-                                alt={item.card}
-                                className={`w-16 h-24 object-cover rounded ${
-                                  reversed ? "rotate-180" : ""
-                                }`}
-                              />
-                            )}
-                            <div>
-                              <p className="text-sm opacity-70">
-                                {t("tarot.results.questionPrefix", {
-                                  index: index + 1,
-                                })}{" "}
-                                {item.question}
-                              </p>
-                              <p className="font-semibold mt-1">
-                                {t("tarot.results.cardLabel")}: {item.card}
-                              </p>
-                              <p className="mt-1">{item.message}</p>
-                              <p className="mt-1 text-primary">
-                                {t("tarot.results.adviceLabel")}: {item.advice}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {overallMessage && (
-                    <div className="alert">
-                      <span>{overallMessage}</span>
-                    </div>
-                  )}
-                </>
-              ) : (
-                fallbackText && (
-                  <div className="alert alert-info">
-                    <div>
-                      <p className="font-semibold">{t("tarot.results.aiTitle")}</p>
-                      <p className="text-sm whitespace-pre-line">{fallbackText}</p>
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

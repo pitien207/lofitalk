@@ -400,6 +400,7 @@ const english = {
     },
     cards: {
       title: "Drawn Cards",
+      tapHint: "Tap each card to draw it after entering your questions.",
       placeholder: "placeholder",
       reversed: " (reversed)",
       backAlt: "Card back",
@@ -427,6 +428,10 @@ const english = {
       noDeck: "Deck not found.",
       consumeFailed: "Unable to consume energy.",
       notEnoughCards: "Not enough cards to draw.",
+      needSituationBeforeDraw:
+        "Please describe your current situation before drawing cards.",
+      needSituation:
+        "Please describe your current situation before requesting a reading.",
       needQuestions: "Please enter all 3 questions.",
       needDrawnCards: "Please draw all 3 cards first.",
       refillFailed: "Unable to refill energy.",
@@ -860,6 +865,7 @@ const vietnamese = {
     },
     cards: {
       title: "Lá bài đã bốc",
+      tapHint: "Nhập đủ câu hỏi rồi chạm vào từng lá để bốc.",
       placeholder: "placeholder",
       reversed: " (ngược)",
       backAlt: "Mặt sau lá bài",
@@ -888,6 +894,9 @@ const vietnamese = {
       noDeck: "Không tìm thấy bộ bài.",
       consumeFailed: "Không thể tiêu hao năng lượng.",
       notEnoughCards: "Không đủ lá bài để bốc.",
+      needSituationBeforeDraw:
+        "Hãy mô tả hoàn cảnh hiện tại trước khi bốc bài.",
+      needSituation: "Hãy mô tả hoàn cảnh hiện tại trước khi xin lời tiên tri.",
       needQuestions: "Hãy nhập đủ 3 câu hỏi.",
       needDrawnCards: "Hãy bốc đủ 3 lá bài trước.",
       refillFailed: "Không thể nạp năng lượng.",
@@ -1324,6 +1333,8 @@ const german = {
     },
     cards: {
       title: "Gezogene Karten",
+      tapHint:
+        "Tippe nach dem Ausfüllen aller Fragen auf jede Karte, um sie zu ziehen.",
       placeholder: "Platzhalter",
       reversed: " (umgekehrt)",
       backAlt: "Kartenrückseite",
@@ -1352,6 +1363,10 @@ const german = {
       noDeck: "Deck nicht gefunden.",
       consumeFailed: "Energie kann nicht verbraucht werden.",
       notEnoughCards: "Nicht genug Karten zum Ziehen.",
+      needSituationBeforeDraw:
+        "Beschreibe deine aktuelle Situation, bevor du Karten ziehst.",
+      needSituation:
+        "Beschreibe deine aktuelle Situation, bevor du die Lesung anfragst.",
       needQuestions: "Bitte gib alle 3 Fragen ein.",
       needDrawnCards: "Bitte ziehe zuerst alle 3 Karten.",
       refillFailed: "Energie kann nicht aufgefüllt werden.",

@@ -25,6 +25,22 @@
   padding: 10px;
 }
 
+.tarot-card-slot--clickable {
+  cursor: pointer;
+}
+
+.tarot-card--interactive {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tarot-card--interactive:hover,
+.tarot-card--interactive:focus-visible {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px rgba(30, 41, 59, 0.35);
+  outline: none;
+}
+
 .tarot-card--flip {
   animation: tarotFlip 0.7s ease;
 }
