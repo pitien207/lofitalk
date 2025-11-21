@@ -158,7 +158,12 @@ const AppContainer = () => {
   if (isHydrating || versionStatus === "checking") {
     return (
       <View style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar
+          style="light"
+          hidden
+          translucent
+          backgroundColor="transparent"
+        />
         <AppBackground />
       </View>
     );
@@ -167,7 +172,12 @@ const AppContainer = () => {
   if (requiresUpdate) {
     return (
       <View style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar
+          style="light"
+          hidden
+          translucent
+          backgroundColor="transparent"
+        />
         <AppBackground />
         <UpdateRequiredScreen
           requiredVersion={serverVersion}
@@ -182,7 +192,12 @@ const AppContainer = () => {
   if (showIntro) {
     return (
       <View style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar
+          style="light"
+          hidden
+          translucent
+          backgroundColor="transparent"
+        />
         <AppBackground />
         <Animated.View style={[styles.introContent, { opacity: introOpacity }]}>
           <View style={styles.introGlowOne} />
@@ -198,7 +213,12 @@ const AppContainer = () => {
   if (!user) {
     return (
       <View style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar
+          style="light"
+          hidden
+          translucent
+          backgroundColor="transparent"
+        />
         <AppBackground />
         <AuthScreen
           email={email}
@@ -216,7 +236,12 @@ const AppContainer = () => {
   if (user && !user.isOnboarded) {
     return (
       <View style={styles.screen}>
-        <StatusBar style="light" />
+        <StatusBar
+          style="light"
+          hidden
+          translucent
+          backgroundColor="transparent"
+        />
         <AppBackground />
         <OnboardingScreen
           user={user}
@@ -228,7 +253,12 @@ const AppContainer = () => {
 
   return (
     <View style={styles.screen}>
-      <StatusBar style="light" />
+      <StatusBar
+        style="light"
+        hidden
+        translucent
+        backgroundColor="transparent"
+      />
       <AppBackground />
       <View style={styles.mainArea}>
         {activePage === "home" && (

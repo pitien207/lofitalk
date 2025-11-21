@@ -19,6 +19,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "androidStatusBar": {
+        "hidden": true,
+        "translucent": true,
+        "backgroundColor": "transparent"
+      },
       "package": "com.nghiato2.lofitalkmobile"
     },
     "web": {

@@ -257,8 +257,8 @@ const ChatScreen = ({
     return (
       <KeyboardAvoidingView
         style={styles.chatWrapper}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 16}
       >
         <View style={styles.chatHeader}>
           <TouchableOpacity style={styles.backButton} onPress={onBackToList}>
@@ -291,6 +291,8 @@ const ChatScreen = ({
           style={styles.messageList}
           contentContainerStyle={styles.messageListContent}
           inverted
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <View
               style={[
@@ -589,7 +591,8 @@ const styles = StyleSheet.create({
   messageListContent: {
     flexGrow: 1,
     justifyContent: "flex-end",
-    paddingBottom: 16,
+    paddingBottom: 110,
+    paddingTop: 12,
   },
   messageItem: {
     maxWidth: "80%",
