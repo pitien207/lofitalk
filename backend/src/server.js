@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 import tarotRoutes from "./routes/tarot.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import metaRoutes from "./routes/meta.route.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -62,6 +63,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/tarot", tarotRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/meta", metaRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

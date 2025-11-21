@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Image, StyleSheet, Text, View } from "react-native";
+import { Alert, Animated, Image, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
@@ -12,9 +12,11 @@ import AppBackground from "./components/layout/AppBackground";
 import useAuth from "./hooks/useAuth";
 import useFriends from "./hooks/useFriends";
 import useChat from "./hooks/useChat";
+import useAppVersion from "./hooks/useAppVersion";
 import { MENU_ITEMS } from "./constants";
 import { BRAND_COLORS } from "./theme/colors";
 import Logo from "../assets/LofiTalk_logo.png";
+import UpdateRequiredScreen from "./screens/UpdateRequiredScreen";
 
 const AppContainer = () => {
   const {
@@ -68,6 +70,14 @@ const AppContainer = () => {
     closeChannel,
     sendMessage,
   } = useChat();
+  const {
+    status: versionStatus,
+    requiresUpdate,
+    serverVersion,
+    currentVersion,
+    updateUrl,
+    refresh: refreshVersionCheck,
+  } = useAppVersion();
   const [activePage, setActivePage] = useState("home");
   const [showIntro, setShowIntro] = useState(true);
   const introOpacity = useRef(new Animated.Value(1)).current;
@@ -145,11 +155,26 @@ const AppContainer = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, friends.length]);
 
-  if (isHydrating) {
+  if (isHydrating || versionStatus === "checking") {
     return (
       <View style={styles.screen}>
         <StatusBar style="light" />
         <AppBackground />
+      </View>
+    );
+  }
+
+  if (requiresUpdate) {
+    return (
+      <View style={styles.screen}>
+        <StatusBar style="light" />
+        <AppBackground />
+        <UpdateRequiredScreen
+          requiredVersion={serverVersion}
+          currentVersion={currentVersion}
+          updateUrl={updateUrl}
+          onRetry={refreshVersionCheck}
+        />
       </View>
     );
   }
