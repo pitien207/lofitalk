@@ -19,6 +19,7 @@ import cardBackImg from "../pictures/cards/CardBacks.png";
 import "../tarot.css";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
+import useFlipCardSound from "../hooks/useFlipCardSound";
 
 const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
 const ENERGY_MAX = 7;
@@ -48,6 +49,7 @@ const TarotPage = () => {
   const { t } = useTranslation();
   const { authUser } = useAuthUser();
   const canRefillEnergy = ["plus", "admin"].includes(authUser?.accountType);
+  const playFlipCardSound = useFlipCardSound();
 
   const {
     data: energyData,
@@ -210,6 +212,7 @@ const TarotPage = () => {
     const reversed = Math.random() < 0.5;
     const selectedCard = { ...pool[idx], reversed };
 
+    playFlipCardSound();
     setDrawnCards((prev) => {
       const next = [...prev];
       next[index] = selectedCard;

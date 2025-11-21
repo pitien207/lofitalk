@@ -33,6 +33,7 @@ const ChatPage = () => {
 
   const { authUser } = useAuthUser();
   const { t, language } = useTranslation();
+  const isAdmin = authUser?.accountType === "admin";
 
   const { data: tokenData } = useQuery({
     queryKey: ["streamToken"],
@@ -169,7 +170,7 @@ const ChatPage = () => {
                   </p>
                 </div>
               </div>
-              <CallButton handleVideoCall={handleVideoCall} />
+              {isAdmin && <CallButton handleVideoCall={handleVideoCall} />}
             </div>
             <MessageList />
             <MessageInput focus />
