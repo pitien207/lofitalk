@@ -1,7 +1,29 @@
+import { useEffect, useRef } from "react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import usePendingNotifications from "../hooks/usePendingNotifications";
+import useNotificationSound from "../hooks/useNotificationSound";
 
 const Layout = ({ children, showSidebar = false }) => {
+  const { pendingCount, acceptedCount, declinedCount } = usePendingNotifications();
+  const playNotificationSound = useNotificationSound();
+  const previousNotificationTotal = useRef(null);
+
+  useEffect(() => {
+    const totalNotifications = pendingCount + acceptedCount + declinedCount;
+
+    if (previousNotificationTotal.current === null) {
+      previousNotificationTotal.current = totalNotifications;
+      return;
+    }
+
+    if (totalNotifications > previousNotificationTotal.current) {
+      playNotificationSound();
+    }
+
+    previousNotificationTotal.current = totalNotifications;
+  }, [pendingCount, acceptedCount, declinedCount, playNotificationSound]);
+
   return (
     <div className="min-h-screen">
       <div className="flex">

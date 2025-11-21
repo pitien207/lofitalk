@@ -6,6 +6,8 @@ const usePendingNotifications = () => {
     queryKey: ["friendRequests"],
     queryFn: getFriendRequests,
     staleTime: 30 * 1000,
+    refetchInterval: 15 * 1000,
+    refetchIntervalInBackground: true,
   });
 
   const pendingCount = data?.incomingReqs?.length || 0;
