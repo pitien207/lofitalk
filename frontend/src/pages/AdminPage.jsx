@@ -3,11 +3,13 @@ import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { getAdminUsers, updateUserAccountType } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
+import useAuthUser from "../hooks/useAuthUser";
 
 const ACCOUNT_TYPES = ["standard", "plus", "admin"];
 
 const AdminPage = () => {
   const { t } = useTranslation();
+  const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -139,18 +141,32 @@ const AdminPage = () => {
                       </td>
                       <td className="hidden md:table-cell">{user.email}</td>
                       <td>
-                        <select
-                          className="select select-sm select-bordered w-full max-w-xs"
-                          value={user.accountType}
-                          onChange={(event) => handleAccountTypeChange(user._id, event.target.value)}
-                          disabled={isPending}
-                        >
-                          {ACCOUNT_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                              {t(`admin.accountTypes.${type}`)}
-                            </option>
-                          ))}
-                        </select>
+                        {(() => {
+                          const isSelf = authUser?._id === user._id;
+                          const optionsForUser = isSelf
+                            ? ACCOUNT_TYPES
+                            : [
+                                "standard",
+                                "plus",
+                                ...(user.accountType === "admin" ? ["admin"] : []),
+                              ];
+                          const lockedAdmin = !isSelf && user.accountType === "admin";
+
+                          return (
+                            <select
+                              className="select select-sm select-bordered w-full max-w-xs"
+                              value={user.accountType}
+                              onChange={(event) => handleAccountTypeChange(user._id, event.target.value)}
+                              disabled={isPending || lockedAdmin}
+                            >
+                              {optionsForUser.map((type) => (
+                                <option key={type} value={type}>
+                                  {t(`admin.accountTypes.${type}`)}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))

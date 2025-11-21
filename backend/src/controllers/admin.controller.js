@@ -22,6 +22,12 @@ export const updateUserAccountType = async (req, res) => {
     return res.status(400).json({ message: "Invalid account type" });
   }
 
+  if (accountType === "admin" && req.user._id.toString() !== id) {
+    return res
+      .status(403)
+      .json({ message: "Cannot promote other users to admin" });
+  }
+
   if (req.user._id.toString() === id && accountType !== "admin") {
     return res
       .status(400)

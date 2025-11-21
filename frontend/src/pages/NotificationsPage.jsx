@@ -7,7 +7,6 @@ import {
 } from "../lib/api";
 import {
   BellIcon,
-  ClockIcon,
   MapPinIcon,
   MessageSquareIcon,
   UserCheckIcon,
@@ -196,10 +195,6 @@ const NotificationsPage = () => {
                                 name: notification.recipient.fullName,
                               })}
                             </p>
-                            <p className="text-xs flex items-center opacity-70">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              {t("notifications.recently")}
-                            </p>
                           </div>
                           <div className="badge badge-success">
                             <MessageSquareIcon className="h-3 w-3 mr-1" />
@@ -259,10 +254,6 @@ const NotificationsPage = () => {
                               {t("notifications.declinedText", {
                                 name: notification.recipient.fullName,
                               })}
-                            </p>
-                            <p className="text-xs flex items-center opacity-70">
-                              <ClockIcon className="h-3 w-3 mr-1" />
-                              {t("notifications.recently")}
                             </p>
                           </div>
                           <div className="badge badge-error">

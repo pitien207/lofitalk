@@ -145,6 +145,9 @@ const ChatHomePage = () => {
     const previewTimeLabel = previewTime
       ? formatRelativeTimeFromNow(previewTime, language)
       : "";
+    const unreadCount =
+      channel?.state?.read?.[authUser?._id]?.unread_messages || 0;
+    const hasUnread = unreadCount > 0;
 
     return (
       <button
@@ -169,6 +172,9 @@ const ChatHomePage = () => {
           <span
             className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-100 ${presenceDotClass}`}
           />
+          {hasUnread && (
+            <span className="absolute -top-1 -left-1 block size-3 rounded-full bg-error ring-2 ring-base-100" />
+          )}
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
           <div className="min-w-0 text-left">

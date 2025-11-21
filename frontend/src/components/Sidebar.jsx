@@ -6,6 +6,8 @@ import {
   HomeIcon,
   MessageSquareIcon,
   MoonStarIcon,
+  CrownIcon,
+  ShieldCheckIcon,
   ShieldIcon,
   SmartphoneIcon,
   UsersIcon,
@@ -13,6 +15,7 @@ import {
 import logo from "../pictures/others/LofiTalk_logo.png";
 import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
+import useUnreadChats from "../hooks/useUnreadChats";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
@@ -20,6 +23,7 @@ const Sidebar = () => {
   const currentPath = location.pathname;
   const { t } = useTranslation();
   const { hasPending } = usePendingNotifications();
+  const { hasUnread } = useUnreadChats();
   const isChatRoute =
     currentPath === "/chats" || currentPath.startsWith("/chat/");
 
@@ -31,6 +35,16 @@ const Sidebar = () => {
           <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
             LofiTalk
           </span>
+          {authUser?.accountType === "admin" && (
+            <span className="inline-flex items-center justify-center rounded-full bg-primary/15 text-primary border border-primary/30 p-1">
+              <ShieldCheckIcon className="size-4" />
+            </span>
+          )}
+          {authUser?.accountType === "plus" && (
+            <span className="inline-flex items-center justify-center rounded-full bg-secondary/15 text-secondary border border-secondary/30 p-1">
+              <CrownIcon className="size-4" />
+            </span>
+          )}
         </Link>
       </div>
 
@@ -61,7 +75,12 @@ const Sidebar = () => {
             isChatRoute ? "btn-active" : ""
           }`}
         >
-          <MessageSquareIcon className="size-5 text-base-content opacity-70" />
+          <span className="relative">
+            <MessageSquareIcon className="size-5 text-base-content opacity-70" />
+            {hasUnread && (
+              <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+            )}
+          </span>
           <span>{t("sidebar.chat")}</span>
         </Link>
 
