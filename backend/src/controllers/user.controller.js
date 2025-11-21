@@ -147,6 +147,24 @@ export async function getFriendFilterStatus(req, res) {
   }
 }
 
+export async function getOnlineUsersCount(req, res) {
+  try {
+    const viewerId = req.user._id || req.user.id;
+    const threshold = new Date(Date.now() - ONLINE_THRESHOLD_MS);
+
+    const count = await User.countDocuments({
+      _id: { $ne: viewerId },
+      isOnline: true,
+      lastActiveAt: { $gte: threshold },
+    });
+
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error("Error fetching online users count", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export async function getRecommendedUsers(req, res) {
   try {
     const viewerId = req.user._id || req.user.id;

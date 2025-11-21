@@ -1,4 +1,4 @@
-export const AVAILABLE_LANGUAGES = [
+﻿export const AVAILABLE_LANGUAGES = [
   { value: "English", label: "English" },
   { value: "Vietnamese", label: "Tiếng Việt" },
   { value: "German", label: "Deutsch" },
@@ -9,6 +9,8 @@ const english = {
     loading: "Loading...",
     prev: "Previous",
     next: "Next",
+    send: "Send",
+    messagePlaceholder: "Type a message...",
     presence: {
       online: "Online now",
       offline: "Last seen {timeAgo}",
@@ -489,6 +491,8 @@ const vietnamese = {
     loading: "Đang tải...",
     prev: "Trang trước",
     next: "Trang sau",
+    send: "Gửi",
+    messagePlaceholder: "Nhập tin nhắn...",
     presence: {
       online: "Đang trực tuyến",
       offline: "Hoạt động {timeAgo}",
@@ -968,6 +972,8 @@ const german = {
     loading: "Wird geladen...",
     prev: "Zurück",
     next: "Weiter",
+    send: "Senden",
+    messagePlaceholder: "Nachricht eingeben…",
     presence: {
       online: "Jetzt online",
       offline: "Zuletzt aktiv {timeAgo}",

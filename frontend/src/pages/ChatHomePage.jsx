@@ -1,158 +1,70 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { useQuery } from "@tanstack/react-query";
-import { StreamChat } from "stream-chat";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 import useAuthUser from "../hooks/useAuthUser";
-import { getStreamToken } from "../lib/api";
+import { getChatThreads } from "../lib/api";
 import ChatLoader from "../components/ChatLoader";
 import { useTranslation } from "../languages/useTranslation";
 import { formatRelativeTimeFromNow } from "../utils/time";
-
-const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+import useChatSocket from "../hooks/useChatSocket";
 
 const ChatHomePage = () => {
   const { authUser } = useAuthUser();
   const { t, language } = useTranslation();
   const navigate = useNavigate();
+  const socket = useChatSocket(Boolean(authUser));
+  const queryClient = useQueryClient();
 
-  const [chatClient, setChatClient] = useState(null);
-  const [channels, setChannels] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
+  const { data, isLoading } = useQuery({
+    queryKey: ["chatThreads"],
+    queryFn: getChatThreads,
     enabled: Boolean(authUser),
   });
 
   useEffect(() => {
-    if (!tokenData?.token || !authUser) return;
+    if (!socket) return undefined;
 
-    let isMounted = true;
-    let subscriptions = [];
+    const refresh = () =>
+      queryClient.invalidateQueries({ queryKey: ["chatThreads"] });
 
-    const resolvedApiKey = tokenData?.apiKey || FALLBACK_STREAM_API_KEY;
-    if (!resolvedApiKey) {
-      toast.error("Missing Stream API key");
-      setLoading(false);
-      return;
-    }
-
-    const client = StreamChat.getInstance(resolvedApiKey);
-
-    const ensureConnected = async () => {
-      if (client.userID && client.userID !== authUser._id) {
-        await client.disconnectUser();
-      }
-
-      if (!client.userID) {
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
-      }
-    };
-
-    const loadChannels = async () => {
-      try {
-        const result = await client.queryChannels(
-          { type: "messaging", members: { $in: [authUser._id] } },
-          { last_message_at: -1 },
-          { watch: true, state: true }
-        );
-
-        if (isMounted) {
-          setChannels(result);
-        }
-      } catch (error) {
-        console.error("Error loading chat channels:", error);
-        if (isMounted) {
-          toast.error("Unable to load chats");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    const init = async () => {
-      try {
-        await ensureConnected();
-        if (!isMounted) return;
-        setChatClient(client);
-        await loadChannels();
-        const refresh = () => loadChannels();
-        subscriptions = [
-          client.on("message.new", refresh),
-          client.on("channel.updated", refresh),
-          client.on("channel.visible", refresh),
-          client.on("user.presence.changed", refresh),
-          client.on("user.updated", refresh),
-        ];
-      } catch (error) {
-        console.error("Error initializing chat list:", error);
-        if (isMounted) {
-          toast.error("Could not connect to chat. Please try again.");
-          setLoading(false);
-        }
-      }
-    };
-
-    init();
+    socket.on("chat:thread:update", refresh);
+    socket.on("chat:message:new", refresh);
 
     return () => {
-      isMounted = false;
-      subscriptions.forEach((sub) => sub.unsubscribe());
+      socket.off("chat:thread:update", refresh);
+      socket.off("chat:message:new", refresh);
     };
-  }, [tokenData, authUser]);
+  }, [socket, queryClient]);
 
   const handleOpenChat = (userId) => {
-    if (!userId) return;
+    if (!userId) {
+      toast.error("Unable to open chat");
+      return;
+    }
     navigate(`/chat/${userId}`);
   };
 
-  const renderChannelCard = (channel) => {
-    const members = Object.values(channel?.state?.members || {});
-    const otherMember = members.find((member) => member.user_id !== authUser?._id);
-    const partnerId =
-      otherMember?.user_id ||
-      otherMember?.user?.id ||
-      channel.id?.split("-").find((id) => id !== authUser?._id);
-
-    const isOnline = Boolean(otherMember?.user?.online);
+  const renderThreadCard = (thread) => {
+    const partner = thread?.partner || {};
+    const partnerId = thread?.partnerId;
+    const partnerName = partner.fullName || t("common.loading");
+    const partnerImage = partner.profilePic;
+    const isOnline = Boolean(partner?.isOnline);
     const presenceDotClass = isOnline ? "bg-success" : "bg-base-300";
 
-    const partnerName =
-      otherMember?.user?.name ||
-      channel?.data?.name ||
-      t("common.loading");
-    const partnerImage = otherMember?.user?.image;
-
-    const messages = channel?.state?.messages || [];
-    const lastMessage =
-      [...messages].reverse().find((message) => message.type === "regular") ||
-      messages[messages.length - 1];
-    const previewText = lastMessage?.text || t("chatHome.noMessages");
-    const previewTime =
-      lastMessage?.created_at || channel?.state?.last_message_at;
-    const previewTimeLabel = previewTime
-      ? formatRelativeTimeFromNow(previewTime, language)
+    const previewText = thread?.lastMessage || t("chatHome.noMessages");
+    const previewTimeLabel = thread?.lastMessageAt
+      ? formatRelativeTimeFromNow(thread.lastMessageAt, language)
       : "";
-    const unreadCount =
-      channel?.state?.read?.[authUser?._id]?.unread_messages || 0;
+    const unreadCount = thread?.unreadCount || 0;
     const hasUnread = unreadCount > 0;
 
     return (
       <button
         type="button"
-        key={channel.id}
+        key={thread.id}
         onClick={() => handleOpenChat(partnerId)}
         disabled={!partnerId}
         className="flex w-full items-center gap-3 px-3 py-3 transition hover:bg-base-200 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -189,14 +101,15 @@ const ChatHomePage = () => {
     );
   };
 
-  const shouldShowLoader = loading || !chatClient;
+  const threads = data?.threads || [];
+  const shouldShowLoader = isLoading && !data;
 
   return (
     <div className="w-full">
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
         {shouldShowLoader ? (
           <ChatLoader />
-        ) : channels.length === 0 ? (
+        ) : threads.length === 0 ? (
           <div className="rounded-3xl border border-base-300 bg-base-100/80 p-8 text-center shadow">
             <p className="text-lg font-semibold text-base-content">
               {t("chatHome.empty")}
@@ -207,7 +120,7 @@ const ChatHomePage = () => {
           </div>
         ) : (
           <section className="rounded-3xl border border-base-300 bg-base-100/90 shadow divide-y divide-base-200 overflow-hidden">
-            {channels.map((channel) => renderChannelCard(channel))}
+            {threads.map((thread) => renderThreadCard(thread))}
           </section>
         )}
       </div>

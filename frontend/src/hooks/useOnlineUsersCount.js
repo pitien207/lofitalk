@@ -1,75 +1,36 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { StreamChat } from "stream-chat";
 import useAuthUser from "./useAuthUser";
-import { getStreamToken } from "../lib/api";
-
-const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+import { getOnlineUsersCount } from "../lib/api";
+import useChatSocket from "./useChatSocket";
 
 const useOnlineUsersCount = () => {
   const { authUser } = useAuthUser();
-  const [count, setCount] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const socket = useChatSocket(Boolean(authUser));
 
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["onlineUsersCount"],
+    queryFn: getOnlineUsersCount,
     enabled: Boolean(authUser),
+    refetchInterval: 30_000,
   });
 
   useEffect(() => {
-    if (!authUser || !tokenData?.token) return;
+    if (!socket) return undefined;
 
-    let isMounted = true;
-    let client = null;
-
-    const fetchOnlineCount = async () => {
-      setLoading(true);
-      try {
-        client = StreamChat.getInstance(
-          tokenData?.apiKey || FALLBACK_STREAM_API_KEY
-        );
-
-        if (client.userID && client.userID !== authUser._id) {
-          await client.disconnectUser();
-        }
-        if (!client.userID) {
-          await client.connectUser(
-            {
-              id: authUser._id,
-              name: authUser.fullName,
-              image: authUser.profilePic,
-            },
-            tokenData.token
-          );
-        }
-
-        const result = await client.queryUsers(
-          { id: { $ne: authUser._id } },
-          { last_active: -1 },
-          { presence: true, limit: 200 }
-        );
-
-        const onlineUsers = result?.users?.filter((user) => user.online) || [];
-        if (isMounted) {
-          setCount(onlineUsers.length);
-        }
-      } catch (error) {
-        console.error("Failed to fetch online count", error);
-        if (isMounted) setCount(null);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchOnlineCount();
+    const refresh = () => refetch();
+    socket.on("chat:ready", refresh);
+    socket.on("connect", refresh);
+    socket.on("disconnect", refresh);
 
     return () => {
-      isMounted = false;
+      socket.off("chat:ready", refresh);
+      socket.off("connect", refresh);
+      socket.off("disconnect", refresh);
     };
-  }, [authUser, tokenData]);
+  }, [socket, refetch]);
 
-  return { count, loading };
+  return { count: data?.count ?? null, loading: isFetching };
 };
 
 export default useOnlineUsersCount;

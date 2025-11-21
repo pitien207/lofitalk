@@ -5,6 +5,7 @@ import {
   cancelFriendRequest,
   declineFriendRequest,
   deleteFriendRequest,
+  getOnlineUsersCount,
   getFriendFilterStatus,
   getFriendRequests,
   getFortuneCookie,
@@ -24,6 +25,7 @@ router.use(protectRoute);
 
 router.get("/", getRecommendedUsers);
 router.get("/friend-filter-status", getFriendFilterStatus);
+router.get("/online-count", getOnlineUsersCount);
 router.get("/friends", getMyFriends);
 router.get("/profile/:id", getUserProfile);
 router.get("/fortune-cookie", getFortuneCookie);

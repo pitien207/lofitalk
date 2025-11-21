@@ -1,105 +1,61 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { StreamChat } from "stream-chat";
 import useAuthUser from "./useAuthUser";
-import { getStreamToken } from "../lib/api";
 import useNotificationSound from "./useNotificationSound";
-
-const FALLBACK_STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+import {
+  getChatUnreadCount,
+} from "../lib/api";
+import useChatSocket from "./useChatSocket";
 
 const useUnreadChats = () => {
   const { authUser } = useAuthUser();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const socket = useChatSocket(Boolean(authUser));
   const playNotificationSound = useNotificationSound();
 
-  const { data: tokenData } = useQuery({
-    queryKey: ["streamToken"],
-    queryFn: getStreamToken,
+  const {
+    data,
+    refetch,
+    isFetching,
+  } = useQuery({
+    queryKey: ["chatUnreadCount"],
+    queryFn: getChatUnreadCount,
     enabled: Boolean(authUser),
+    refetchOnWindowFocus: true,
   });
 
+  const unreadCount = useMemo(() => data?.count ?? 0, [data]);
+
   useEffect(() => {
-    if (!authUser || !tokenData?.token) return;
+    if (!socket) return undefined;
 
-    let isMounted = true;
-    let subscriptions = [];
-
-    const client = StreamChat.getInstance(
-      tokenData?.apiKey || FALLBACK_STREAM_API_KEY
-    );
-
-    const ensureConnected = async () => {
-      if (client.userID && client.userID !== authUser._id) {
-        await client.disconnectUser();
-      }
-      if (!client.userID) {
-        await client.connectUser(
-          {
-            id: authUser._id,
-            name: authUser.fullName,
-            image: authUser.profilePic,
-          },
-          tokenData.token
-        );
-      }
-    };
-
-    const updateUnreadCount = (channels = []) => {
-      if (!isMounted) return;
-      const total = channels.reduce((sum, channel) => {
-        const readState = channel?.state?.read?.[authUser._id] || {};
-        const unread = readState.unread_messages || 0;
-        return sum + unread;
-      }, 0);
-      setUnreadCount(total);
-    };
-
-    const loadChannels = async () => {
-      try {
-        await ensureConnected();
-        const result = await client.queryChannels(
-          { type: "messaging", members: { $in: [authUser._id] } },
-          { last_message_at: -1 },
-          { watch: true, state: true }
-        );
-        updateUnreadCount(result);
-      } catch (error) {
-        console.error("Failed to load unread chats", error);
-      }
-    };
-
-    loadChannels();
-
-    const handleMessageNew = (event) => {
+    const handleThreadUpdate = () => refetch();
+    const handleNewMessage = (payload) => {
       const senderId =
-        event?.user?.id ||
-        event?.user_id ||
-        event?.message?.user?.id ||
-        event?.message?.user_id;
+        payload?.message?.senderId ||
+        payload?.message?.sender ||
+        payload?.message?.user_id;
 
       if (senderId && senderId !== authUser?._id) {
         playNotificationSound();
       }
 
-      loadChannels();
+      refetch();
     };
 
-    const refresh = () => loadChannels();
-    subscriptions = [
-      client.on("message.new", handleMessageNew),
-      client.on("message.read", refresh),
-      client.on("notification.mark_read", refresh),
-      client.on("channel.truncated", refresh),
-      client.on("channel.updated", refresh),
-    ];
+    socket.on("chat:thread:update", handleThreadUpdate);
+    socket.on("chat:message:new", handleNewMessage);
 
     return () => {
-      isMounted = false;
-      subscriptions.forEach((sub) => sub.unsubscribe());
+      socket.off("chat:thread:update", handleThreadUpdate);
+      socket.off("chat:message:new", handleNewMessage);
     };
-  }, [authUser, tokenData, playNotificationSound]);
+  }, [socket, refetch, playNotificationSound, authUser]);
 
-  return { unreadCount, hasUnread: unreadCount > 0 };
+  return {
+    unreadCount,
+    hasUnread: unreadCount > 0,
+    loading: isFetching,
+  };
 };
 
 export default useUnreadChats;

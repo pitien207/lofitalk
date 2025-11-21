@@ -1,41 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { SmileIcon } from "lucide-react";
-import { useMessageComposer } from "stream-chat-react";
 
 const EMOJI_PALETTE = [
   "😀",
-  "😁",
   "😂",
-  "🤣",
-  "😅",
   "😊",
   "😍",
-  "😘",
-  "😎",
-  "🙂",
-  "🤗",
-  "🤩",
-  "😇",
-  "🤔",
-  "🤨",
-  "😏",
-  "😢",
-  "😭",
-  "😡",
-  "😴",
-  "🙈",
-  "🙉",
-  "🙊",
   "👍",
-  "👎",
-  "👏",
   "🙏",
-  "💪",
-  "💖",
   "🔥",
-  "🌟",
   "🎉",
-  "🎶",
+  "😎",
+  "🤔",
+  "🥰",
+  "🙌",
+  "😇",
+  "😴",
+  "🤯",
+  "😅",
+  "🤝",
+  "🥳",
 ];
 
 const getTheme = () => {
@@ -47,8 +31,7 @@ const getTheme = () => {
   return attr?.toLowerCase().includes("dark") ? "dark" : "light";
 };
 
-const EmojiPickerButton = () => {
-  const { textComposer } = useMessageComposer();
+const EmojiPickerButton = ({ onSelect }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState(() => getTheme());
   const buttonRef = useRef(null);
@@ -91,16 +74,18 @@ const EmojiPickerButton = () => {
   }, []);
 
   const handleEmojiSelect = (emoji) => {
-    if (!textComposer) return;
-    textComposer.insertText({ text: emoji });
+    if (typeof onSelect === "function") {
+      onSelect(emoji);
+    }
+    setIsOpen(false);
   };
 
   return (
-    <div className="str-chat__emoji-picker relative ml-2">
+    <div className="relative ml-2">
       <button
         type="button"
         ref={buttonRef}
-        className="str-chat__emoji-picker-button flex items-center justify-center rounded-full border border-base-300 bg-base-200/70 p-2 hover:bg-base-200"
+        className="flex items-center justify-center rounded-full border border-base-300 bg-base-200/70 p-2 hover:bg-base-200"
         aria-label="Add emoji"
         onClick={() => setIsOpen((prev) => !prev)}
       >
@@ -118,10 +103,7 @@ const EmojiPickerButton = () => {
                 key={emoji}
                 type="button"
                 className="rounded p-1 hover:bg-base-200"
-                onClick={() => {
-                  handleEmojiSelect(emoji);
-                  setIsOpen(false);
-                }}
+                onClick={() => handleEmojiSelect(emoji)}
               >
                 {emoji}
               </button>

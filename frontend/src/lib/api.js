@@ -98,8 +98,37 @@ export async function acceptFriendRequest(requestId) {
   return response.data;
 }
 
-export async function getStreamToken() {
-  const response = await axiosInstance.get("/chat/token");
+export async function getChatThreads() {
+  const response = await axiosInstance.get("/chat/threads");
+  return response.data;
+}
+
+export async function getChatThreadWithUser(userId, limit = 50) {
+  const response = await axiosInstance.get(`/chat/threads/user/${userId}`, {
+    params: { limit },
+  });
+  return response.data;
+}
+
+export async function getChatMessages(threadId, limit = 50) {
+  const response = await axiosInstance.get(`/chat/threads/${threadId}/messages`, {
+    params: { limit },
+  });
+  return response.data;
+}
+
+export async function sendChatMessage(payload) {
+  const response = await axiosInstance.post("/chat/messages", payload);
+  return response.data;
+}
+
+export async function markChatThreadRead(threadId) {
+  const response = await axiosInstance.post(`/chat/threads/${threadId}/read`);
+  return response.data;
+}
+
+export async function getChatUnreadCount() {
+  const response = await axiosInstance.get("/chat/unread-count");
   return response.data;
 }
 
@@ -167,5 +196,10 @@ export async function updateUserAccountType(userId, accountType) {
   const response = await axiosInstance.put(`/admin/users/${userId}/account-type`, {
     accountType,
   });
+  return response.data;
+}
+
+export async function getOnlineUsersCount() {
+  const response = await axiosInstance.get("/users/online-count");
   return response.data;
 }

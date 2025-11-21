@@ -3,6 +3,7 @@ import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
+import http from "http";
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -12,9 +13,12 @@ import adminRoutes from "./routes/admin.route.js";
 import metaRoutes from "./routes/meta.route.js";
 
 import { connectDB } from "./lib/db.js";
+import { connectChatDB } from "./lib/chatDb.js";
+import { setupChatSocket } from "./lib/chatSocket.js";
 
 const app = express();
 const PORT = process.env.PORT;
+const server = http.createServer(app);
 
 const __dirname = path.resolve();
 
@@ -73,8 +77,21 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  connectDB();
-});
+setupChatSocket(server, allowedOrigins);
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    await connectChatDB();
+
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
 

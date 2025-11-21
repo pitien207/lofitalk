@@ -1,4 +1,3 @@
-import { upsertStreamUser } from "../lib/stream.js";
 import User from "../models/User.js";
 import PendingSignup from "../models/PendingSignup.js";
 import bcrypt from "bcryptjs";
@@ -235,16 +234,6 @@ export async function verifySignupCode(req, res) {
       await user.save();
     }
 
-    try {
-      await upsertStreamUser({
-        id: user._id.toString(),
-        name: user.fullName,
-        image: user.profilePic || "",
-      });
-    } catch (streamError) {
-      console.log("Error creating Stream user:", streamError);
-    }
-
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",
     });
@@ -446,22 +435,6 @@ export async function onboard(req, res) {
 
     if (!updatedUser)
       return res.status(404).json({ message: "User not found" });
-
-    try {
-      await upsertStreamUser({
-        id: updatedUser._id.toString(),
-        name: updatedUser.fullName,
-        image: updatedUser.profilePic || "",
-      });
-      console.log(
-        `Stream user updated after onboarding for ${updatedUser.fullName}`
-      );
-    } catch (streamError) {
-      console.log(
-        "Error updating Stream user during onboarding:",
-        streamError.message
-      );
-    }
 
     res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {
