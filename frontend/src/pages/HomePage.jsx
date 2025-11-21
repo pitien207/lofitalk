@@ -117,6 +117,8 @@ const HomePage = () => {
         value: "Vietnam",
         label: t("onboarding.countryOptions.vietnam"),
         cities: sortOptionsByLabel([
+          { value: "Can Tho", label: t("onboarding.cityOptions.vietnam.cantho") },
+          { value: "Da Lat", label: t("onboarding.cityOptions.vietnam.dalat") },
           { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
           {
             value: "Hai Phong",
@@ -128,15 +130,19 @@ const HomePage = () => {
             label: t("onboarding.cityOptions.vietnam.hcmc"),
           },
           { value: "Hue", label: t("onboarding.cityOptions.vietnam.hue") },
+          { value: "Nam Dinh", label: t("onboarding.cityOptions.vietnam.namdinh") },
           { value: "Nghe An", label: t("onboarding.cityOptions.vietnam.nghean") },
           {
             value: "Ninh Binh",
             label: t("onboarding.cityOptions.vietnam.ninhbinh"),
           },
+          { value: "Quy Nhon", label: t("onboarding.cityOptions.vietnam.quynhon") },
           {
             value: "Thanh Hoa",
             label: t("onboarding.cityOptions.vietnam.thanhhoa"),
           },
+          { value: "Vinh", label: t("onboarding.cityOptions.vietnam.vinh") },
+          { value: "Vung Tau", label: t("onboarding.cityOptions.vietnam.vungtau") },
         ]),
       },
       {
@@ -144,6 +150,7 @@ const HomePage = () => {
         label: t("onboarding.countryOptions.germany"),
         cities: sortOptionsByLabel([
           { value: "Berlin", label: t("onboarding.cityOptions.germany.berlin") },
+          { value: "Bonn", label: t("onboarding.cityOptions.germany.bonn") },
           { value: "Bremen", label: t("onboarding.cityOptions.germany.bremen") },
           { value: "Cologne", label: t("onboarding.cityOptions.germany.koln") },
           {
@@ -151,8 +158,16 @@ const HomePage = () => {
             label: t("onboarding.cityOptions.germany.dresden"),
           },
           {
+            value: "Dusseldorf",
+            label: t("onboarding.cityOptions.germany.dusseldorf"),
+          },
+          {
             value: "Frankfurt",
             label: t("onboarding.cityOptions.germany.frankfurt"),
+          },
+          {
+            value: "Hanover",
+            label: t("onboarding.cityOptions.germany.hanover"),
           },
           {
             value: "Hamburg",

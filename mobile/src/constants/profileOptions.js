@@ -1,4 +1,10 @@
-export const REQUIRED_FIELDS = ["fullName", "gender", "birthDate", "country", "city"];
+export const REQUIRED_FIELDS = [
+  "fullName",
+  "gender",
+  "birthDate",
+  "country",
+  "city",
+];
 
 export const genderOptions = [
   { value: "female", label: "Female" },
@@ -12,14 +18,20 @@ export const countryCityOptions = [
     value: "Vietnam",
     label: "Vietnam",
     cities: [
+      "Can Tho",
+      "Da Lat",
       "Da Nang",
       "Hai Phong",
       "Hanoi",
       "Ho Chi Minh City",
       "Hue",
+      "Nam Dinh",
       "Nghe An",
       "Ninh Binh",
+      "Quy Nhon",
       "Thanh Hoa",
+      "Vinh",
+      "Vung Tau",
     ],
   },
   {
@@ -27,10 +39,13 @@ export const countryCityOptions = [
     label: "Germany",
     cities: [
       "Berlin",
+      "Bonn",
       "Bremen",
       "Cologne",
       "Dresden",
+      "Dusseldorf",
       "Frankfurt",
+      "Hanover",
       "Hamburg",
       "Leipzig",
       "Munich",

@@ -5,7 +5,7 @@ import {
   CookieIcon,
   HomeIcon,
   MessageSquareIcon,
-  ShuffleIcon,
+  MoonStarIcon,
   ShieldIcon,
   SmartphoneIcon,
   UsersIcon,
@@ -81,14 +81,14 @@ const Sidebar = () => {
         </Link>
 
         <Link
-          to="/tarot"
-          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-            currentPath === "/tarot" ? "btn-active" : ""
-          }`}
-        >
-          <ShuffleIcon className="size-5 text-base-content opacity-70" />
-          <span>{t("sidebar.tarot")}</span>
-        </Link>
+        to="/tarot"
+        className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+          currentPath === "/tarot" ? "btn-active" : ""
+        }`}
+      >
+        <MoonStarIcon className="size-5 text-base-content opacity-70" />
+        <span>{t("sidebar.tarot")}</span>
+      </Link>
 
         <Link
           to="/fortune"
