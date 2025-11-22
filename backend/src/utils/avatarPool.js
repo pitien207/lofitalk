@@ -6,9 +6,10 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const avatarRoot =
   process.env.AVATAR_ROOT || path.join(currentDir, "..", "assets", "avatars");
 
+const DEFAULT_AVATAR_PREFIX = "/static/avatars";
 const MOBILE_PREFIX =
-  process.env.MOBILE_AVATAR_STATIC_PATH || "/static/avatars/mobile";
-const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || "/static/avatars/web";
+  process.env.MOBILE_AVATAR_STATIC_PATH || DEFAULT_AVATAR_PREFIX;
+const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || DEFAULT_AVATAR_PREFIX;
 
 const buildPublicPaths = (dir, prefix, subPath) => {
   try {

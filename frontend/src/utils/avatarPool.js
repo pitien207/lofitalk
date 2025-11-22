@@ -3,7 +3,7 @@ import { API_BASE_URL } from "../lib/axios";
 const STATIC_BASE = API_BASE_URL.replace(/\/api\/?$/, "");
 
 const buildUrl = (folder, file) =>
-  `${STATIC_BASE}/static/avatars/mobile/${folder}/${file}`;
+  `${STATIC_BASE}/static/avatars/${folder}/${file}`;
 
 const boyFiles = [
   "AV1.png",
