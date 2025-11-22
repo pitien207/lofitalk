@@ -13,7 +13,6 @@ import {
   View,
   TextInput,
 } from "react-native";
-import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
 import { genderLabels } from "../constants";
 import {
@@ -22,6 +21,7 @@ import {
   formatLocation,
   parseListField,
 } from "../utils/profile";
+import { resolveImageSource } from "../utils/imageSource";
 import {
   InfoRow,
   PillList,
@@ -44,12 +44,6 @@ import {
   petOptions,
 } from "../constants/profileOptions";
 import DropdownSelect from "../components/common/DropdownSelect";
-
-const resolveImageSource = (value) => {
-  if (!value) return Logo;
-  if (typeof value === "string") return { uri: value };
-  return value;
-};
 
 const buildProfileFormState = (baseUser = {}) => ({
   fullName: baseUser?.fullName || "",

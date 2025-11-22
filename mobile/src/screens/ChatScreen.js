@@ -12,8 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
+import { resolveImageSource } from "../utils/imageSource";
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
 
@@ -70,12 +70,6 @@ const buildThreadMeta = (thread) => {
     lastMessageTime: formatRelativeTime(thread?.lastMessageAt),
     unread: (thread?.unreadCount || 0) > 0,
   };
-};
-
-const resolveImageSource = (value) => {
-  if (!value) return Logo;
-  if (typeof value === "string") return { uri: value };
-  return value;
 };
 
 const segmentMessageText = (text = "") => {

@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
 import { genderLabels } from "../constants";
 import {
@@ -16,6 +15,7 @@ import {
   formatLocation,
   parseListField,
 } from "../utils/profile";
+import { resolveImageSource } from "../utils/imageSource";
 import {
   InfoRow,
   PillList,
@@ -23,12 +23,6 @@ import {
   StatBadge,
 } from "../components/profile/ProfileDetails";
 import { buttonStyles } from "../components/common/buttons";
-
-const resolveImageSource = (value) => {
-  if (!value) return Logo;
-  if (typeof value === "string") return { uri: value };
-  return value;
-};
 
 const FriendsScreen = ({
   friends = [],
@@ -144,6 +138,7 @@ const FriendProfile = ({ profile, loading, error, onStartChat }) => {
   }
 
   const gender = genderLabels[profile.gender] || profile.gender || "";
+  const avatarSource = resolveImageSource(profile.profilePic);
   const location = formatLocation(profile);
   const birthDate = formatDate(profile.birthDate);
   const age = computeAge(profile.birthDate);
@@ -156,10 +151,7 @@ const FriendProfile = ({ profile, loading, error, onStartChat }) => {
   return (
     <View style={styles.friendProfileWrapper}>
       <View style={styles.friendProfileCard}>
-          <Image
-            source={resolveImageSource(profile.profilePic)}
-            style={styles.friendProfileAvatar}
-          />
+        <Image source={avatarSource} style={styles.friendProfileAvatar} />
         <Text style={styles.friendProfileName}>
           {profile.fullName || "Friend"}
         </Text>

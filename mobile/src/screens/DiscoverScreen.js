@@ -7,18 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
 import { buttonStyles } from "../components/common/buttons";
 import { formatLocation } from "../utils/profile";
 import DropdownSelect from "../components/common/DropdownSelect";
 import { useMemo, useState } from "react";
-
-const resolveImageSource = (value) => {
-  if (!value) return Logo;
-  if (typeof value === "string") return { uri: value };
-  return value;
-};
+import { resolveImageSource } from "../utils/imageSource";
 
 const DiscoverScreen = ({
   filters,

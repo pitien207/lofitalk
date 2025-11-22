@@ -130,9 +130,21 @@ const useFriends = () => {
       await syncOutgoingRequests().catch(() => null);
       const params = buildFilterParams(filters);
       const users = await fetchRecommendedUsers(params);
-      setRecommended(users || []);
+      const normalized =
+        users
+          ?.map((user, index) =>
+            user
+              ? {
+                  ...user,
+                  _id: user._id || `${index}`,
+                }
+              : null
+          )
+          ?.filter(Boolean) || [];
+
+      setRecommended(normalized);
       const flagged = new Set(
-        (users || [])
+        (normalized || [])
           .filter((user) => user?.pendingRequestSent)
           .map((user) => user._id)
       );

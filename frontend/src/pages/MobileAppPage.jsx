@@ -1,7 +1,7 @@
 import { SmartphoneIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "../languages/useTranslation";
-import qrAndroid from "../pictures/others/QR_Android_App.png";
+import qrAndroid from "../pictures/others/QR_Android.png";
 import useAuthUser from "../hooks/useAuthUser";
 
 const MobileAppPage = () => {

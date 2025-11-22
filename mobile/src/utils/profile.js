@@ -1,5 +1,4 @@
 import { FALLBACK_MESSAGES } from "../constants";
-import { getRandomAvatar } from "./avatarPool";
 
 export const parseListField = (value) => {
   if (!value) return [];
@@ -61,10 +60,7 @@ export const normalizeFriends = (rawFriends = []) => {
           ? parseListField(base.hobbies)
           : parseListField("");
 
-      const resolvedAvatar =
-        base.profilePic ||
-        getRandomAvatar(base.gender) ||
-        getRandomAvatar();
+      const resolvedAvatar = base.profilePic || "";
 
       return {
         _id: base._id || `${index}`,
