@@ -100,7 +100,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const [avatarError, setAvatarError] = useState("");
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
-  const [profileForm, setProfileForm] = useState(() => buildProfileFormState(user));
+  const [profileForm, setProfileForm] = useState(() =>
+    buildProfileFormState(user)
+  );
   const [profileError, setProfileError] = useState("");
   const [profileLoading, setProfileLoading] = useState(false);
   const canUploadAvatar = user?.accountType === "admin";
@@ -412,129 +414,135 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   return (
     <>
       <ScrollView
-      contentContainerStyle={styles.homeScroll}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.homeHeader}>
-        <Text style={styles.homeTitle}>LofiTalk</Text>
-        <View style={styles.menuContainer}>
-          <TouchableOpacity
-            style={styles.menuTrigger}
-            onPress={toggleMenu}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.menuTriggerDots}>⋮</Text>
-          </TouchableOpacity>
-          {menuOpen && (
-            <View style={styles.menuDropdown}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleMenuSelect("edit")}
-              >
-                <Text style={styles.menuItemText}>Edit profile</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleMenuSelect("language")}
-              >
-                <Text style={styles.menuItemText}>Language</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleMenuSelect("about")}
-              >
-                <Text style={styles.menuItemText}>About</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => handleMenuSelect("signout")}
-              >
-                <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                  Sign out
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.profileCard}>
-        <Image
-          source={resolveImageSource(user?.profilePic)}
-          style={styles.profileAvatar}
-        />
-        <View style={styles.profileText}>
-          <Text style={styles.profileName}>{user?.fullName || "Your profile"}</Text>
-          <Text style={styles.profileLocation}>
-            {location || "Add your location"}
-          </Text>
-          <Text style={styles.profileBio}>
-            {user?.bio || "Share a short bio so friends know you better."}
-          </Text>
-          <View style={styles.avatarActionRow}>
+        contentContainerStyle={styles.homeScroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.homeHeader}>
+          <Text style={styles.homeTitle}>LofiTalk</Text>
+          <View style={styles.menuContainer}>
             <TouchableOpacity
-              style={[
-                buttonStyles.primaryButton,
-                styles.avatarActionButton,
-                avatarLoading && styles.disabledButton,
-              ]}
-              onPress={handleRandomAvatar}
-              disabled={avatarLoading}
+              style={styles.menuTrigger}
+              onPress={toggleMenu}
+              activeOpacity={0.7}
             >
-              <Text style={buttonStyles.primaryButtonText}>Random avatar</Text>
+              <Text style={styles.menuTriggerDots}>⋮</Text>
             </TouchableOpacity>
-            {canUploadAvatar && (
+            {menuOpen && (
+              <View style={styles.menuDropdown}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleMenuSelect("edit")}
+                >
+                  <Text style={styles.menuItemText}>Edit profile</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleMenuSelect("language")}
+                >
+                  <Text style={styles.menuItemText}>Language</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleMenuSelect("about")}
+                >
+                  <Text style={styles.menuItemText}>About</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => handleMenuSelect("signout")}
+                >
+                  <Text style={[styles.menuItemText, styles.menuItemDanger]}>
+                    Sign out
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.profileCard}>
+          <Image
+            source={resolveImageSource(user?.profilePic)}
+            style={styles.profileAvatar}
+          />
+          <View style={styles.profileText}>
+            <Text style={styles.profileName}>
+              {user?.fullName || "Your profile"}
+            </Text>
+            <Text style={styles.profileLocation}>
+              {location || "Add your location"}
+            </Text>
+            <Text style={styles.profileBio}>
+              {user?.bio || "Share a short bio so friends know you better."}
+            </Text>
+            <View style={styles.avatarActionRow}>
               <TouchableOpacity
                 style={[
-                  buttonStyles.secondaryOutlineButton,
+                  buttonStyles.primaryButton,
                   styles.avatarActionButton,
                   avatarLoading && styles.disabledButton,
                 ]}
-                onPress={handleUploadAvatar}
+                onPress={handleRandomAvatar}
                 disabled={avatarLoading}
               >
-                <Text style={buttonStyles.secondaryOutlineText}>
-                  Upload photo
+                <Text style={buttonStyles.primaryButtonText}>
+                  Random avatar
                 </Text>
               </TouchableOpacity>
-            )}
+              {canUploadAvatar && (
+                <TouchableOpacity
+                  style={[
+                    buttonStyles.secondaryOutlineButton,
+                    styles.avatarActionButton,
+                    avatarLoading && styles.disabledButton,
+                  ]}
+                  onPress={handleUploadAvatar}
+                  disabled={avatarLoading}
+                >
+                  <Text style={buttonStyles.secondaryOutlineText}>
+                    Upload photo
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {avatarError ? (
+              <Text style={styles.error}>{avatarError}</Text>
+            ) : null}
+            {avatarMessage ? (
+              <Text style={styles.avatarSuccess}>{avatarMessage}</Text>
+            ) : null}
           </View>
-          {avatarError ? <Text style={styles.error}>{avatarError}</Text> : null}
-          {avatarMessage ? (
-            <Text style={styles.avatarSuccess}>{avatarMessage}</Text>
-          ) : null}
         </View>
-      </View>
 
-      <View style={styles.statRow}>
-        <StatBadge label="Gender" value={gender} />
-        <StatBadge label="Age" value={age} />
-        <StatBadge label="Height" value={user?.height} />
-      </View>
+        <View style={styles.statRow}>
+          <StatBadge label="Gender" value={gender} />
+          <StatBadge label="Age" value={age} />
+          <StatBadge label="Height" value={user?.height} />
+        </View>
 
-      <SectionCard title="Personal info">
-        <InfoRow label="Email" value={user?.email} />
-        <InfoRow label="Birthday" value={birthDate} />
-        <InfoRow label="Country" value={user?.country} />
-        <InfoRow label="City" value={user?.city} />
-        <InfoRow label="Education" value={user?.education} />
-      </SectionCard>
+        <SectionCard title="Personal info">
+          <InfoRow label="Email" value={user?.email} />
+          <InfoRow label="Birthday" value={birthDate} />
+          <InfoRow label="Country" value={user?.country} />
+          <InfoRow label="City" value={user?.city} />
+          <InfoRow label="Education" value={user?.education} />
+        </SectionCard>
 
-      <SectionCard title="Hobbies">
-        <PillList items={hobbies} />
-      </SectionCard>
+        <SectionCard title="Hobbies">
+          <PillList items={hobbies} />
+        </SectionCard>
 
-      <SectionCard title="Pets">
-        <PillList items={pets} />
-      </SectionCard>
+        <SectionCard title="Pets">
+          <PillList items={pets} />
+        </SectionCard>
 
-      <TouchableOpacity
-        style={[buttonStyles.primaryButton, styles.homeSignOut]}
-        onPress={onSignOut}
-      >
-        <Text style={buttonStyles.primaryButtonText}>Sign out</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity
+          style={[buttonStyles.primaryButton, styles.homeSignOut]}
+          onPress={onSignOut}
+        >
+          <Text style={buttonStyles.primaryButtonText}>Sign out</Text>
+        </TouchableOpacity>
+      </ScrollView>
 
       <Modal
         transparent
@@ -579,7 +587,10 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   )}
                   <View style={styles.editAvatarActions}>
                     <TouchableOpacity
-                      style={[buttonStyles.primaryButton, styles.editAvatarButton]}
+                      style={[
+                        buttonStyles.primaryButton,
+                        styles.editAvatarButton,
+                      ]}
                       onPress={handleProfileAvatarRandomLocal}
                     >
                       <Text style={buttonStyles.primaryButtonText}>
@@ -606,7 +617,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   placeholder="Full name / Nickname"
                   placeholderTextColor="#A0A6B7"
                   value={profileForm.fullName}
-                  onChangeText={(value) => handleProfileFieldChange("fullName", value)}
+                  onChangeText={(value) =>
+                    handleProfileFieldChange("fullName", value)
+                  }
                   style={styles.editInput}
                 />
 
@@ -614,7 +627,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   placeholder="Short bio"
                   placeholderTextColor="#A0A6B7"
                   value={profileForm.bio}
-                  onChangeText={(value) => handleProfileFieldChange("bio", value)}
+                  onChangeText={(value) =>
+                    handleProfileFieldChange("bio", value)
+                  }
                   style={[styles.editInput, styles.editTextArea]}
                   multiline
                   numberOfLines={3}
@@ -625,7 +640,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   value={profileForm.gender}
                   placeholder="Select gender"
                   options={genderOptions}
-                  onSelect={(value) => handleProfileFieldChange("gender", value)}
+                  onSelect={(value) =>
+                    handleProfileFieldChange("gender", value)
+                  }
                 />
 
                 <DropdownSelect
@@ -656,7 +673,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   placeholder="Birth date (YYYY-MM-DD)*"
                   placeholderTextColor="#A0A6B7"
                   value={profileForm.birthDate}
-                  onChangeText={(value) => handleProfileFieldChange("birthDate", value)}
+                  onChangeText={(value) =>
+                    handleProfileFieldChange("birthDate", value)
+                  }
                   style={styles.editInput}
                 />
 
@@ -664,7 +683,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   placeholder="Height"
                   placeholderTextColor="#A0A6B7"
                   value={profileForm.height}
-                  onChangeText={(value) => handleProfileFieldChange("height", value)}
+                  onChangeText={(value) =>
+                    handleProfileFieldChange("height", value)
+                  }
                   style={styles.editInput}
                 />
 
@@ -688,8 +709,13 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                     return (
                       <TouchableOpacity
                         key={option}
-                        style={[styles.editChip, active && styles.editChipActive]}
-                        onPress={() => toggleProfileMultiValue("hobbies", option)}
+                        style={[
+                          styles.editChip,
+                          active && styles.editChipActive,
+                        ]}
+                        onPress={() =>
+                          toggleProfileMultiValue("hobbies", option)
+                        }
                       >
                         <Text
                           style={[
@@ -711,7 +737,10 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                     return (
                       <TouchableOpacity
                         key={option}
-                        style={[styles.editChip, active && styles.editChipActive]}
+                        style={[
+                          styles.editChip,
+                          active && styles.editChipActive,
+                        ]}
                         onPress={() => toggleProfileMultiValue("pets", option)}
                       >
                         <Text
@@ -767,7 +796,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                     <Text style={styles.error}>{passwordError}</Text>
                   ) : null}
                   {passwordMessage ? (
-                    <Text style={styles.passwordSuccess}>{passwordMessage}</Text>
+                    <Text style={styles.passwordSuccess}>
+                      {passwordMessage}
+                    </Text>
                   ) : null}
 
                   <TouchableOpacity
@@ -801,7 +832,9 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                     onPress={closeProfileEditor}
                     disabled={profileLoading}
                   >
-                    <Text style={buttonStyles.secondaryOutlineText}>Cancel</Text>
+                    <Text style={buttonStyles.secondaryOutlineText}>
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -836,7 +869,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             <Text style={styles.aboutTitle}>About LofiTalk</Text>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Version</Text>
-              <Text style={styles.aboutValue}>v1.0.0</Text>
+              <Text style={styles.aboutValue}>v1.1</Text>
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Developer</Text>
@@ -844,13 +877,11 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Inspired by</Text>
-              <Text style={styles.aboutValue}>
-                Codesistency • Fremdchat • avocadorable
-              </Text>
+              <Text style={styles.aboutValue}>Codesistency • Fremdchat</Text>
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Special thanks</Text>
-              <Text style={styles.aboutValue}>Sayed Sayedy</Text>
+              <Text style={styles.aboutValue}>Sayed Sayedy • avocadorable</Text>
             </View>
             <Text style={styles.aboutFooter}>
               LofiTalk mobile companion. Take your cozy chats anywhere.
@@ -1199,4 +1230,3 @@ const styles = StyleSheet.create({
 });
 
 export default HomeScreen;
-

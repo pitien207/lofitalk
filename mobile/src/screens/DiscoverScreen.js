@@ -12,7 +12,7 @@ import { BRAND_COLORS } from "../theme/colors";
 import { buttonStyles } from "../components/common/buttons";
 import { formatLocation } from "../utils/profile";
 import DropdownSelect from "../components/common/DropdownSelect";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
@@ -34,6 +34,7 @@ const DiscoverScreen = ({
   onCancelRequest,
   hasPendingRequest,
 }) => {
+  const [collapsed, setCollapsed] = useState(true);
   const genderOptions = useMemo(
     () => [
       { value: "female", label: "Female" },
@@ -186,10 +187,13 @@ const DiscoverScreen = ({
         petOptions={petOptions}
         onFilterChange={onFilterChange}
         onResetFilters={onResetFilters}
-        onApplyFilters={onApplyFilters}
-        loading={recommendedLoading}
-        error={recommendedError}
-      />
+      onApplyFilters={onApplyFilters}
+      loading={recommendedLoading}
+      error={recommendedError}
+      collapsed={collapsed}
+      onToggleCollapsed={() => setCollapsed((prev) => !prev)}
+      onCollapse={() => setCollapsed(true)}
+    />
 
       <RecommendationsList
         items={recommended}
@@ -219,76 +223,95 @@ const FilterPanel = ({
   onApplyFilters,
   loading,
   error,
+  collapsed,
+  onToggleCollapsed,
+  onCollapse,
 }) => (
   <View style={styles.card}>
-    <Text style={styles.cardTitle}>Filters</Text>
-    <Text style={styles.cardSubtitle}>
-      Apply filters and see recommended matches.
-    </Text>
-
-    <View style={styles.filterGrid}>
-      <DropdownSelect
-        label="Gender"
-        value={filters.gender}
-        placeholder="Any"
-        options={[{ value: "", label: "Any" }, ...genderOptions]}
-        onSelect={(value) => onFilterChange("gender", value)}
-      />
-      <DropdownSelect
-        label="Country"
-        value={filters.country}
-        placeholder="Any country"
-        options={[{ value: "", label: "Any" }, ...countryCityOptions]}
-        onSelect={(value) => onFilterChange("country", value)}
-      />
-      <DropdownSelect
-        label="City"
-        value={filters.city}
-        placeholder={filters.country ? "Any city" : "Select a country first"}
-        options={[
-          { value: "", label: "Any" },
-          ...cityOptions.map((city) => ({ value: city, label: city })),
-        ]}
-        disabled={!filters.country}
-        onSelect={(value) => onFilterChange("city", value)}
-      />
-      <DropdownSelect
-        label="Education"
-        value={filters.education}
-        placeholder="Any"
-        options={[{ value: "", label: "Any" }, ...educationOptions]}
-        onSelect={(value) => onFilterChange("education", value)}
-      />
-      <DropdownSelect
-        label="Hobby"
-        value={filters.hobby}
-        placeholder="Any"
-        options={[{ value: "", label: "Any" }, ...hobbyOptions]}
-        onSelect={(value) => onFilterChange("hobby", value)}
-      />
-      <DropdownSelect
-        label="Pet"
-        value={filters.pet}
-        placeholder="Any"
-        options={[{ value: "", label: "Any" }, ...petOptions]}
-        onSelect={(value) => onFilterChange("pet", value)}
-      />
-      <DropdownSelect
-        label="Minimum height (cm)"
-        value={filters.heightMin}
-        placeholder="Any"
-        options={[
-          { value: "", label: "Any" },
-          { value: "150", label: "150+" },
-          { value: "160", label: "160+" },
-          { value: "170", label: "170+" },
-          { value: "180", label: "180+" },
-        ]}
-        onSelect={(value) => onFilterChange("heightMin", value)}
-      />
+    <View style={styles.cardHeaderRow}>
+      <View>
+        <Text style={styles.cardTitle}>Filters</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.collapsePill}
+        onPress={onToggleCollapsed}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.collapsePillText}>
+          {collapsed ? "Show" : "Hide"}
+        </Text>
+      </TouchableOpacity>
     </View>
 
-    {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    {!collapsed && (
+      <>
+        <View style={styles.filterGrid}>
+          <DropdownSelect
+            label="Gender"
+            value={filters.gender}
+            placeholder="Any"
+            options={[{ value: "", label: "Any" }, ...genderOptions]}
+            onSelect={(value) => onFilterChange("gender", value)}
+          />
+          <DropdownSelect
+            label="Country"
+            value={filters.country}
+            placeholder="Any country"
+            options={[{ value: "", label: "Any" }, ...countryCityOptions]}
+            onSelect={(value) => onFilterChange("country", value)}
+          />
+          <DropdownSelect
+            label="City"
+            value={filters.city}
+            placeholder={
+              filters.country ? "Any city" : "Select a country first"
+            }
+            options={[
+              { value: "", label: "Any" },
+              ...cityOptions.map((city) => ({ value: city, label: city })),
+            ]}
+            disabled={!filters.country}
+            onSelect={(value) => onFilterChange("city", value)}
+          />
+          <DropdownSelect
+            label="Education"
+            value={filters.education}
+            placeholder="Any"
+            options={[{ value: "", label: "Any" }, ...educationOptions]}
+            onSelect={(value) => onFilterChange("education", value)}
+          />
+          <DropdownSelect
+            label="Hobby"
+            value={filters.hobby}
+            placeholder="Any"
+            options={[{ value: "", label: "Any" }, ...hobbyOptions]}
+            onSelect={(value) => onFilterChange("hobby", value)}
+          />
+          <DropdownSelect
+            label="Pet"
+            value={filters.pet}
+            placeholder="Any"
+            options={[{ value: "", label: "Any" }, ...petOptions]}
+            onSelect={(value) => onFilterChange("pet", value)}
+          />
+          <DropdownSelect
+            label="Minimum height (cm)"
+            value={filters.heightMin}
+            placeholder="Any"
+            options={[
+              { value: "", label: "Any" },
+              { value: "150", label: "150+" },
+              { value: "160", label: "160+" },
+              { value: "170", label: "170+" },
+              { value: "180", label: "180+" },
+            ]}
+            onSelect={(value) => onFilterChange("heightMin", value)}
+          />
+        </View>
+
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      </>
+    )}
 
     <View style={styles.actions}>
       <TouchableOpacity
@@ -304,7 +327,11 @@ const FilterPanel = ({
           styles.applyButton,
           loading && styles.disabledButton,
         ]}
-        onPress={() => onApplyFilters().catch(() => null)}
+        onPress={() =>
+          onApplyFilters()
+            .catch(() => null)
+            .finally(() => onCollapse?.())
+        }
         disabled={loading}
       >
         {loading ? (
@@ -356,16 +383,16 @@ const RecommendationsList = ({
               ? "Cancelling..."
               : "Sending..."
             : isPending
-              ? "Cancel request"
-              : "Send request";
+            ? "Cancel request"
+            : "Send request";
 
           return (
             <View key={user._id} style={styles.recommendationCard}>
               <TouchableOpacity
                 style={styles.recommendationContent}
                 activeOpacity={0.85}
-              onPress={() => onViewProfile?.(user._id)}
-            >
+                onPress={() => onViewProfile?.(user._id)}
+              >
                 <View style={styles.avatarWrapper}>
                   <Image
                     source={resolveImageSource(user.profilePic)}
@@ -463,6 +490,24 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     marginTop: 4,
     marginBottom: 12,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  collapsePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(255,255,255,0.05)",
+  },
+  collapsePillText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
   },
   filterGrid: {
     gap: 10,
