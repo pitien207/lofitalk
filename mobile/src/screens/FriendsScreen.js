@@ -181,9 +181,6 @@ const FriendProfile = ({ profile, loading, error, onStartChat }) => {
           >
             <Text style={buttonStyles.primaryButtonText}>Message</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={buttonStyles.secondaryOutlineButton}>
-            <Text style={buttonStyles.secondaryOutlineText}>Start call</Text>
-          </TouchableOpacity>
         </View>
       </View>
 

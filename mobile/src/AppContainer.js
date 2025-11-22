@@ -25,6 +25,7 @@ const AppContainer = () => {
     loading,
     error,
     user,
+    token,
     isHydrating,
     login,
     signOut,
@@ -56,18 +57,18 @@ const AppContainer = () => {
     hasPendingRequest,
   } = useFriends();
   const {
-    channels,
+    threads,
     chatLoading,
     chatError,
-    activeChannel,
+    activeThread,
     messages,
-    selectingChannel,
+    selectingThread,
     connectChat,
     disconnectChat,
-    refreshChannels,
-    openChannel,
+    refreshThreads,
+    openThread,
     startDirectChat,
-    closeChannel,
+    closeThread,
     sendMessage,
   } = useChat();
   const {
@@ -134,12 +135,12 @@ const AppContainer = () => {
   }, [introOpacity]);
 
   useEffect(() => {
-    if (user) {
-      connectChat(user);
+    if (user && token) {
+      connectChat(user, token);
     } else {
       disconnectChat();
     }
-  }, [connectChat, disconnectChat, user]);
+  }, [connectChat, disconnectChat, token, user]);
 
   useEffect(() => {
     if (activePage === "friends" && user) {
@@ -302,13 +303,13 @@ const AppContainer = () => {
             user={user}
             chatLoading={chatLoading}
             chatError={chatError}
-            channels={channels}
-            activeChannel={activeChannel}
+            threads={threads}
+            activeThread={activeThread}
             messages={messages}
-            selectingChannel={selectingChannel}
-            onRefresh={refreshChannels}
-            onChannelSelect={openChannel}
-            onBackToList={closeChannel}
+            selectingThread={selectingThread}
+            onRefresh={refreshThreads}
+            onThreadSelect={openThread}
+            onBackToList={closeThread}
             onSendMessage={sendMessage}
           />
         )}

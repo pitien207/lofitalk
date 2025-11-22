@@ -15,39 +15,29 @@ import {
 import Logo from "../../assets/LofiTalk_logo.png";
 import { BRAND_COLORS } from "../theme/colors";
 
-const DEFAULT_CALL_BASE_URL =
-  process.env.EXPO_PUBLIC_WEB_APP_URL || "https://lofitalk.onrender.com";
 const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
 
 const EMOJI_PALETTE = [
   "😀",
+  "😃",
+  "😄",
   "😁",
+  "😆",
+  "😅",
   "😂",
   "🤣",
   "😊",
   "😍",
+  "😘",
+  "😜",
   "😎",
-  "🙂",
-  "🤗",
   "🤩",
-  "😇",
   "🤔",
-  "😢",
-  "😭",
-  "😡",
-  "😴",
-  "🙈",
-  "🙉",
-  "🙊",
+  "🙃",
+  "😇",
+  "🥳",
+  "🤗",
   "👍",
-  "👏",
-  "🙏",
-  "💪",
-  "💖",
-  "🔥",
-  "🌟",
-  "🎉",
-  "🎶",
 ];
 
 const formatRelativeTime = (date) => {
@@ -68,66 +58,19 @@ const formatRelativeTime = (date) => {
   return target.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const buildChannelMeta = (channel, currentUserId) => {
-  const members = Object.values(channel.state?.members || {});
-  const otherMember =
-    members.find((member) => member.user?.id !== currentUserId)?.user ||
-    channel.data?.created_by ||
-    {};
-
-  const validMessages =
-    channel.state?.messages?.filter(
-      (msg) => !msg.deleted_at && msg.type !== "system"
-    ) || [];
-  const lastMessage = validMessages[validMessages.length - 1];
-
-  const readState = channel.state?.read;
-  let lastReadDate = null;
-  if (readState) {
-    if (Array.isArray(readState)) {
-      const ownRead = readState.find(
-        (read) =>
-          read?.user?.id === currentUserId || read?.user_id === currentUserId
-      );
-      lastReadDate = ownRead?.last_read;
-    } else {
-      lastReadDate = readState?.[currentUserId]?.last_read;
-    }
-  }
-
-  const unread =
-    lastMessage && lastMessage.created_at
-      ? !lastReadDate ||
-        new Date(lastMessage.created_at) > new Date(lastReadDate)
-      : false;
-
-  const lastMessageText =
-    lastMessage?.text ||
-    (lastMessage?.attachments?.length ? "Sent an attachment" : "Say hello 👋");
-
+const buildThreadMeta = (thread) => {
+  const partner = thread?.partner || {};
   return {
-    id: channel.id,
-    cid: channel.cid,
-    name: otherMember?.name || channel.data?.name || "Conversation",
-    avatar: otherMember?.image,
-    online: Boolean(otherMember?.online),
-    lastMessageText,
-    lastMessageTime: formatRelativeTime(
-      lastMessage?.created_at || channel.state?.last_message_at
-    ),
-    unread,
+    id: thread?.id,
+    partnerId: thread?.partnerId,
+    name: partner.fullName || "Conversation",
+    avatar: partner.profilePic,
+    online: Boolean(partner.isOnline),
+    lastMessageText: thread?.lastMessage || "Say hello :)",
+    lastMessageTime: formatRelativeTime(thread?.lastMessageAt),
+    unread: (thread?.unreadCount || 0) > 0,
   };
 };
-
-const filterMessages = (messages) =>
-  (messages || []).filter(
-    (msg) =>
-      !msg.deleted_at &&
-      (msg.type === "regular" ||
-        msg.type === "reply" ||
-        msg.type === "message.read" ||
-        !msg.type)
-  );
 
 const resolveImageSource = (value) => {
   if (!value) return Logo;
@@ -166,12 +109,12 @@ const ChatScreen = ({
   user,
   chatLoading,
   chatError,
-  channels,
-  activeChannel,
+  threads,
+  activeThread,
   messages,
-  selectingChannel,
+  selectingThread,
   onRefresh,
-  onChannelSelect,
+  onThreadSelect,
   onBackToList,
   onSendMessage,
 }) => {
@@ -183,13 +126,13 @@ const ChatScreen = ({
     Linking.openURL(url).catch(() => null);
   };
 
-  const renderChannelItem = ({ item }) => {
-    const meta = buildChannelMeta(item, user?._id);
+  const renderThreadItem = ({ item }) => {
+    const meta = buildThreadMeta(item);
     return (
       <TouchableOpacity
         style={styles.threadRow}
         activeOpacity={0.85}
-        onPress={() => onChannelSelect(meta.id)}
+        onPress={() => onThreadSelect(meta.partnerId || meta.id)}
       >
         <View style={styles.avatarWrapper}>
           <Image source={resolveImageSource(meta.avatar)} style={styles.threadAvatar} />
@@ -210,17 +153,16 @@ const ChatScreen = ({
   };
 
   const conversationMeta = useMemo(() => {
-    if (!activeChannel) return null;
-    return buildChannelMeta(activeChannel, user?._id);
-  }, [activeChannel, user?._id]);
+    if (!activeThread) return null;
+    return buildThreadMeta(activeThread);
+  }, [activeThread]);
 
   const conversationMessages = useMemo(() => {
-    const normalized = filterMessages(messages).map((msg, index) => ({
-      id: msg.id || `${msg.cid || "msg"}-${msg.created_at || index}`,
-      text: msg.text || (msg.attachments?.length ? "Shared attachment" : ""),
-      createdAt: msg.created_at,
-      isOwn: msg.user?.id === user?._id,
-      name: msg.user?.name || "Friend",
+    const normalized = (messages || []).map((msg, index) => ({
+      id: msg.id || msg.tempId || `${index}`,
+      text: msg.text || "",
+      createdAt: msg.createdAt,
+      isOwn: msg.senderId === user?._id,
     }));
 
     return normalized.reverse();
@@ -234,26 +176,18 @@ const ChatScreen = ({
   };
 
   const handleSelectEmoji = (emoji) => {
-    setMessageText((prev) => prev + emoji);
+    if (!emoji) return;
+    const hasText = messageText.trim().length > 0;
+    if (!hasText) {
+      onSendMessage(emoji);
+      setShowEmojiPicker(false);
+      return;
+    }
+    setMessageText((prev) => `${prev}${emoji}`);
     setShowEmojiPicker(false);
   };
 
-  const handleSendCallLink = async () => {
-    if (!activeChannel) return;
-    const normalizedBase = DEFAULT_CALL_BASE_URL.replace(/\/$/, "");
-    const callUrl = `${normalizedBase}/call/${activeChannel.id}`;
-
-    try {
-      await activeChannel.sendMessage({
-        text: `Join this call: ${callUrl}`,
-      });
-      Linking.openURL(callUrl).catch(() => null);
-    } catch (error) {
-      console.log("Call link error:", error);
-    }
-  };
-
-  if (activeChannel && conversationMeta) {
+  if (activeThread && conversationMeta) {
     return (
       <KeyboardAvoidingView
         style={styles.chatWrapper}
@@ -262,7 +196,7 @@ const ChatScreen = ({
       >
         <View style={styles.chatHeader}>
           <TouchableOpacity style={styles.backButton} onPress={onBackToList}>
-            <Text style={styles.backButtonText}>◀</Text>
+            <Text style={styles.backButtonText}>{"<"}</Text>
           </TouchableOpacity>
           <View style={styles.chatAvatarWrapper}>
             <Image
@@ -277,12 +211,6 @@ const ChatScreen = ({
               {conversationMeta.online ? "Online now" : "Offline"}
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.callButton}
-            onPress={handleSendCallLink}
-          >
-            <Text style={styles.callButtonText}>Call</Text>
-          </TouchableOpacity>
         </View>
 
         <FlatList
@@ -394,16 +322,16 @@ const ChatScreen = ({
 
       {chatError && <Text style={styles.errorText}>{chatError}</Text>}
 
-      {(chatLoading || selectingChannel) && (
+      {(chatLoading || selectingThread) && (
         <View style={styles.loaderRow}>
           <ActivityIndicator color="#fff" />
           <Text style={styles.loaderText}>
-            {selectingChannel ? "Loading chat..." : "Connecting to Stream..."}
+            {selectingThread ? "Loading chat..." : "Connecting to chat..."}
           </Text>
         </View>
       )}
 
-      {channels.length === 0 && !chatLoading ? (
+      {threads.length === 0 && !chatLoading ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>No conversations yet</Text>
           <Text style={styles.emptySubtitle}>
@@ -412,9 +340,9 @@ const ChatScreen = ({
         </View>
       ) : (
         <FlatList
-          data={channels}
-          keyExtractor={(item) => item.cid || item.id}
-          renderItem={renderChannelItem}
+          data={threads}
+          keyExtractor={(item) => item.id || item.partnerId}
+          renderItem={renderThreadItem}
           refreshing={chatLoading}
           onRefresh={onRefresh}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -573,18 +501,6 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     fontSize: 13,
   },
-  callButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  callButtonText: {
-    color: BRAND_COLORS.text,
-    fontWeight: "700",
-  },
   messageList: {
     flex: 1,
   },
@@ -656,7 +572,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   emojiToggleText: {
-    fontSize: 24,
+    fontSize: 20,
   },
   emojiPicker: {
     flexDirection: "row",
@@ -674,7 +590,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   emojiOptionText: {
-    fontSize: 22,
+    fontSize: 18,
+    color: BRAND_COLORS.text,
   },
   messageInput: {
     flex: 1,
