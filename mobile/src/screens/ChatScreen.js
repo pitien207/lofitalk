@@ -17,6 +17,24 @@ import { resolveImageSource } from "../utils/imageSource";
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
 
+const EMOJI_OPTIONS = [
+  "\uD83D\uDE00",
+  "\uD83D\uDE04",
+  "\uD83D\uDE06",
+  "\uD83D\uDE0D",
+  "\uD83E\uDD14",
+  "\uD83D\uDE0E",
+  "\uD83E\uDD29",
+  "\uD83D\uDE4C",
+  "\uD83C\uDF89",
+  "\u2764\uFE0F",
+  "\uD83D\uDC4D",
+  "\u2728",
+  "\uD83D\uDE0A",
+  "\uD83E\uDD70",
+  "\uD83D\uDE0B",
+];
+
 const EMOJI_PALETTE = [
   "😀",
   "😃",
@@ -171,13 +189,7 @@ const ChatScreen = ({
 
   const handleSelectEmoji = (emoji) => {
     if (!emoji) return;
-    const hasText = messageText.trim().length > 0;
-    if (!hasText) {
-      onSendMessage(emoji);
-      setShowEmojiPicker(false);
-      return;
-    }
-    setMessageText((prev) => `${prev}${emoji}`);
+    setMessageText((prev) => `${prev || ""}${emoji}`);
     setShowEmojiPicker(false);
   };
 
@@ -263,7 +275,7 @@ const ChatScreen = ({
 
         {showEmojiPicker && (
           <View style={styles.emojiPicker}>
-            {EMOJI_PALETTE.map((emoji) => (
+            {EMOJI_OPTIONS.map((emoji) => (
               <TouchableOpacity
                 key={emoji}
                 style={styles.emojiOption}
