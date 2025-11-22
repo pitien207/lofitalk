@@ -3,15 +3,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const backendRoot = path.resolve(currentDir, "../../");
-const repoRoot = path.resolve(backendRoot, "..");
-
-const mobileAvatarsDir = path.join(repoRoot, "mobile", "assets", "avatars");
-const frontendAvatarsDir = path.join(repoRoot, "frontend", "src", "pictures", "avatars");
+const avatarRoot =
+  process.env.AVATAR_ROOT || path.join(currentDir, "..", "assets", "avatars");
 
 const MOBILE_PREFIX =
   process.env.MOBILE_AVATAR_STATIC_PATH || "/static/avatars/mobile";
-const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || "/static/avatars/frontend";
+const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || "/static/avatars/web";
 
 const buildPublicPaths = (dir, prefix, subPath) => {
   try {
@@ -36,8 +33,8 @@ const createAvatarPool = (baseDir, prefix) => {
   return { boy, girl, all };
 };
 
-const mobilePool = createAvatarPool(mobileAvatarsDir, MOBILE_PREFIX);
-const webPool = createAvatarPool(frontendAvatarsDir, WEB_PREFIX);
+const mobilePool = createAvatarPool(avatarRoot, MOBILE_PREFIX);
+const webPool = createAvatarPool(avatarRoot, WEB_PREFIX);
 
 const normalizeGender = (gender = "") => gender.toLowerCase().trim();
 

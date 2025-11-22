@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
 import http from "http";
+import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -20,7 +21,8 @@ const app = express();
 const PORT = process.env.PORT;
 const server = http.createServer(app);
 
-const __dirname = path.resolve();
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const backendRoot = path.resolve(currentDir, "..");
 
 const allowedOrigins = (
   process.env.FRONTEND_URLS || "http://localhost:5173,https://lofitalk.onrender.com"
@@ -40,27 +42,12 @@ app.use(express.json({ limit: "200kb" }));
 app.use(express.urlencoded({ extended: true, limit: "200kb" }));
 app.use(cookieParser());
 
-const frontendAvatarDirectory = path.join(
-  __dirname,
-  "..",
-  "frontend",
-  "src",
-  "pictures",
-  "avatars"
-);
+const avatarDirectory =
+  process.env.AVATAR_ROOT || path.join(currentDir, "assets", "avatars");
 
-const mobileAvatarDirectory = path.join(
-  __dirname,
-  "..",
-  "mobile",
-  "assets",
-  "avatars"
-);
-
-app.use("/static/avatars/frontend", express.static(frontendAvatarDirectory));
-app.use("/static/avatars/web", express.static(frontendAvatarDirectory));
-app.use("/static/avatars/mobile", express.static(mobileAvatarDirectory));
-app.use("/static/avatars", express.static(mobileAvatarDirectory));
+app.use("/static/avatars/mobile", express.static(avatarDirectory));
+app.use("/static/avatars/web", express.static(avatarDirectory));
+app.use("/static/avatars", express.static(avatarDirectory));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -70,10 +57,11 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/meta", metaRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const frontendDist = path.join(backendRoot, "dist");
+  app.use(express.static(frontendDist));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
 
