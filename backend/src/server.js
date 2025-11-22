@@ -57,7 +57,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/meta", metaRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  const frontendDist = path.join(backendRoot, "dist");
+  const frontendDist =
+    process.env.FRONTEND_DIST ||
+    path.join(backendRoot, "..", "frontend", "dist");
+
   app.use(express.static(frontendDist));
 
   app.get("*", (req, res) => {
