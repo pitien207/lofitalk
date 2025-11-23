@@ -46,6 +46,21 @@ const setAuthCookie = (res, token) => {
   });
 };
 
+const withAvatarVersion = (url, version) => {
+  if (!url || url.startsWith("data:")) return url;
+  const versionValue = version || Date.now();
+  try {
+    const parsed = new URL(url);
+    parsed.searchParams.set("v", versionValue);
+    return parsed.toString();
+  } catch (_err) {
+    const [base, query = ""] = url.split("?");
+    const params = new URLSearchParams(query);
+    params.set("v", versionValue);
+    return `${base}?${params.toString()}`;
+  }
+};
+
 export async function signup(req, res) {
   const { email, password, fullName } = req.body;
 
@@ -81,7 +96,9 @@ export async function signup(req, res) {
     const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
     const avatarSource = platformHeader === "web" ? "web" : "mobile";
     const randomAvatarPath = getRandomAvatar(undefined, avatarSource);
-    const randomAvatar = randomAvatarPath ? buildAssetUrl(randomAvatarPath) : "";
+    const randomAvatar = randomAvatarPath
+      ? withAvatarVersion(buildAssetUrl(randomAvatarPath))
+      : "";
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -206,7 +223,8 @@ export async function verifySignupCode(req, res) {
         email: pendingSignup.email,
         fullName: pendingSignup.fullName,
         password: pendingSignup.passwordHash,
-        profilePic: pendingSignup.profilePic || "",
+        profilePic: withAvatarVersion(pendingSignup.profilePic),
+        avatarVersion: Date.now(),
         isEmailVerified: true,
       });
       user._skipPasswordHash = true;
@@ -426,7 +444,9 @@ export async function onboard(req, res) {
     };
 
     if (profilePic) {
-      updatePayload.profilePic = profilePic;
+      const version = Date.now();
+      updatePayload.avatarVersion = version;
+      updatePayload.profilePic = withAvatarVersion(profilePic, version);
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updatePayload, {
