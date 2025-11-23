@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -132,11 +132,29 @@ const ChatScreen = ({
 }) => {
   const [messageText, setMessageText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [visibleTimestamps, setVisibleTimestamps] = useState(() => new Set());
 
   const handleLinkPress = (url) => {
     if (!url) return;
     Linking.openURL(url).catch(() => null);
   };
+
+  useEffect(() => {
+    setVisibleTimestamps(new Set());
+  }, [activeThread?.id]);
+
+  const toggleTimestamp = useCallback((messageId) => {
+    if (!messageId) return;
+    setVisibleTimestamps((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  }, []);
 
   const renderThreadItem = ({ item }) => {
     const meta = buildThreadMeta(item);
@@ -228,11 +246,13 @@ const ChatScreen = ({
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
-            <View
+            <TouchableOpacity
               style={[
                 styles.messageItem,
                 item.isOwn ? styles.messageItemOwn : styles.messageItemRemote,
               ]}
+              activeOpacity={0.85}
+              onPress={() => toggleTimestamp(item.id)}
             >
               <View
                 style={[
@@ -255,21 +275,23 @@ const ChatScreen = ({
                       >
                         {segment.content}
                       </Text>
-                    ) : (
-                      <Text key={`seg-${index}`}>{segment.content}</Text>
-                    )
-                  )}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.messageTime,
-                  item.isOwn && styles.messageTimeOwn,
-                ]}
-              >
-                {formatRelativeTime(item.createdAt)}
+                  ) : (
+                    <Text key={`seg-${index}`}>{segment.content}</Text>
+                  )
+                )}
               </Text>
-            </View>
+              </View>
+              {visibleTimestamps.has(item.id) && (
+                <Text
+                  style={[
+                    styles.messageTime,
+                    item.isOwn && styles.messageTimeOwn,
+                  ]}
+                >
+                  {formatRelativeTime(item.createdAt)}
+                </Text>
+              )}
+            </TouchableOpacity>
           )}
         />
 

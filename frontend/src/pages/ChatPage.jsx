@@ -27,6 +27,7 @@ const ChatPage = () => {
   const [messageText, setMessageText] = useState("");
 
   const messageListRef = useRef(null);
+  const [visibleTimestamps, setVisibleTimestamps] = useState(() => new Set());
 
   const {
     data: threadData,
@@ -129,6 +130,23 @@ const ChatPage = () => {
       socket.off("chat:thread:update", handleThreadUpdate);
     };
   }, [socket, threadId, upsertMessage, queryClient]);
+
+  useEffect(() => {
+    setVisibleTimestamps(new Set());
+  }, [threadId]);
+
+  const toggleTimestampVisibility = useCallback((messageId) => {
+    if (!messageId) return;
+    setVisibleTimestamps((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  }, []);
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -259,20 +277,25 @@ const ChatPage = () => {
             message.createdAt,
             language
           );
+          const messageKey = message.id || message.tempId;
+          const showTimestamp = messageKey && visibleTimestamps.has(messageKey);
 
           return (
             <div
-              key={message.id || message.tempId}
-              className={`flex flex-col ${alignment} gap-1`}
+              key={messageKey}
+              className={`flex flex-col ${alignment} gap-1 cursor-pointer`}
+              onClick={() => toggleTimestampVisibility(messageKey)}
             >
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2 shadow ${bubbleClasses}`}
               >
                 <p className="whitespace-pre-wrap break-words">{message.text}</p>
               </div>
-              <span className="text-[11px] text-base-content/60">
-                {timestamp || ""}
-              </span>
+              {showTimestamp && (
+                <span className="text-[11px] text-base-content/60">
+                  {timestamp || ""}
+                </span>
+              )}
             </div>
           );
         })}
