@@ -16,6 +16,7 @@ import FortuneCookiePage from "./pages/FortuneCookiePage.jsx";
 import MobileAppPage from "./pages/MobileAppPage.jsx";
 
 import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
@@ -25,6 +26,12 @@ import { useThemeStore } from "./store/useThemeStore.js";
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
   const { theme } = useThemeStore();
+
+  useEffect(() => {
+    if (!theme) return;
+    document.documentElement?.setAttribute("data-theme", theme);
+    document.body?.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const isAuthenticated = Boolean(authUser);
   const isOnboarded = authUser?.isOnboarded;

@@ -45,19 +45,20 @@ body,
 }
 
 body {
-  background-color: var(--fallback-b1, #030712);
+  background-color: var(--b1);
+  color: var(--bc);
 }
 
 .btn-primary,
 .btn-primary:focus-visible {
-  background-color: var(--brand-color);
-  border-color: var(--brand-color);
-  color: #fff;
+  background-color: var(--p, var(--brand-color));
+  border-color: var(--p, var(--brand-color));
+  color: var(--pc, #fff);
 }
 
 .btn-primary:hover {
-  background-color: var(--brand-color-hover);
-  border-color: var(--brand-color-hover);
+  background-color: var(--pf, var(--brand-color-hover));
+  border-color: var(--pf, var(--brand-color-hover));
 }
 
 .text-primary {
