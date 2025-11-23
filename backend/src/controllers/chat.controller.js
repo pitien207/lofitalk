@@ -28,6 +28,9 @@ export async function getChatThreads(req, res) {
     const Conversation = getChatConversationModel();
 
     const threads = await Conversation.find({ participants: viewerId })
+      .select(
+        "_id participants lastMessageText lastMessageAt lastSender unreadByUser updatedAt"
+      )
       .sort({ lastMessageAt: -1, updatedAt: -1 })
       .lean();
 
@@ -57,9 +60,9 @@ export async function getThreadWithUser(req, res) {
       return res.status(400).json({ message: "Target user is required" });
     }
 
-    const targetUser = await User.findById(userId).select(
-      "fullName profilePic isOnline lastActiveAt"
-    );
+    const targetUser = await User.findById(userId)
+      .select("fullName profilePic isOnline lastActiveAt")
+      .lean();
 
     if (!targetUser) {
       return res.status(404).json({ message: "User not found" });
@@ -111,7 +114,9 @@ export async function getThreadMessages(req, res) {
     }
 
     const Conversation = getChatConversationModel();
-    const conversation = await Conversation.findById(threadId);
+    const conversation = await Conversation.findById(threadId)
+      .select("participants")
+      .lean();
 
     const isParticipant = (conversation?.participants || []).some(
       (participantId) => participantId.toString() === viewerId.toString()
