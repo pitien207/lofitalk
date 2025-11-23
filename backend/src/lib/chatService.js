@@ -101,12 +101,33 @@ export const saveChatMessage = async ({
   return message;
 };
 
-export const fetchRecentMessages = async (conversationId, limit = 50) => {
+export const fetchRecentMessages = async (
+  conversationId,
+  { limit = 20, before = null, after = null } = {}
+) => {
   const Message = getChatMessageModel();
-  return Message.find({ conversation: conversationId })
+  const filters = { conversation: conversationId };
+
+  if (before) {
+    const beforeDate = new Date(before);
+    if (!Number.isNaN(beforeDate.getTime())) {
+      filters.createdAt = { ...(filters.createdAt || {}), $lt: beforeDate };
+    }
+  }
+
+  if (after) {
+    const afterDate = new Date(after);
+    if (!Number.isNaN(afterDate.getTime())) {
+      filters.createdAt = { ...(filters.createdAt || {}), $gt: afterDate };
+    }
+  }
+
+  const items = await Message.find(filters)
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean();
+
+  return items.reverse();
 };
 
 export const markConversationRead = async (conversationId, userId) => {

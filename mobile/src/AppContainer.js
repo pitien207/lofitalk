@@ -63,6 +63,8 @@ const AppContainer = () => {
     activeThread,
     messages,
     selectingThread,
+    hasMoreMessages,
+    loadingMoreMessages,
     connectChat,
     disconnectChat,
     refreshThreads,
@@ -70,6 +72,7 @@ const AppContainer = () => {
     startDirectChat,
     closeThread,
     sendMessage,
+    loadOlderMessages,
   } = useChat();
   const {
     status: versionStatus,
@@ -307,10 +310,13 @@ const AppContainer = () => {
             activeThread={activeThread}
             messages={messages}
             selectingThread={selectingThread}
+            loadingMoreMessages={loadingMoreMessages}
+            hasMoreMessages={hasMoreMessages}
             onRefresh={refreshThreads}
             onThreadSelect={openThread}
             onBackToList={closeThread}
             onSendMessage={sendMessage}
+            onLoadOlderMessages={loadOlderMessages}
           />
         )}
       </View>

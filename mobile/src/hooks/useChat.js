@@ -6,6 +6,7 @@ import {
 import {
   fetchChatThreads,
   fetchThreadWithUser,
+  fetchThreadMessages,
   markThreadRead,
   sendChatMessage,
 } from "../services/chatService";
@@ -24,6 +25,8 @@ const useChat = () => {
   const [activeThread, setActiveThread] = useState(null);
   const [messages, setMessages] = useState([]);
   const [selectingThread, setSelectingThread] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
 
   const socketRef = useRef(null);
   const activeThreadIdRef = useRef(null);
@@ -35,6 +38,8 @@ const useChat = () => {
     setActiveThread(null);
     setMessages([]);
     setChatError(null);
+    setHasMoreMessages(true);
+    setLoadingMoreMessages(false);
     activeThreadIdRef.current = null;
   }, []);
 
@@ -120,9 +125,10 @@ const useChat = () => {
       setChatError(null);
 
       try {
-        const data = await fetchThreadWithUser(resolvedUserId);
+        const data = await fetchThreadWithUser(resolvedUserId, { limit: 20 });
         const thread = data?.thread;
         setMessages(data?.messages ?? []);
+        setHasMoreMessages((data?.messages?.length || 0) >= 20);
         if (thread) {
           setActiveThread(thread);
           upsertThread(thread);
@@ -150,6 +156,8 @@ const useChat = () => {
     activeThreadIdRef.current = null;
     setActiveThread(null);
     setMessages([]);
+    setHasMoreMessages(true);
+    setLoadingMoreMessages(false);
   }, []);
 
   const handleIncomingMessage = useCallback(
@@ -301,6 +309,49 @@ const useChat = () => {
     [activeThread, upsertMessage, upsertThread]
   );
 
+  const loadOlderMessages = useCallback(async () => {
+    if (loadingMoreMessages || !hasMoreMessages) return;
+    const threadId = activeThreadIdRef.current;
+    if (!threadId || !messages.length) return;
+
+    const oldest = messages[0];
+    if (!oldest?.createdAt) return;
+
+    setLoadingMoreMessages(true);
+    try {
+      const older = await fetchThreadMessages(threadId, {
+        before: oldest.createdAt,
+        limit: 20,
+      });
+
+      if (!older.length) {
+        setHasMoreMessages(false);
+        return;
+      }
+
+      setHasMoreMessages(older.length >= 20);
+
+      setMessages((prev) => {
+        const existing = new Set(
+          prev.map((msg) => msg.id || msg.tempId || msg._id)
+        );
+        const deduped = older.filter(
+          (msg) => !existing.has(msg.id || msg.tempId || msg._id)
+        );
+        const merged = [...deduped, ...prev];
+        return merged.sort(
+          (a, b) =>
+            new Date(a.createdAt || 0).getTime() -
+            new Date(b.createdAt || 0).getTime()
+        );
+      });
+    } catch (_error) {
+      setChatError("Unable to load older messages");
+    } finally {
+      setLoadingMoreMessages(false);
+    }
+  }, [hasMoreMessages, loadingMoreMessages, messages]);
+
   useEffect(() => {
     return () => {
       disconnectChat();
@@ -314,6 +365,8 @@ const useChat = () => {
     activeThread,
     messages,
     selectingThread,
+    hasMoreMessages,
+    loadingMoreMessages,
     connectChat,
     disconnectChat,
     refreshThreads,
@@ -321,6 +374,7 @@ const useChat = () => {
     startDirectChat,
     closeThread,
     sendMessage,
+    loadOlderMessages,
   };
 };
 

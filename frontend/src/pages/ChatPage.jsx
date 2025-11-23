@@ -15,6 +15,9 @@ import ChatLoader from "../components/ChatLoader";
 import EmojiPickerButton from "../components/EmojiPickerButton";
 import { useTranslation } from "../languages/useTranslation";
 import { formatRelativeTimeFromNow } from "../utils/time";
+import { getChatMessages } from "../lib/api";
+
+const PAGE_SIZE = 20;
 
 const ChatPage = () => {
   const { id: targetUserId } = useParams();
@@ -25,6 +28,8 @@ const ChatPage = () => {
 
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   const messageListRef = useRef(null);
   const [visibleTimestamps, setVisibleTimestamps] = useState(() => new Set());
@@ -46,6 +51,7 @@ const ChatPage = () => {
   useEffect(() => {
     if (threadData?.messages) {
       setMessages(threadData.messages);
+      setHasMore((threadData.messages || []).length >= PAGE_SIZE);
     }
   }, [threadData]);
 
@@ -133,6 +139,8 @@ const ChatPage = () => {
 
   useEffect(() => {
     setVisibleTimestamps(new Set());
+    setHasMore(true);
+    setLoadingMore(false);
   }, [threadId]);
 
   const toggleTimestampVisibility = useCallback((messageId) => {
@@ -197,6 +205,67 @@ const ChatPage = () => {
       }
     }
   };
+
+  const fetchOlderMessages = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    const oldest = messages[0];
+    if (!oldest || !threadId) return;
+
+    setLoadingMore(true);
+    const listEl = messageListRef.current;
+    const prevScrollHeight = listEl?.scrollHeight || 0;
+    const prevScrollTop = listEl?.scrollTop || 0;
+
+    try {
+      const response = await getChatMessages(threadId, {
+        before: oldest.createdAt,
+        limit: PAGE_SIZE,
+      });
+
+      const incoming = response?.messages || [];
+      if (!incoming.length) {
+        setHasMore(false);
+        return;
+      }
+
+      setHasMore(incoming.length >= PAGE_SIZE);
+
+      setMessages((prev) => {
+        const existingIds = new Set(
+          prev.map((msg) => msg.id || msg.tempId || msg._id)
+        );
+        const deduped = incoming.filter(
+          (msg) =>
+            !existingIds.has(msg.id || msg.tempId || msg._id)
+        );
+        const merged = [...deduped, ...prev];
+        return merged.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
+
+      // Preserve scroll position so content doesn't jump when prepending
+      requestAnimationFrame(() => {
+        if (!listEl) return;
+        const newScrollHeight = listEl.scrollHeight || prevScrollHeight;
+        const delta = newScrollHeight - prevScrollHeight;
+        listEl.scrollTop = prevScrollTop + delta;
+      });
+    } catch (_error) {
+      // swallow; optional toast could be added
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, messages, threadId]);
+
+  const handleScroll = useCallback(() => {
+    const el = messageListRef.current;
+    if (!el || loadingMore || !hasMore) return;
+    if (el.scrollTop <= 12) {
+      fetchOlderMessages();
+    }
+  }, [fetchOlderMessages, loadingMore, hasMore]);
 
   const presenceText = useMemo(() => {
     if (!partner) return "";
@@ -265,8 +334,14 @@ const ChatPage = () => {
 
       <div
         ref={messageListRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto bg-base-200/40 px-4 py-6 space-y-4"
       >
+        {loadingMore && (
+          <div className="flex justify-center text-xs text-base-content/60">
+            {t("common.loading") || "Loading..."}
+          </div>
+        )}
         {messages.map((message) => {
           const isMine = message.senderId === authUser?._id;
           const alignment = isMine ? "items-end" : "items-start";

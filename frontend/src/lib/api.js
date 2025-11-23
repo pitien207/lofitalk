@@ -103,16 +103,22 @@ export async function getChatThreads() {
   return response.data;
 }
 
-export async function getChatThreadWithUser(userId, limit = 50) {
+export async function getChatThreadWithUser(userId, options = {}) {
+  const { limit = 20, before, after } =
+    typeof options === "number" ? { limit: options } : options;
+
   const response = await axiosInstance.get(`/chat/threads/user/${userId}`, {
-    params: { limit },
+    params: { limit, before, after },
   });
   return response.data;
 }
 
-export async function getChatMessages(threadId, limit = 50) {
+export async function getChatMessages(threadId, options = {}) {
+  const { limit = 20, before, after } =
+    typeof options === "number" ? { limit: options } : options;
+
   const response = await axiosInstance.get(`/chat/threads/${threadId}/messages`, {
-    params: { limit },
+    params: { limit, before, after },
   });
   return response.data;
 }

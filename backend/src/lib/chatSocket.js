@@ -13,6 +13,32 @@ import {
   saveChatMessage,
 } from "./chatService.js";
 
+const USER_MAP_CACHE_TTL_MS = parseInt(
+  process.env.CHAT_USERMAP_TTL_MS || "120000",
+  10
+);
+const userMapCache = new Map();
+
+const buildUserMapCacheKey = (participants = []) =>
+  (participants || [])
+    .map((id) => id && id.toString())
+    .filter(Boolean)
+    .sort()
+    .join("|");
+
+const getCachedUserMap = async (participants = []) => {
+  const cacheKey = buildUserMapCacheKey(participants);
+  const now = Date.now();
+  const cached = userMapCache.get(cacheKey);
+  if (cached && now - cached.timestamp < USER_MAP_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  const userMap = await loadUserMap(participants);
+  userMapCache.set(cacheKey, { value: userMap, timestamp: now });
+  return userMap;
+};
+
 const getAuthToken = (socket) => {
   const rawCookie = socket.handshake?.headers?.cookie;
   if (rawCookie) {
@@ -118,20 +144,20 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
           text: normalizedText,
         });
 
-        const userMap = await loadUserMap(conversation.participants);
-        const summary = buildThreadSummary(conversation, userId, userMap);
+        const userMap = await getCachedUserMap(conversation.participants);
         const formattedMessage = formatMessage(message);
         const threadRoom = toRoomName(conversation._id.toString());
+        const recipientIdStr = recipientId.toString();
 
         socket.join(threadRoom);
 
         io.to(threadRoom).emit("chat:message:new", {
           message: formattedMessage,
-          thread: summary,
+          threadId: conversation._id.toString(),
           tempId: tempId || null,
         });
 
-        [recipientId.toString(), userId].forEach((participantId) => {
+        [recipientIdStr, userId].forEach((participantId) => {
           io.to(toUserRoom(participantId)).emit(
             "chat:thread:update",
             buildThreadSummary(conversation, participantId, userMap)
@@ -142,7 +168,6 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
           ok: true,
           threadId: conversation._id.toString(),
           message: formattedMessage,
-          thread: summary,
         });
       } catch (error) {
         console.error("Error in chat:send-message", error);
@@ -156,7 +181,7 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
         const updated = await markConversationRead(threadId, userId);
         if (!updated) return;
 
-        const userMap = await loadUserMap(updated.participants);
+        const userMap = await getCachedUserMap(updated.participants);
         const summary = buildThreadSummary(updated, userId, userMap);
 
         io.to(toUserRoom(userId)).emit("chat:thread:update", summary);

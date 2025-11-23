@@ -125,10 +125,13 @@ const ChatScreen = ({
   activeThread,
   messages,
   selectingThread,
+  loadingMoreMessages,
+  hasMoreMessages,
   onRefresh,
   onThreadSelect,
   onBackToList,
   onSendMessage,
+  onLoadOlderMessages,
 }) => {
   const [messageText, setMessageText] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -245,6 +248,21 @@ const ChatScreen = ({
           inverted
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
+          maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+          onEndReachedThreshold={0.2}
+          onEndReached={() => {
+            if (hasMoreMessages && !loadingMoreMessages) {
+              onLoadOlderMessages?.();
+            }
+          }}
+          ListFooterComponent={
+            loadingMoreMessages ? (
+              <View style={styles.loaderRow}>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={styles.loaderText}>Loading earlier messages...</Text>
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[

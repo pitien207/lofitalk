@@ -10,10 +10,16 @@ import {
 } from "../lib/chatService.js";
 import { getChatConversationModel } from "../models/ChatConversation.js";
 
-const normalizeLimit = (value, fallback = 50) => {
+const normalizeLimit = (value, fallback = 20) => {
   const parsed = parseInt(value, 10);
   if (Number.isNaN(parsed) || parsed <= 0) return fallback;
   return Math.min(parsed, 200);
+};
+
+const normalizeCursor = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
 export async function getChatThreads(req, res) {
@@ -43,7 +49,9 @@ export async function getThreadWithUser(req, res) {
   try {
     const viewerId = req.user._id;
     const { userId } = req.params;
-    const limit = normalizeLimit(req.query.limit, 50);
+    const limit = normalizeLimit(req.query.limit, 20);
+    const before = normalizeCursor(req.query.before);
+    const after = normalizeCursor(req.query.after);
 
     if (!userId) {
       return res.status(400).json({ message: "Target user is required" });
@@ -58,7 +66,11 @@ export async function getThreadWithUser(req, res) {
     }
 
     const conversation = await ensureConversation(viewerId, userId);
-    const messages = await fetchRecentMessages(conversation._id, limit);
+    const messages = await fetchRecentMessages(conversation._id, {
+      limit,
+      before,
+      after,
+    });
     const updatedConversation = await markConversationRead(
       conversation._id,
       viewerId
@@ -78,7 +90,7 @@ export async function getThreadWithUser(req, res) {
     res.status(200).json({
       thread,
       partner: thread?.partner,
-      messages: messages.reverse().map(formatMessage),
+      messages: messages.map(formatMessage),
     });
   } catch (error) {
     console.error("Error fetching chat thread:", error);
@@ -90,7 +102,9 @@ export async function getThreadMessages(req, res) {
   try {
     const viewerId = req.user._id;
     const { threadId } = req.params;
-    const limit = normalizeLimit(req.query.limit, 50);
+    const limit = normalizeLimit(req.query.limit, 20);
+    const before = normalizeCursor(req.query.before);
+    const after = normalizeCursor(req.query.after);
 
     if (!threadId) {
       return res.status(400).json({ message: "Thread id is required" });
@@ -107,12 +121,16 @@ export async function getThreadMessages(req, res) {
       return res.status(404).json({ message: "Thread not found" });
     }
 
-    const messages = await fetchRecentMessages(threadId, limit);
+    const messages = await fetchRecentMessages(threadId, {
+      limit,
+      before,
+      after,
+    });
     await markConversationRead(threadId, viewerId);
 
     res
       .status(200)
-      .json({ messages: messages.reverse().map(formatMessage) });
+      .json({ messages: messages.map(formatMessage) });
   } catch (error) {
     console.error("Error fetching messages:", error);
     res.status(500).json({ message: "Unable to load messages" });
