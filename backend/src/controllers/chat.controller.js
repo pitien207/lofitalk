@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import {
+  MAX_MESSAGE_LENGTH,
   buildThreadSummary,
   ensureConversation,
   fetchRecentMessages,
@@ -13,7 +14,7 @@ import { getChatConversationModel } from "../models/ChatConversation.js";
 const normalizeLimit = (value, fallback = 20) => {
   const parsed = parseInt(value, 10);
   if (Number.isNaN(parsed) || parsed <= 0) return fallback;
-  return Math.min(parsed, 200);
+  return Math.min(parsed, 50);
 };
 
 const normalizeCursor = (value) => {
@@ -150,6 +151,11 @@ export async function sendMessage(req, res) {
     const normalizedText = text?.toString().trim();
     if (!normalizedText) {
       return res.status(400).json({ message: "Message text is required" });
+    }
+    if (normalizedText.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        message: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)`,
+      });
     }
 
     const targetUserId = toUserId || null;

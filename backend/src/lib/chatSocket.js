@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { getChatConversationModel } from "../models/ChatConversation.js";
 import {
+  MAX_MESSAGE_LENGTH,
   buildThreadSummary,
   ensureConversation,
   formatMessage,
@@ -112,6 +113,11 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
 
         if (!normalizedText) {
           return callback({ error: "Message text is required" });
+        }
+        if (normalizedText.length > MAX_MESSAGE_LENGTH) {
+          return callback({
+            error: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)`,
+          });
         }
 
         const Conversation = getChatConversationModel();

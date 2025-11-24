@@ -5,6 +5,10 @@ import { getChatMessageModel } from "../models/ChatMessage.js";
 
 const ONLINE_THRESHOLD_MS =
   parseInt(process.env.USER_ONLINE_MINUTES || "5", 10) * 60 * 1000;
+export const MAX_MESSAGE_LENGTH = parseInt(
+  process.env.CHAT_MESSAGE_MAX_LENGTH || "1000",
+  10
+);
 
 const toObjectId = (value) =>
   value instanceof mongoose.Types.ObjectId
@@ -62,6 +66,11 @@ export const saveChatMessage = async ({
   recipientId,
   text,
 }) => {
+  const truncatedText =
+    typeof text === "string" && text.length > MAX_MESSAGE_LENGTH
+      ? text.slice(0, MAX_MESSAGE_LENGTH)
+      : text;
+
   const Message = getChatMessageModel();
   const senderIdStr = senderId.toString();
   const recipientIdStr = recipientId.toString();
@@ -70,7 +79,7 @@ export const saveChatMessage = async ({
     conversation: conversation._id,
     sender: senderId,
     recipient: recipientId,
-    text,
+    text: truncatedText,
     readBy: [senderId],
   });
 
