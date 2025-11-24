@@ -11,12 +11,34 @@ const MOBILE_PREFIX =
   process.env.MOBILE_AVATAR_STATIC_PATH || DEFAULT_AVATAR_PREFIX;
 const WEB_PREFIX = process.env.WEB_AVATAR_STATIC_PATH || DEFAULT_AVATAR_PREFIX;
 
+const SUPPORTED_EXTENSIONS = [".avif", ".webp", ".png"];
+const extensionRank = {
+  ".avif": 0,
+  ".webp": 1,
+  ".png": 2,
+};
+
 const buildPublicPaths = (dir, prefix, subPath) => {
   try {
-    return fs
-      .readdirSync(dir)
-      .filter((file) => file.toLowerCase().endsWith(".png"))
-      .map((file) => `${prefix}/${subPath}/${file}`);
+    const bestByBase = new Map();
+
+    fs.readdirSync(dir)
+      .filter((file) => {
+        const ext = path.extname(file).toLowerCase();
+        return SUPPORTED_EXTENSIONS.includes(ext);
+      })
+      .forEach((file) => {
+        const ext = path.extname(file).toLowerCase();
+        const base = path.basename(file, ext);
+        const current = bestByBase.get(base);
+        if (!current || extensionRank[ext] < extensionRank[current.ext]) {
+          bestByBase.set(base, { file, ext });
+        }
+      });
+
+    return Array.from(bestByBase.values()).map(
+      ({ file }) => `${prefix}/${subPath}/${file}`
+    );
   } catch (error) {
     console.warn(`Unable to read avatars from ${dir}:`, error.message);
     return [];

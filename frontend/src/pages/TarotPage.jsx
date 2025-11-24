@@ -15,26 +15,73 @@ import {
   clearTarotLatest,
   getTarotReading,
 } from "../lib/api";
-import cardBackImg from "../pictures/cards/CardBacks.png";
 import "../tarot.css";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
 import useFlipCardSound from "../hooks/useFlipCardSound";
 
-const cardModules = import.meta.glob("../pictures/cards/*.png", { eager: true });
+const CARD_EXT_RANK = {
+  ".avif": 0,
+  ".webp": 1,
+  ".png": 2,
+};
+
+const cardModules = import.meta.glob("../pictures/cards/*.{webp,avif,png}", {
+  eager: true,
+});
+
+const parseCardVariant = (filename = "") => {
+  const extMatch = filename.match(/\.[^.]+$/);
+  const ext = extMatch ? extMatch[0].toLowerCase() : "";
+  const base = ext ? filename.slice(0, -ext.length) : filename;
+  const sizeMatch = base.match(/_(\d+)$/);
+  const size = sizeMatch ? parseInt(sizeMatch[1], 10) : 0;
+  const name = sizeMatch ? base.slice(0, -sizeMatch[0].length) : base;
+
+  return { name, size, ext };
+};
+
+const { CARD_BACK_IMG, CARD_DECK } = (() => {
+  const bestByName = {};
+
+  Object.entries(cardModules).forEach(([path, mod]) => {
+    const filename = path.split("/").pop() || "";
+    const { name, size, ext } = parseCardVariant(filename);
+    if (!name || !ext) return;
+
+    const current = bestByName[name];
+    const isBetter =
+      !current ||
+      size > current.size ||
+      (size === current.size && CARD_EXT_RANK[ext] < CARD_EXT_RANK[current.ext]);
+
+    if (isBetter) {
+      bestByName[name] = {
+        name,
+        size,
+        ext,
+        src: mod.default,
+      };
+    }
+  });
+
+  const { CardBacks, ...rest } = bestByName;
+  const deck = Object.values(rest)
+    .map(({ name, src }) => ({ name, src }))
+    .sort((a, b) => a.name.localeCompare(b.name, "en", { numeric: true }));
+
+  return {
+    CARD_BACK_IMG: CardBacks?.src || deck[0]?.src || "",
+    CARD_DECK: deck,
+  };
+})();
+
 const ENERGY_MAX = 7;
 const QUESTIONS_FORM_ID = "tarot-questions-form";
 
 const TarotPage = () => {
-  const deck = useMemo(() => {
-    return Object.entries(cardModules)
-      .filter(([path]) => !path.endsWith("CardBacks.png"))
-      .map(([path, mod]) => {
-        const filename = path.split("/").pop() || "";
-        const name = filename.replace(/\.png$/i, "");
-        return { name, src: mod.default };
-      });
-  }, []);
+  const deck = CARD_DECK;
+  const cardBackImg = CARD_BACK_IMG;
 
   const [currentSituation, setCurrentSituation] = useState("");
   const [questions, setQuestions] = useState(["", "", ""]);
