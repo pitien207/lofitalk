@@ -198,6 +198,25 @@ export async function getRecommendedUsers(req, res) {
     const candidates = await User.aggregate([
       { $match: matchStage },
       { $sample: { size: 50 } },
+      {
+        $project: {
+          fullName: 1,
+          profilePic: 1,
+          avatarVersion: 1,
+          gender: 1,
+          country: 1,
+          city: 1,
+          height: 1,
+          education: 1,
+          hobbies: 1,
+          pets: 1,
+          location: 1,
+          isOnline: 1,
+          lastActiveAt: 1,
+          accountType: 1,
+          isOnboarded: 1,
+        },
+      },
     ]);
 
     const requestedHobbies = normalizeFilterArray(requestedHobby);

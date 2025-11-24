@@ -158,6 +158,24 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const stripSensitiveFields = (ret = {}) => {
+  delete ret.password;
+  delete ret.verificationCode;
+  delete ret.verificationCodeExpiresAt;
+  delete ret.passwordResetCode;
+  delete ret.passwordResetCodeExpiresAt;
+  delete ret.__v;
+  return ret;
+};
+
+userSchema.set("toJSON", {
+  transform: (_doc, ret) => stripSensitiveFields(ret),
+});
+
+userSchema.set("toObject", {
+  transform: (_doc, ret) => stripSensitiveFields(ret),
+});
+
 //pre hook to hash password before saving
 userSchema.pre("save", async function (next) {
   if (this._skipPasswordHash) {

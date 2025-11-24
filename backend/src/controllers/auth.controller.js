@@ -46,6 +46,48 @@ const setAuthCookie = (res, token) => {
   });
 };
 
+const PUBLIC_USER_FIELDS = [
+  "_id",
+  "fullName",
+  "email",
+  "bio",
+  "gender",
+  "birthDate",
+  "country",
+  "city",
+  "height",
+  "education",
+  "hobbies",
+  "pets",
+  "profilePic",
+  "avatarVersion",
+  "isEmailVerified",
+  "isOnboarded",
+  "isOnline",
+  "lastActiveAt",
+  "location",
+  "accountType",
+  "energy",
+  "lastEnergyRefill",
+];
+
+const toPublicUser = (userDoc) => {
+  if (!userDoc) return null;
+  const raw =
+    typeof userDoc.toJSON === "function" ? userDoc.toJSON() : { ...userDoc };
+  const safe = {};
+
+  PUBLIC_USER_FIELDS.forEach((field) => {
+    if (raw[field] !== undefined) {
+      safe[field] = raw[field];
+    }
+  });
+
+  safe.id = raw._id?.toString?.() ?? raw._id;
+
+  return safe;
+};
+
 const withAvatarVersion = (url, version) => {
   if (!url || url.startsWith("data:")) return url;
   const versionValue = version || Date.now();
@@ -158,7 +200,7 @@ export async function login(req, res) {
 
     setAuthCookie(res, token);
 
-    res.status(200).json({ success: true, token, user });
+    res.status(200).json({ success: true, token, user: toPublicUser(user) });
   } catch (error) {
     console.log("Error in login controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -258,7 +300,7 @@ export async function verifySignupCode(req, res) {
 
     setAuthCookie(res, token);
 
-    res.status(200).json({ success: true, user });
+    res.status(200).json({ success: true, user: toPublicUser(user) });
   } catch (error) {
     console.log("Error verifying signup code:", error);
     res.status(500).json({ message: "Internal Server Error" });
