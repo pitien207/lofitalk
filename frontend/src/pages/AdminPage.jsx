@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { getAdminUsers, updateUserAccountType } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
 
 const ACCOUNT_TYPES = ["standard", "plus", "admin"];
+const USERS_PER_PAGE = 10;
 
 const AdminPage = () => {
   const { t } = useTranslation();
@@ -13,6 +14,7 @@ const AdminPage = () => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     data,
@@ -52,7 +54,17 @@ const AdminPage = () => {
     });
   }, [users, searchTerm, typeFilter]);
 
-  const visibleUsers = filteredUsers.slice(0, 10);
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((previous) => Math.min(previous, totalPages));
+  }, [totalPages]);
+
+  const visibleUsers = useMemo(() => {
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * USERS_PER_PAGE;
+    return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+  }, [filteredUsers, currentPage, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -76,7 +88,10 @@ const AdminPage = () => {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(event) => {
+                  setSearchTerm(event.target.value);
+                  setCurrentPage(1);
+                }}
                 className="input input-bordered"
                 placeholder={t("admin.filters.searchPlaceholder")}
               />
@@ -89,7 +104,10 @@ const AdminPage = () => {
               <select
                 className="select select-bordered"
                 value={typeFilter}
-                onChange={(event) => setTypeFilter(event.target.value)}
+                onChange={(event) => {
+                  setTypeFilter(event.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="all">{t("admin.filters.allTypes")}</option>
                 {ACCOUNT_TYPES.map((type) => (
@@ -174,6 +192,43 @@ const AdminPage = () => {
               </tbody>
             </table>
           </div>
+
+          {filteredUsers.length > USERS_PER_PAGE && (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 pt-4">
+              <div className="join">
+                <button
+                  className="btn btn-sm join-item"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                >
+                  {t("common.prev")}
+                </button>
+
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const pageNumber = index + 1;
+                  const isActive = pageNumber === currentPage;
+
+                  return (
+                    <button
+                      key={pageNumber}
+                      className={`btn btn-sm join-item ${isActive ? "btn-primary" : "btn-ghost"}`}
+                      onClick={() => setCurrentPage(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+
+                <button
+                  className="btn btn-sm join-item"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  {t("common.next")}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
