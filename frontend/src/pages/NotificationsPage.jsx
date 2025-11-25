@@ -21,6 +21,8 @@ import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
 
+const ADMIN_EXPIRE_DAYS = 3;
+
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -91,12 +93,12 @@ const NotificationsPage = () => {
     useMutation({
       mutationFn: deleteAdminNotification,
       onSuccess: () => {
-        toast.success("Notification removed");
+        toast.success(t("notifications.deleted"));
         queryClient.invalidateQueries({ queryKey: ["adminNotifications"] });
       },
       onError: (error) => {
         toast.error(
-          error.response?.data?.message || "Failed to remove notification"
+          error.response?.data?.message || t("notifications.error")
         );
       },
     });
@@ -130,7 +132,7 @@ const NotificationsPage = () => {
               <section className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MegaphoneIcon className="h-5 w-5 text-warning" />
-                  <h2 className="text-xl font-semibold">Admin notifications</h2>
+                  <h2 className="text-xl font-semibold">{t("notifications.adminTitle")}</h2>
                   {loadingAdminNotifications && (
                     <span className="loading loading-spinner loading-xs"></span>
                   )}
@@ -150,7 +152,7 @@ const NotificationsPage = () => {
                       const createdAt =
                         createdAtDate && !Number.isNaN(createdAtDate.getTime())
                           ? createdAtDate.toLocaleString()
-                          : "From admin";
+                          : t("notifications.fromAdmin");
 
                       const expireAtRaw = notification.expireAt || notification.expiresAt;
                       const expireDate =
@@ -174,25 +176,27 @@ const NotificationsPage = () => {
                                 <p className="text-sm text-base-content/60">
                                   {createdAt}
                                 </p>
-                                <p className="text-sm leading-relaxed">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-base-content/60">
-                                  Auto-clears after 3 days
-                                  {expireDate
-                                    ? ` (expires ${expireDate.toLocaleDateString()})`
-                                    : ""}
-                                </p>
-                              </div>
-                              <button
-                                className="btn btn-ghost btn-sm"
+                              <p className="text-sm leading-relaxed">
+                                {notification.message}
+                              </p>
+                              <p className="text-xs text-base-content/60">
+                                {t("notifications.adminExpireHint", { days: ADMIN_EXPIRE_DAYS })}
+                                {expireDate
+                                  ? ` (${t("notifications.expiresOn", {
+                                      date: expireDate.toLocaleDateString(),
+                                    })})`
+                                  : ""}
+                              </p>
+                            </div>
+                            <button
+                              className="btn btn-ghost btn-sm"
                                 onClick={() =>
                                   notificationId &&
                                   dismissAdminNotification(notificationId)
-                                }
-                                disabled={isDismissingAdmin || !notificationId}
-                                title="Remove notification"
-                              >
+                              }
+                              disabled={isDismissingAdmin || !notificationId}
+                              title={t("notifications.delete")}
+                            >
                                 {isDismissingAdmin ? (
                                   <span className="loading loading-spinner loading-xs"></span>
                                 ) : (

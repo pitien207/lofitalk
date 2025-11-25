@@ -18,6 +18,9 @@ const AdminPage = () => {
   const [notificationTarget, setNotificationTarget] = useState("all");
   const [notificationEmail, setNotificationEmail] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
+  const notificationExpireDays = 3;
+  const [pendingAccountTypes, setPendingAccountTypes] = useState({});
+  const [savingAccounts, setSavingAccounts] = useState(false);
 
   const {
     data,
@@ -40,20 +43,49 @@ const AdminPage = () => {
     },
   });
 
-  const handleAccountTypeChange = async (userId, accountType) => {
-    await mutateAsync({ userId, accountType });
+  const handleAccountTypeChange = (userId, accountType) => {
+    setPendingAccountTypes((previous) => ({
+      ...previous,
+      [userId]: accountType,
+    }));
+  };
+
+  const getSelectedAccountType = (user) => pendingAccountTypes[user._id] ?? user.accountType;
+
+  const clearPendingAccountType = (userId) => {
+    setPendingAccountTypes((previous) => {
+      const { [userId]: _removed, ...rest } = previous;
+      return rest;
+    });
+  };
+
+  const handleSaveAllAccountChanges = async () => {
+    if (!hasPendingAccountChanges) return;
+    setSavingAccounts(true);
+    try {
+      for (const user of users) {
+        const nextType = getSelectedAccountType(user);
+        if (nextType && nextType !== user.accountType) {
+          // eslint-disable-next-line no-await-in-loop
+          await mutateAsync({ userId: user._id, accountType: nextType });
+        }
+      }
+      setPendingAccountTypes({});
+    } finally {
+      setSavingAccounts(false);
+    }
   };
 
   const { mutateAsync: sendNotification, isPending: sendingNotification } = useMutation({
     mutationFn: sendAdminNotification,
     onSuccess: () => {
-      toast.success("Notification sent");
+      toast.success(t("admin.notifications.success"));
       setNotificationMessage("");
       setNotificationEmail("");
       setNotificationTarget("all");
     },
     onError: (error) => {
-      const message = error?.response?.data?.message || "Failed to send notification";
+      const message = error?.response?.data?.message || t("admin.notifications.error");
       toast.error(message);
     },
   });
@@ -83,18 +115,27 @@ const AdminPage = () => {
     return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
   }, [filteredUsers, currentPage, totalPages]);
 
+  const hasPendingAccountChanges = useMemo(
+    () =>
+      users.some((user) => {
+        const selected = getSelectedAccountType(user);
+        return selected !== user.accountType;
+      }),
+    [users, pendingAccountTypes]
+  );
+
   const handleSendNotification = async (event) => {
     event.preventDefault();
     const trimmedMessage = notificationMessage.trim();
     const trimmedEmail = notificationEmail.trim();
 
     if (!trimmedMessage) {
-      toast.error("Message is required");
+      toast.error(t("admin.notifications.validation.messageRequired"));
       return;
     }
 
     if (notificationTarget === "single" && !trimmedEmail) {
-      toast.error("Email is required for a single user");
+      toast.error(t("admin.notifications.validation.emailRequired"));
       return;
     }
 
@@ -102,7 +143,7 @@ const AdminPage = () => {
       message: trimmedMessage,
       targetType: notificationTarget,
       email: notificationTarget === "single" ? trimmedEmail : undefined,
-      expireInDays: 3,
+      expireInDays: notificationExpireDays,
     });
   };
 
@@ -117,7 +158,18 @@ const AdminPage = () => {
         <div className="card-body space-y-4">
           <div className="flex w-full justify-between items-center">
             <h2 className="card-title">{t("admin.users.heading")}</h2>
-            {(loadingUsers || isFetching) && <span className="loading loading-spinner loading-sm" />}
+            <div className="flex items-center gap-3">
+              {(loadingUsers || isFetching) && <span className="loading loading-spinner loading-sm" />}
+              <button
+                className="btn btn-sm btn-primary"
+                type="button"
+                onClick={handleSaveAllAccountChanges}
+                disabled={!hasPendingAccountChanges || isPending || savingAccounts}
+              >
+                {savingAccounts && <span className="loading loading-spinner loading-xs" />}
+                {t("admin.users.saveChanges")}
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -210,12 +262,16 @@ const AdminPage = () => {
                               ];
                           const lockedAdmin = !isSelf && user.accountType === "admin";
 
+                          const selectedAccountType = getSelectedAccountType(user);
+
                           return (
                             <select
                               className="select select-sm select-bordered w-full max-w-xs"
-                              value={user.accountType}
-                              onChange={(event) => handleAccountTypeChange(user._id, event.target.value)}
-                              disabled={isPending || lockedAdmin}
+                              value={selectedAccountType}
+                              onChange={(event) =>
+                                handleAccountTypeChange(user._id, event.target.value)
+                              }
+                              disabled={isPending || lockedAdmin || savingAccounts}
                             >
                               {optionsForUser.map((type) => (
                                 <option key={type} value={type}>
@@ -275,32 +331,33 @@ const AdminPage = () => {
       <div className="card bg-base-200 shadow-xl">
         <div className="card-body space-y-4">
           <div className="flex w-full justify-between items-center">
-            <h2 className="card-title">Send notifications</h2>
+            <h2 className="card-title">{t("admin.notifications.heading")}</h2>
             {sendingNotification && <span className="loading loading-spinner loading-sm" />}
           </div>
 
-          <p className="text-sm text-base-content/70">
-            Send a short notice to everyone or a specific user. Notifications will appear in their
-            Notifications page and auto-delete after 3 days if they are not cleared.
-          </p>
+          <p className="text-sm text-base-content/70">{t("admin.notifications.description")}</p>
 
           <form className="space-y-4" onSubmit={handleSendNotification}>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="form-control w-full">
-                <span className="label-text text-sm font-semibold">Audience</span>
+                <span className="label-text text-sm font-semibold">
+                  {t("admin.notifications.audienceLabel")}
+                </span>
                 <select
                   className="select select-bordered"
                   value={notificationTarget}
                   onChange={(event) => setNotificationTarget(event.target.value)}
                 >
-                  <option value="all">All users</option>
-                  <option value="single">Specific user by email</option>
+                  <option value="all">{t("admin.notifications.audienceAll")}</option>
+                  <option value="single">{t("admin.notifications.audienceSingle")}</option>
                 </select>
               </label>
 
               {notificationTarget === "single" && (
                 <label className="form-control w-full">
-                  <span className="label-text text-sm font-semibold">Recipient email</span>
+                  <span className="label-text text-sm font-semibold">
+                    {t("admin.notifications.emailLabel")}
+                  </span>
                   <input
                     type="email"
                     className="input input-bordered"
@@ -313,28 +370,33 @@ const AdminPage = () => {
             </div>
 
             <label className="form-control w-full">
-              <span className="label-text text-sm font-semibold">Message</span>
+              <span className="label-text text-sm font-semibold">
+                {t("admin.notifications.messageLabel")}
+              </span>
               <textarea
                 className="textarea textarea-bordered h-28"
-                placeholder="Share a short update or reminder..."
+                placeholder={t("admin.notifications.messagePlaceholder")}
                 value={notificationMessage}
                 onChange={(event) => setNotificationMessage(event.target.value)}
                 maxLength={500}
               />
               <div className="label">
                 <span className="label-text-alt text-base-content/70">
-                  Auto-removes after 3 days • {notificationMessage.length}/500
+                  {t("admin.notifications.counterLabel", {
+                    days: notificationExpireDays,
+                    count: notificationMessage.length,
+                  })}
                 </span>
               </div>
             </label>
 
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-base-content/70">
-                Notifications are posted immediately and will expire after 3 days by default.
+                {t("admin.notifications.footerHint", { days: notificationExpireDays })}
               </p>
               <button className="btn btn-primary" type="submit" disabled={sendingNotification}>
                 {sendingNotification && <span className="loading loading-spinner loading-sm" />}
-                Send notification
+                {t("admin.notifications.sendButton")}
               </button>
             </div>
           </form>

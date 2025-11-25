@@ -128,6 +128,10 @@ const english = {
     declinedText: "{name} declined your friend request",
     recently: "Recently",
     newFriend: "New Friend",
+    adminTitle: "Admin notifications",
+    adminExpireHint: "Auto-clears after {days} days",
+    expiresOn: "expires {date}",
+    fromAdmin: "From admin",
   },
   sidebar: {
     home: "Home",
@@ -470,6 +474,7 @@ const english = {
       name: "Name",
       email: "Email",
       accountType: "Account type",
+      saveChanges: "Save change",
       empty: "No users to display.",
       noResults: "No users match your filters.",
       visibleCount: "Showing {visible} of {total} matches.",
@@ -482,6 +487,26 @@ const english = {
     messages: {
       updated: "Account type updated.",
       updateFailed: "Unable to update account type.",
+    },
+    notifications: {
+      heading: "Send notifications",
+      description:
+        "Send a short notice to everyone or a specific user. Notifications will appear in their Notifications page and auto-delete after 3 days if they are not cleared.",
+      audienceLabel: "Audience",
+      audienceAll: "All users",
+      audienceSingle: "Specific user by email",
+      emailLabel: "Recipient email",
+      messageLabel: "Message",
+      messagePlaceholder: "Share a short update or reminder...",
+      counterLabel: "Auto-removes after {days} days • {count}/500",
+      footerHint: "Notifications are posted immediately and will expire after {days} days by default.",
+      sendButton: "Send notification",
+      success: "Notification sent",
+      error: "Failed to send notification",
+      validation: {
+        messageRequired: "Message is required",
+        emailRequired: "Email is required for a single user",
+      },
     },
   },
 };
@@ -608,6 +633,10 @@ const vietnamese = {
     declinedText: "{name} đã từ chối lời mời kết bạn của bạn",
     recently: "Vừa xong",
     newFriend: "Bạn mới",
+    adminTitle: "Thông báo từ admin",
+    adminExpireHint: "Tự xóa sau {days} ngày",
+    expiresOn: "hết hạn {date}",
+    fromAdmin: "Từ admin",
   },
   sidebar: {
     home: "Trang chủ",
@@ -951,6 +980,7 @@ const vietnamese = {
       name: "Tên",
       email: "Email",
       accountType: "Loại tài khoản",
+      saveChanges: "Lưu thay đổi",
       empty: "Chưa có người dùng.",
       noResults: "Không tìm thấy người dùng phù hợp.",
       visibleCount: "Đang hiển thị {visible}/{total} người dùng.",
@@ -963,6 +993,26 @@ const vietnamese = {
     messages: {
       updated: "Đã cập nhật loại tài khoản.",
       updateFailed: "Không thể cập nhật loại tài khoản.",
+    },
+    notifications: {
+      heading: "Gửi thông báo",
+      description:
+        "Gửi thông báo ngắn cho tất cả hoặc một người cụ thể. Thông báo sẽ hiện ở trang Thông báo của họ và tự xóa sau 3 ngày nếu chưa dọn.",
+      audienceLabel: "Đối tượng",
+      audienceAll: "Tất cả người dùng",
+      audienceSingle: "Một người (qua email)",
+      emailLabel: "Email người nhận",
+      messageLabel: "Nội dung",
+      messagePlaceholder: "Chia sẻ một cập nhật hoặc lời nhắc ngắn...",
+      counterLabel: "Tự xóa sau {days} ngày • {count}/500",
+      footerHint: "Thông báo được gửi ngay và sẽ hết hạn sau {days} ngày theo mặc định.",
+      sendButton: "Gửi thông báo",
+      success: "Đã gửi thông báo",
+      error: "Gửi thông báo thất bại",
+      validation: {
+        messageRequired: "Cần nhập nội dung",
+        emailRequired: "Cần email khi gửi cho 1 người",
+      },
     },
   },
 };
@@ -1092,6 +1142,10 @@ const german = {
     declinedText: "{name} hat deine Freundschaftsanfrage abgelehnt",
     recently: "Kürzlich",
     newFriend: "Neuer Freund",
+    adminTitle: "Admin-Benachrichtigungen",
+    adminExpireHint: "Löscht sich nach {days} Tagen automatisch",
+    expiresOn: "läuft ab {date}",
+    fromAdmin: "Vom Admin",
   },
   sidebar: {
     home: "Startseite",
@@ -1439,6 +1493,7 @@ const german = {
       name: "Name",
       email: "E-Mail",
       accountType: "Kontotyp",
+      saveChanges: "Speichern",
       empty: "Keine Benutzer vorhanden.",
       noResults: "Keine Benutzer entsprechen den Filtern.",
       visibleCount: "{visible} von {total} Treffern werden angezeigt.",
@@ -1451,6 +1506,27 @@ const german = {
     messages: {
       updated: "Kontotyp aktualisiert.",
       updateFailed: "Kontotyp konnte nicht aktualisiert werden.",
+    },
+    notifications: {
+      heading: "Benachrichtigung senden",
+      description:
+        "Sende eine kurze Mitteilung an alle oder eine bestimmte Person. Sie erscheint auf der Benachrichtigungsseite und löscht sich nach 3 Tagen automatisch, wenn sie nicht entfernt wird.",
+      audienceLabel: "Zielgruppe",
+      audienceAll: "Alle Nutzer",
+      audienceSingle: "Einzelner Nutzer per E-Mail",
+      emailLabel: "Empfänger-E-Mail",
+      messageLabel: "Nachricht",
+      messagePlaceholder: "Teile ein kurzes Update oder eine Erinnerung...",
+      counterLabel: "Löscht sich nach {days} Tagen automatisch • {count}/500",
+      footerHint:
+        "Benachrichtigungen werden sofort veröffentlicht und verfallen standardmäßig nach {days} Tagen.",
+      sendButton: "Benachrichtigung senden",
+      success: "Benachrichtigung gesendet",
+      error: "Benachrichtigung konnte nicht gesendet werden",
+      validation: {
+        messageRequired: "Nachricht ist erforderlich",
+        emailRequired: "E-Mail ist für einzelne Nutzer erforderlich",
+      },
     },
   },
 };
