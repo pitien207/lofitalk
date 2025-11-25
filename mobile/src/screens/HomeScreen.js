@@ -151,6 +151,16 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     setProfileError("");
   };
 
+  const handleProfileAvatarRandomLocal = () => {
+    const avatar =
+      getRandomAvatar(profileForm.gender || user?.gender) || getRandomAvatar();
+    if (!avatar) {
+      Alert.alert("Avatar unavailable", "Please try again in a moment.");
+      return;
+    }
+    setProfileForm((prev) => ({ ...prev, profilePic: avatar }));
+  };
+
   const handleProfileCountrySelect = (country) => {
     const currentCities =
       countryCityOptions.find((item) => item.value === country)?.cities || [];
@@ -183,16 +193,6 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
       return value.length > 0;
     }
     return Boolean(value && value.toString().trim());
-  };
-
-  const handleProfileAvatarRandomLocal = () => {
-    const avatar =
-      getRandomAvatar(profileForm.gender || user?.gender) || getRandomAvatar();
-    if (!avatar) {
-      Alert.alert("Avatar unavailable", "Please try again in a moment.");
-      return;
-    }
-    setProfileForm((prev) => ({ ...prev, profilePic: avatar }));
   };
 
   const handleProfileAvatarUploadLocal = async () => {
@@ -306,15 +306,6 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
     } finally {
       setAvatarLoading(false);
     }
-  };
-
-  const handleRandomAvatar = async () => {
-    const avatar = getRandomAvatar(user?.gender) || getRandomAvatar();
-    if (!avatar) {
-      Alert.alert("Avatar unavailable", "Please try again in a moment.");
-      return;
-    }
-    await handleAvatarUpdate(avatar);
   };
 
   const handleUploadAvatar = async () => {
@@ -469,21 +460,8 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             <Text style={styles.profileBio}>
               {user?.bio || "Share a short bio so friends know you better."}
             </Text>
-            <View style={styles.avatarActionRow}>
-              <TouchableOpacity
-                style={[
-                  buttonStyles.primaryButton,
-                  styles.avatarActionButton,
-                  avatarLoading && styles.disabledButton,
-                ]}
-                onPress={handleRandomAvatar}
-                disabled={avatarLoading}
-              >
-                <Text style={buttonStyles.primaryButtonText}>
-                  Random avatar
-                </Text>
-              </TouchableOpacity>
-              {canUploadAvatar && (
+            {canUploadAvatar && (
+              <View style={styles.avatarActionRow}>
                 <TouchableOpacity
                   style={[
                     buttonStyles.secondaryOutlineButton,
@@ -497,8 +475,8 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                     Upload photo
                   </Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            )}
             {avatarError ? (
               <Text style={styles.error}>{avatarError}</Text>
             ) : null}

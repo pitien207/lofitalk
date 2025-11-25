@@ -32,6 +32,7 @@ const AppContainer = () => {
     handleEmailChange,
     handlePasswordChange,
     updateUserProfile,
+    refreshUserProfile,
   } = useAuth();
   const {
     friends,
@@ -152,6 +153,12 @@ const AppContainer = () => {
       disconnectChat();
     }
   }, [connectChat, disconnectChat, token, user]);
+
+  useEffect(() => {
+    if (user && activePage === "home") {
+      refreshUserProfile().catch(() => null);
+    }
+  }, [activePage, refreshUserProfile, user]);
 
   useEffect(() => {
     if (activePage === "friends" && user) {

@@ -60,3 +60,8 @@ export const completeOnboardingRequest = async (payload) => {
   const { data } = await api.post("/auth/onboarding", payload);
   return data;
 };
+
+export const fetchCurrentUserProfile = async () => {
+  const { data } = await api.get("/users/me");
+  return data;
+};

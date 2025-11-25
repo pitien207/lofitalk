@@ -16,6 +16,7 @@ import {
   openFortuneCookie,
   removeFriend,
   sendFriendRequest,
+  getCurrentUser,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -27,6 +28,7 @@ router.get("/", getRecommendedUsers);
 router.get("/friend-filter-status", getFriendFilterStatus);
 router.get("/online-count", getOnlineUsersCount);
 router.get("/friends", getMyFriends);
+router.get("/me", getCurrentUser);
 router.get("/profile/:id", getUserProfile);
 router.get("/fortune-cookie", getFortuneCookie);
 router.post("/fortune-cookie", openFortuneCookie);

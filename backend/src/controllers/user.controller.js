@@ -666,6 +666,28 @@ export async function getUserProfile(req, res) {
   }
 }
 
+export async function getCurrentUser(req, res) {
+  try {
+    const viewerId = req.user.id;
+    const user = await User.findById(viewerId)
+      .select(
+        "fullName profilePic bio gender birthDate country city height education hobbies pets location isOnline lastActiveAt isOnboarded accountType email"
+      )
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const normalized = withPresence(user);
+
+    res.status(200).json(normalized);
+  } catch (error) {
+    console.error("Error in getCurrentUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
 export async function removeFriend(req, res) {
   try {
     const viewerId = req.user.id;

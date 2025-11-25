@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loginRequest } from "../services/authService";
+import { fetchCurrentUserProfile, loginRequest } from "../services/authService";
 import { setAuthToken } from "../services/api";
 
 const AUTH_STORAGE_KEY = "lofitalk_auth_session";
@@ -102,6 +102,21 @@ const useAuth = () => {
     }
   };
 
+  const refreshUserProfile = useCallback(async () => {
+    if (!token) return null;
+    try {
+      const profile = await fetchCurrentUserProfile();
+      if (profile) {
+        setUser(profile);
+        await persistSession(profile, token);
+      }
+      return profile;
+    } catch (error) {
+      // silent fail to avoid disrupting UI; token might be invalid/expired
+      return null;
+    }
+  }, [persistSession, token]);
+
   const signOut = () => {
     setUser(null);
     setToken(null);
@@ -132,6 +147,7 @@ const useAuth = () => {
     handleEmailChange,
     handlePasswordChange,
     updateUserProfile,
+    refreshUserProfile,
   };
 };
 
