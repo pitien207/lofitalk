@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { getAdminUsers, updateUserAccountType } from "../lib/api";
+import { getAdminUsers, sendAdminNotification, updateUserAccountType } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
 
@@ -15,6 +15,9 @@ const AdminPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [notificationTarget, setNotificationTarget] = useState("all");
+  const [notificationEmail, setNotificationEmail] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
 
   const {
     data,
@@ -41,6 +44,20 @@ const AdminPage = () => {
     await mutateAsync({ userId, accountType });
   };
 
+  const { mutateAsync: sendNotification, isPending: sendingNotification } = useMutation({
+    mutationFn: sendAdminNotification,
+    onSuccess: () => {
+      toast.success("Notification sent");
+      setNotificationMessage("");
+      setNotificationEmail("");
+      setNotificationTarget("all");
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || "Failed to send notification";
+      toast.error(message);
+    },
+  });
+
   const users = data?.users ?? [];
 
   const filteredUsers = useMemo(() => {
@@ -65,6 +82,29 @@ const AdminPage = () => {
     const startIndex = (safePage - 1) * USERS_PER_PAGE;
     return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
   }, [filteredUsers, currentPage, totalPages]);
+
+  const handleSendNotification = async (event) => {
+    event.preventDefault();
+    const trimmedMessage = notificationMessage.trim();
+    const trimmedEmail = notificationEmail.trim();
+
+    if (!trimmedMessage) {
+      toast.error("Message is required");
+      return;
+    }
+
+    if (notificationTarget === "single" && !trimmedEmail) {
+      toast.error("Email is required for a single user");
+      return;
+    }
+
+    await sendNotification({
+      message: trimmedMessage,
+      targetType: notificationTarget,
+      email: notificationTarget === "single" ? trimmedEmail : undefined,
+      expireInDays: 3,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -229,6 +269,75 @@ const AdminPage = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body space-y-4">
+          <div className="flex w-full justify-between items-center">
+            <h2 className="card-title">Send notifications</h2>
+            {sendingNotification && <span className="loading loading-spinner loading-sm" />}
+          </div>
+
+          <p className="text-sm text-base-content/70">
+            Send a short notice to everyone or a specific user. Notifications will appear in their
+            Notifications page and auto-delete after 3 days if they are not cleared.
+          </p>
+
+          <form className="space-y-4" onSubmit={handleSendNotification}>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="form-control w-full">
+                <span className="label-text text-sm font-semibold">Audience</span>
+                <select
+                  className="select select-bordered"
+                  value={notificationTarget}
+                  onChange={(event) => setNotificationTarget(event.target.value)}
+                >
+                  <option value="all">All users</option>
+                  <option value="single">Specific user by email</option>
+                </select>
+              </label>
+
+              {notificationTarget === "single" && (
+                <label className="form-control w-full">
+                  <span className="label-text text-sm font-semibold">Recipient email</span>
+                  <input
+                    type="email"
+                    className="input input-bordered"
+                    placeholder="user@example.com"
+                    value={notificationEmail}
+                    onChange={(event) => setNotificationEmail(event.target.value)}
+                  />
+                </label>
+              )}
+            </div>
+
+            <label className="form-control w-full">
+              <span className="label-text text-sm font-semibold">Message</span>
+              <textarea
+                className="textarea textarea-bordered h-28"
+                placeholder="Share a short update or reminder..."
+                value={notificationMessage}
+                onChange={(event) => setNotificationMessage(event.target.value)}
+                maxLength={500}
+              />
+              <div className="label">
+                <span className="label-text-alt text-base-content/70">
+                  Auto-removes after 3 days • {notificationMessage.length}/500
+                </span>
+              </div>
+            </label>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs text-base-content/70">
+                Notifications are posted immediately and will expire after 3 days by default.
+              </p>
+              <button className="btn btn-primary" type="submit" disabled={sendingNotification}>
+                {sendingNotification && <span className="loading loading-spinner loading-sm" />}
+                Send notification
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

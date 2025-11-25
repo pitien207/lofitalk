@@ -18,6 +18,10 @@ import {
   sendFriendRequest,
   getCurrentUser,
 } from "../controllers/user.controller.js";
+import {
+  deleteAdminNotificationForUser,
+  listAdminNotificationsForUser,
+} from "../controllers/adminNotification.controller.js";
 
 const router = express.Router();
 
@@ -42,5 +46,7 @@ router.put("/friend-request/:id/decline", declineFriendRequest);
 
 router.get("/friend-requests", getFriendRequests);
 router.get("/outgoing-friend-requests", getOutgoingFriendReqs);
+router.get("/notifications", listAdminNotificationsForUser);
+router.delete("/notifications/:id", deleteAdminNotificationForUser);
 
 export default router;

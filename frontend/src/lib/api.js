@@ -210,3 +210,18 @@ export async function getOnlineUsersCount() {
   const response = await axiosInstance.get("/users/online-count");
   return response.data;
 }
+
+export async function sendAdminNotification(payload) {
+  const response = await axiosInstance.post("/admin/notifications", payload);
+  return response.data;
+}
+
+export async function getAdminNotifications() {
+  const response = await axiosInstance.get("/users/notifications");
+  return response.data;
+}
+
+export async function deleteAdminNotification(notificationId) {
+  const response = await axiosInstance.delete(`/users/notifications/${notificationId}`);
+  return response.data;
+}

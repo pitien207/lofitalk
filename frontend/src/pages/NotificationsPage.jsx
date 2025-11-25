@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   acceptFriendRequest,
+  deleteAdminNotification,
   declineFriendRequest,
   deleteFriendRequest,
+  getAdminNotifications,
   getFriendRequests,
 } from "../lib/api";
 import {
   BellIcon,
+  MegaphoneIcon,
   MapPinIcon,
   MessageSquareIcon,
   UserCheckIcon,
@@ -25,6 +28,31 @@ const NotificationsPage = () => {
   const { data: friendRequests, isLoading } = useQuery({
     queryKey: ["friendRequests"],
     queryFn: getFriendRequests,
+  });
+
+  const {
+    data: adminNotificationData,
+    isLoading: loadingAdminNotifications,
+  } = useQuery({
+    queryKey: ["adminNotifications"],
+    queryFn: async () => {
+      try {
+        return await getAdminNotifications();
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          return { notifications: [] };
+        }
+        throw error;
+      }
+    },
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    retry: 1,
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Failed to load admin notifications"
+      );
+    },
   });
 
   const { mutate: acceptRequestMutation, isPending } = useMutation({
@@ -59,9 +87,31 @@ const NotificationsPage = () => {
       },
     });
 
+  const { mutate: dismissAdminNotification, isPending: isDismissingAdmin } =
+    useMutation({
+      mutationFn: deleteAdminNotification,
+      onSuccess: () => {
+        toast.success("Notification removed");
+        queryClient.invalidateQueries({ queryKey: ["adminNotifications"] });
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.message || "Failed to remove notification"
+        );
+      },
+    });
+
   const incomingRequests = friendRequests?.incomingReqs || [];
   const acceptedRequests = friendRequests?.acceptedReqs || [];
   const declinedRequests = friendRequests?.declinedReqs || [];
+  const adminNotifications = Array.isArray(adminNotificationData)
+    ? adminNotificationData
+    : adminNotificationData?.notifications || [];
+  const hasAnyNotifications =
+    incomingRequests.length > 0 ||
+    acceptedRequests.length > 0 ||
+    declinedRequests.length > 0 ||
+    adminNotifications.length > 0;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -76,6 +126,89 @@ const NotificationsPage = () => {
           </div>
         ) : (
           <>
+            {(loadingAdminNotifications || adminNotifications.length > 0) && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <MegaphoneIcon className="h-5 w-5 text-warning" />
+                  <h2 className="text-xl font-semibold">Admin notifications</h2>
+                  {loadingAdminNotifications && (
+                    <span className="loading loading-spinner loading-xs"></span>
+                  )}
+                </div>
+
+                {loadingAdminNotifications ? (
+                  <div className="flex justify-center py-6">
+                    <span className="loading loading-spinner loading-sm"></span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {adminNotifications.map((notification) => {
+                      const notificationId = notification._id || notification.id;
+                      const createdAtDate = notification.createdAt
+                        ? new Date(notification.createdAt)
+                        : null;
+                      const createdAt =
+                        createdAtDate && !Number.isNaN(createdAtDate.getTime())
+                          ? createdAtDate.toLocaleString()
+                          : "From admin";
+
+                      const expireAtRaw = notification.expireAt || notification.expiresAt;
+                      const expireDate =
+                        expireAtRaw && !Number.isNaN(new Date(expireAtRaw).getTime())
+                          ? new Date(expireAtRaw)
+                          : null;
+
+                      return (
+                        <div
+                          key={notificationId}
+                          className="card bg-base-200 shadow-sm"
+                        >
+                          <div className="card-body p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="avatar placeholder mt-1">
+                                <div className="w-10 rounded-full bg-warning/20 text-warning flex items-center justify-center">
+                                  <MegaphoneIcon className="h-5 w-5" />
+                                </div>
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <p className="text-sm text-base-content/60">
+                                  {createdAt}
+                                </p>
+                                <p className="text-sm leading-relaxed">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-base-content/60">
+                                  Auto-clears after 3 days
+                                  {expireDate
+                                    ? ` (expires ${expireDate.toLocaleDateString()})`
+                                    : ""}
+                                </p>
+                              </div>
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() =>
+                                  notificationId &&
+                                  dismissAdminNotification(notificationId)
+                                }
+                                disabled={isDismissingAdmin || !notificationId}
+                                title="Remove notification"
+                              >
+                                {isDismissingAdmin ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : (
+                                  <XIcon className="size-4" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            )}
+
             {incomingRequests.length > 0 && (
               <section className="space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -281,9 +414,9 @@ const NotificationsPage = () => {
               </section>
             )}
 
-            {incomingRequests.length === 0 &&
-              acceptedRequests.length === 0 &&
-              declinedRequests.length === 0 && <NoNotificationsFound />}
+            {!loadingAdminNotifications && !hasAnyNotifications && (
+              <NoNotificationsFound />
+            )}
           </>
         )}
       </div>

@@ -5,12 +5,12 @@ import usePendingNotifications from "../hooks/usePendingNotifications";
 import useNotificationSound from "../hooks/useNotificationSound";
 
 const Layout = ({ children, showSidebar = false }) => {
-  const { pendingCount, acceptedCount, declinedCount } = usePendingNotifications();
+  const { pendingCount, acceptedCount, declinedCount, adminCount } = usePendingNotifications();
   const playNotificationSound = useNotificationSound();
   const previousNotificationTotal = useRef(null);
 
   useEffect(() => {
-    const totalNotifications = pendingCount + acceptedCount + declinedCount;
+    const totalNotifications = pendingCount + acceptedCount + declinedCount + adminCount;
 
     if (previousNotificationTotal.current === null) {
       previousNotificationTotal.current = totalNotifications;
@@ -22,7 +22,7 @@ const Layout = ({ children, showSidebar = false }) => {
     }
 
     previousNotificationTotal.current = totalNotifications;
-  }, [pendingCount, acceptedCount, declinedCount, playNotificationSound]);
+  }, [pendingCount, acceptedCount, declinedCount, adminCount, playNotificationSound]);
 
   return (
     <div className="min-h-screen">
