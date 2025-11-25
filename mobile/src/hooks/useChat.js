@@ -18,6 +18,34 @@ const sortThreads = (list = []) =>
       new Date(a.lastMessageAt || a.updatedAt || 0).getTime()
   );
 
+const THREAD_FIELDS = [
+  "_id",
+  "participants",
+  "lastMessageText",
+  "lastMessageAt",
+  "lastSender",
+  "unreadByUser",
+  "updatedAt",
+];
+
+const mergeThreads = (current = [], incoming = []) => {
+  if (!incoming?.length) return current;
+  const map = new Map();
+  current.forEach((thread) => {
+    if (thread?.id) {
+      map.set(thread.id, thread);
+    }
+  });
+
+  incoming.forEach((thread) => {
+    if (!thread?.id) return;
+    const existing = map.get(thread.id) || {};
+    map.set(thread.id, { ...existing, ...thread, id: thread.id });
+  });
+
+  return Array.from(map.values());
+};
+
 const useChat = () => {
   const [threads, setThreads] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -27,11 +55,15 @@ const useChat = () => {
   const [selectingThread, setSelectingThread] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
+  const [hasMoreThreads, setHasMoreThreads] = useState(true);
+  const [loadingMoreThreads, setLoadingMoreThreads] = useState(false);
+  const [threadsCursor, setThreadsCursor] = useState(null);
 
   const socketRef = useRef(null);
   const activeThreadIdRef = useRef(null);
   const currentUserIdRef = useRef(null);
   const isConnectingRef = useRef(false);
+  const lastThreadSyncRef = useRef(null);
 
   const resetChat = useCallback(() => {
     setThreads([]);
@@ -40,7 +72,11 @@ const useChat = () => {
     setChatError(null);
     setHasMoreMessages(true);
     setLoadingMoreMessages(false);
+    setHasMoreThreads(true);
+    setThreadsCursor(null);
+    setLoadingMoreThreads(false);
     activeThreadIdRef.current = null;
+    lastThreadSyncRef.current = null;
   }, []);
 
   const cleanupSocket = useCallback(() => {
@@ -83,23 +119,51 @@ const useChat = () => {
     });
   }, []);
 
-  const refreshThreads = useCallback(async () => {
-    setChatLoading(true);
-    setChatError(null);
-    try {
-      const data = await fetchChatThreads();
-      const list = data?.threads ?? data ?? [];
-      setThreads(sortThreads(list));
-      return list;
-    } catch (error) {
-      const message =
-        error?.response?.data?.message || "Unable to load conversations";
-      setChatError(message);
-      return [];
-    } finally {
-      setChatLoading(false);
-    }
-  }, []);
+  const refreshThreads = useCallback(
+    async ({ fullReload = false } = {}) => {
+      setChatLoading(true);
+      setChatError(null);
+      const params = {
+        limit: 20,
+        fields: THREAD_FIELDS,
+      };
+
+      if (!fullReload && lastThreadSyncRef.current) {
+        params.updatedAfter = lastThreadSyncRef.current;
+      }
+
+      try {
+        const data = await fetchChatThreads(params);
+        const list = data?.threads ?? data ?? [];
+        setThreads((prev) => {
+          if (fullReload || !lastThreadSyncRef.current) {
+            return sortThreads(list);
+          }
+          const merged = mergeThreads(prev, list);
+          return sortThreads(merged);
+        });
+        setHasMoreThreads(data?.hasMore ?? Boolean(data?.nextCursor));
+        setThreadsCursor(data?.nextCursor ?? null);
+        if (list.length) {
+          const latest = list[0]?.lastMessageAt || list[0]?.updatedAt;
+          if (latest) {
+            lastThreadSyncRef.current = latest;
+          }
+        } else if (fullReload) {
+          lastThreadSyncRef.current = null;
+        }
+        return list;
+      } catch (error) {
+        const message =
+          error?.response?.data?.message || "Unable to load conversations";
+        setChatError(message);
+        return [];
+      } finally {
+        setChatLoading(false);
+      }
+    },
+    []
+  );
 
   const joinThreadRoom = useCallback((threadId) => {
     activeThreadIdRef.current = threadId;
@@ -199,6 +263,36 @@ const useChat = () => {
     [upsertThread]
   );
 
+  const loadMoreThreads = useCallback(async () => {
+    if (loadingMoreThreads || !hasMoreThreads || !threadsCursor) return [];
+
+    setLoadingMoreThreads(true);
+    try {
+      const data = await fetchChatThreads({
+        limit: 20,
+        cursor: threadsCursor,
+        fields: THREAD_FIELDS,
+      });
+      const list = data?.threads ?? data ?? [];
+
+      if (list.length) {
+        setThreads((prev) => sortThreads(mergeThreads(prev, list)));
+      }
+
+      setHasMoreThreads(data?.hasMore ?? list.length > 0);
+      setThreadsCursor(data?.nextCursor ?? null);
+
+      return list;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Unable to load conversations";
+      setChatError(message);
+      return [];
+    } finally {
+      setLoadingMoreThreads(false);
+    }
+  }, [hasMoreThreads, loadingMoreThreads, threadsCursor]);
+
   const connectChat = useCallback(
     async (user, token) => {
       if (!user?._id || !token || isConnectingRef.current) return;
@@ -230,7 +324,7 @@ const useChat = () => {
         });
 
         socket.connect();
-        await refreshThreads();
+        await refreshThreads({ fullReload: true });
       } catch (error) {
         setChatError(error?.message || "Unable to connect to chat");
       } finally {
@@ -360,6 +454,7 @@ const useChat = () => {
 
   return {
     threads,
+    hasMoreThreads,
     chatLoading,
     chatError,
     activeThread,
@@ -367,9 +462,11 @@ const useChat = () => {
     selectingThread,
     hasMoreMessages,
     loadingMoreMessages,
+    loadingMoreThreads,
     connectChat,
     disconnectChat,
     refreshThreads,
+    loadMoreThreads,
     openThread,
     startDirectChat,
     closeThread,

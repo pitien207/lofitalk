@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   ScrollView,
   StyleSheet,
@@ -26,6 +27,9 @@ import { buttonStyles } from "../components/common/buttons";
 
 const FriendsScreen = ({
   friends = [],
+  friendsLoading,
+  loadingMoreFriends,
+  hasMoreFriends,
   selectedFriend,
   friendProfile,
   profileLoading,
@@ -34,85 +38,130 @@ const FriendsScreen = ({
   onResetFriendSelection,
   onNavigateHome,
   onStartChat,
+  onRefreshFriends,
+  onLoadMoreFriends,
 }) => {
   const showProfile = Boolean(selectedFriend);
+  const Header = (
+    <View style={styles.friendsHeader}>
+      <View>
+        <Text style={styles.friendsTitle}>
+          {showProfile ? "Friend profile" : "Friends"}
+        </Text>
+        {showProfile && (
+          <Text style={styles.friendsSubtitle}>
+            See what your friend has been up to lately.
+          </Text>
+        )}
+      </View>
+      <TouchableOpacity
+        style={styles.ghostButton}
+        onPress={() =>
+          showProfile ? onResetFriendSelection() : onNavigateHome()
+        }
+      >
+        <Text style={styles.ghostButtonIcon}>{"<"}</Text>
+        <Text style={styles.ghostButtonText}>
+          {showProfile ? "Back to friends" : "Back to home"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderFriendItem = ({ item }) => (
+    <TouchableOpacity
+      key={item._id}
+      style={styles.friendCard}
+      activeOpacity={0.85}
+      onPress={() => onFriendSelect(item)}
+    >
+      <View style={styles.friendAvatarWrapper}>
+        <Image
+          source={resolveImageSource(item.profilePic)}
+          style={styles.friendAvatar}
+        />
+        {item.isOnline && <View style={styles.onlineDot} />}
+      </View>
+      <View style={styles.friendMeta}>
+        <Text style={styles.friendName}>{item.fullName}</Text>
+        <Text style={styles.friendLocation}>
+          {item.location || "Let's keep in touch"}
+        </Text>
+        <Text style={styles.friendMessage} numberOfLines={1}>
+          {item.lastMessage}
+        </Text>
+      </View>
+      <View style={styles.friendTimeBadge}>
+        <Text style={styles.friendTimeText}>Now</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderFooter = () =>
+    loadingMoreFriends ? (
+      <View style={styles.loaderRow}>
+        <ActivityIndicator color="#fff" />
+        <Text style={styles.loaderText}>Loading more friends...</Text>
+      </View>
+    ) : null;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.friendsScroll}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.friendsHeader}>
-        <View>
-          <Text style={styles.friendsTitle}>
-            {showProfile ? "Friend profile" : "Friends"}
-          </Text>
-          {showProfile && (
-            <Text style={styles.friendsSubtitle}>
-              See what your friend has been up to lately.
-            </Text>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.ghostButton}
-          onPress={() =>
-            showProfile ? onResetFriendSelection() : onNavigateHome()
-          }
-        >
-          <Text style={styles.ghostButtonIcon}>{"<"}</Text>
-          <Text style={styles.ghostButtonText}>
-            {showProfile ? "Back to friends" : "Back to home"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
+    <>
       {showProfile ? (
-        <FriendProfile
-          profile={friendProfile || selectedFriend}
-          loading={profileLoading}
-          error={profileError}
-          onStartChat={onStartChat}
-        />
-      ) : friends.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No friends yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Send a few requests on the web app and they will appear here.
-          </Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.friendsScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {Header}
+          <FriendProfile
+            profile={friendProfile || selectedFriend}
+            loading={profileLoading}
+            error={profileError}
+            onStartChat={onStartChat}
+          />
+        </ScrollView>
       ) : (
-        <View style={styles.friendList}>
-          {friends.map((friend) => (
-            <TouchableOpacity
-              key={friend._id}
-              style={styles.friendCard}
-              activeOpacity={0.85}
-              onPress={() => onFriendSelect(friend)}
-            >
-              <View style={styles.friendAvatarWrapper}>
-                <Image
-                  source={resolveImageSource(friend.profilePic)}
-                  style={styles.friendAvatar}
-                />
-                {friend.isOnline && <View style={styles.onlineDot} />}
-              </View>
-              <View style={styles.friendMeta}>
-                <Text style={styles.friendName}>{friend.fullName}</Text>
-                <Text style={styles.friendLocation}>
-                  {friend.location || "Let's keep in touch"}
-                </Text>
-                <Text style={styles.friendMessage} numberOfLines={1}>
-                  {friend.lastMessage}
-                </Text>
-              </View>
-              <View style={styles.friendTimeBadge}>
-                <Text style={styles.friendTimeText}>Now</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.listContainer}>
+          {Header}
+          <FlatList
+            data={friends}
+            keyExtractor={(item) => item._id}
+            renderItem={renderFriendItem}
+            contentContainerStyle={
+              friends.length === 0
+                ? [styles.friendsScroll, styles.emptyListContainer]
+                : styles.listContent
+            }
+            ListEmptyComponent={
+              friendsLoading ? (
+                <View style={styles.emptyState}>
+                  <ActivityIndicator color="#fff" />
+                  <Text style={styles.emptySubtitle}>Loading friends...</Text>
+                </View>
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyTitle}>No friends yet</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Send a few requests on the web app and they will appear here.
+                  </Text>
+                </View>
+              )
+            }
+            onEndReachedThreshold={0.25}
+            onEndReached={() => {
+              if (friends.length && hasMoreFriends) {
+                onLoadMoreFriends?.().catch?.(() => null);
+              }
+            }}
+            refreshing={friendsLoading}
+            onRefresh={() => onRefreshFriends?.().catch?.(() => null)}
+            ItemSeparatorComponent={() => <View style={styles.friendSeparator} />}
+            ListFooterComponent={renderFooter}
+            showsVerticalScrollIndicator={false}
+          />
         </View>
       )}
-    </ScrollView>
+    </>
   );
 };
 const FriendProfile = ({ profile, loading, error, onStartChat }) => {
@@ -206,12 +255,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
+  listContainer: {
+    flex: 1,
+  },
   friendsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 40,
     marginBottom: 20,
+  },
+  listContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  emptyListContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
   },
   friendsTitle: {
     fontSize: 26,
@@ -263,6 +323,9 @@ const styles = StyleSheet.create({
   friendList: {
     gap: 12,
     marginTop: 12,
+  },
+  friendSeparator: {
+    height: 12,
   },
   friendCard: {
     flexDirection: "row",
@@ -321,6 +384,17 @@ const styles = StyleSheet.create({
     color: BRAND_COLORS.muted,
     fontWeight: "600",
     fontSize: 12,
+  },
+  loaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  loaderText: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "600",
   },
   profileStateBox: {
     backgroundColor: "rgba(16,15,26,0.6)",

@@ -181,10 +181,10 @@ const Navbar = () => {
                       <span className="opacity-70">{t("nav.version")}</span>
                       <span className="font-medium">v1.0.0</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="opacity-70">{t("nav.developer")}</span>
-                      <span className="font-medium">Nghia Pham</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="opacity-70">{t("nav.developer")}</span>
+                    <span className="font-medium">Pitien</span>
+                  </div>
                     <div className="flex justify-between gap-3">
                       <span className="opacity-70">{t("nav.inspiredBy")}</span>
                       <span className="font-medium text-right">

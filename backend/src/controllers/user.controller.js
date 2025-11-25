@@ -124,6 +124,76 @@ const buildFortuneResponse = (fortune = {}) => {
   };
 };
 
+const normalizeLimit = (value, fallback = 20) => {
+  const parsed = parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) return fallback;
+  return Math.min(parsed, 100);
+};
+
+const normalizeCursor = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+const normalizeFieldSet = (rawFields, allowed, defaults) => {
+  const parsed =
+    rawFields && Array.isArray(rawFields)
+      ? rawFields
+      : rawFields
+      ? rawFields
+          .toString()
+          .split(',')
+          .map((field) => field.trim())
+          .filter(Boolean)
+      : null;
+
+  const selected = new Set();
+  (parsed || defaults || []).forEach((field) => {
+    if (allowed.includes(field)) {
+      selected.add(field);
+    }
+  });
+
+  // ensure identifiers and presence fields stay available
+  selected.add("_id");
+  selected.add("isOnline");
+  selected.add("lastActiveAt");
+  selected.add("updatedAt");
+
+  return Array.from(selected);
+};
+
+const FRIEND_ALLOWED_FIELDS = [
+  "_id",
+  "fullName",
+  "profilePic",
+  "country",
+  "city",
+  "location",
+  "isOnline",
+  "lastActiveAt",
+  "updatedAt",
+  "avatarVersion",
+  "accountType",
+  "bio",
+  "gender",
+  "height",
+  "education",
+];
+
+const FRIEND_DEFAULT_FIELDS = [
+  "_id",
+  "fullName",
+  "profilePic",
+  "country",
+  "city",
+  "location",
+  "isOnline",
+  "lastActiveAt",
+  "updatedAt",
+];
+
 export async function getFriendFilterStatus(req, res) {
   try {
     const viewerId = req.user._id || req.user.id;
@@ -270,18 +340,66 @@ export async function getRecommendedUsers(req, res) {
 
 export async function getMyFriends(req, res) {
   try {
-    const user = await User.findById(req.user.id)
-      .select("friends")
-      .populate(
-        "friends",
-        "fullName profilePic country city location isOnline lastActiveAt"
-      );
+    const viewerId = req.user.id;
+    const limit = normalizeLimit(req.query.limit, 25);
+    const cursor = normalizeCursor(req.query.cursor);
+    const updatedAfter = normalizeCursor(req.query.updatedAfter);
+    const fields = normalizeFieldSet(
+      req.query.fields,
+      FRIEND_ALLOWED_FIELDS,
+      FRIEND_DEFAULT_FIELDS
+    ).join(" ");
 
-    const friendsWithPresence = (user?.friends || []).map((friend) =>
-      withPresence(friend)
-    );
+    const viewer = await User.findById(viewerId).select("friends");
 
-    res.status(200).json(friendsWithPresence);
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const friendIds = viewer.friends || [];
+    if (!friendIds.length) {
+      return res.status(200).json({
+        friends: [],
+        hasMore: false,
+        nextCursor: null,
+        total: 0,
+      });
+    }
+
+    const match = { _id: { $in: friendIds } };
+
+    if (cursor || updatedAfter) {
+      match.updatedAt = {};
+      if (cursor) {
+        match.updatedAt.$lt = cursor;
+      }
+      if (updatedAfter) {
+        match.updatedAt.$gt = updatedAfter;
+      }
+      if (Object.keys(match.updatedAt).length === 0) {
+        delete match.updatedAt;
+      }
+    }
+
+    const friends = await User.find(match)
+      .select(fields)
+      .sort({ updatedAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const hasMore = friends.length > limit;
+    const trimmed = hasMore ? friends.slice(0, limit) : friends;
+    const friendsWithPresence = trimmed.map((friend) => withPresence(friend));
+
+    const lastItem = trimmed[trimmed.length - 1];
+    const nextCursor = hasMore ? lastItem?.updatedAt || null : null;
+
+    res.status(200).json({
+      friends: friendsWithPresence,
+      hasMore,
+      nextCursor,
+      total: friendIds.length,
+    });
   } catch (error) {
     console.error("Error in getMyFriends controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });

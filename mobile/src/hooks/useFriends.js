@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   fetchFriends,
   fetchFriendProfile,
@@ -29,8 +29,30 @@ const buildFilterParams = (filters) => {
   return params;
 };
 
+const mergeFriendsById = (existing = [], incoming = []) => {
+  if (!incoming?.length) return existing;
+  const map = new Map();
+
+  incoming.forEach((friend) => {
+    if (!friend?._id) return;
+    map.set(friend._id, friend);
+  });
+
+  existing.forEach((friend) => {
+    if (!friend?._id) return;
+    const prev = map.get(friend._id) || {};
+    map.set(friend._id, { ...friend, ...prev });
+  });
+
+  return Array.from(map.values());
+};
+
 const useFriends = () => {
   const [friends, setFriends] = useState([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [loadingMoreFriends, setLoadingMoreFriends] = useState(false);
+  const [hasMoreFriends, setHasMoreFriends] = useState(true);
+  const [friendsCursor, setFriendsCursor] = useState(null);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [friendProfile, setFriendProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -41,19 +63,79 @@ const useFriends = () => {
   const [recommendedError, setRecommendedError] = useState(null);
   const [requestingId, setRequestingId] = useState(null);
   const [hasSentRequest, setHasSentRequest] = useState(new Set());
+  const lastFriendsSyncRef = useRef(null);
 
   const setInitialFriends = (rawFriends) => {
     setFriends(ensureFriendsData(rawFriends));
+    setHasMoreFriends(true);
+    setFriendsCursor(null);
+    lastFriendsSyncRef.current = null;
   };
 
-  const loadFriends = async () => {
+  const loadFriends = async ({ fullReload = true } = {}) => {
+    setFriendsLoading(true);
     try {
-      const serverFriends = await fetchFriends();
-      const normalized = ensureFriendsData(serverFriends);
-      setFriends(normalized);
+      const response = await fetchFriends(
+        fullReload
+          ? { limit: 20 }
+          : { limit: 20, updatedAfter: lastFriendsSyncRef.current }
+      );
+      const normalized = ensureFriendsData(response.friends);
+
+      setFriends((prev) =>
+        fullReload || !prev.length
+          ? normalized
+          : ensureFriendsData(mergeFriendsById(prev, normalized))
+      );
+
+      setHasMoreFriends(response?.hasMore ?? Boolean(response?.nextCursor));
+      setFriendsCursor(response?.nextCursor ?? null);
+
+      if (response?.friends?.length) {
+        const latest = response.friends[0].updatedAt;
+        if (latest) {
+          lastFriendsSyncRef.current = latest;
+        }
+      } else if (fullReload) {
+        lastFriendsSyncRef.current = null;
+      }
+
       return normalized;
     } catch (error) {
       throw error;
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const refreshFriends = async () => loadFriends({ fullReload: false });
+
+  const loadMoreFriends = async () => {
+    if (loadingMoreFriends || !hasMoreFriends || !friendsCursor) return [];
+
+    setLoadingMoreFriends(true);
+    try {
+      const response = await fetchFriends({
+        limit: 20,
+        cursor: friendsCursor,
+      });
+      const normalized = ensureFriendsData(response.friends);
+      setFriends((prev) => ensureFriendsData(mergeFriendsById(prev, normalized)));
+      setHasMoreFriends(response?.hasMore ?? Boolean(response?.nextCursor));
+      setFriendsCursor(response?.nextCursor ?? null);
+
+      if (response?.friends?.length && !lastFriendsSyncRef.current) {
+        const latest = response.friends[0].updatedAt;
+        if (latest) {
+          lastFriendsSyncRef.current = latest;
+        }
+      }
+
+      return normalized;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoadingMoreFriends(false);
     }
   };
 
@@ -88,6 +170,10 @@ const useFriends = () => {
 
   const resetAllFriends = () => {
     setFriends([]);
+    setFriendsLoading(false);
+    setLoadingMoreFriends(false);
+    setHasMoreFriends(true);
+    setFriendsCursor(null);
     resetSelection();
     setFilters(createEmptyFilters());
     setRecommended([]);
@@ -95,6 +181,7 @@ const useFriends = () => {
     setRecommendedLoading(false);
     setRequestingId(null);
     setHasSentRequest(new Set());
+    lastFriendsSyncRef.current = null;
   };
 
   const updateFilter = (key, value) => {
@@ -215,6 +302,9 @@ const useFriends = () => {
 
   return {
     friends,
+    friendsLoading,
+    loadingMoreFriends,
+    hasMoreFriends,
     selectedFriend,
     friendProfile,
     profileLoading,
@@ -226,6 +316,8 @@ const useFriends = () => {
     requestingId,
     hasPendingRequest,
     loadFriends,
+    refreshFriends,
+    loadMoreFriends,
     setInitialFriends,
     selectFriend,
     resetSelection,

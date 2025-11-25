@@ -1,12 +1,64 @@
 import api from "./api";
 
-export const fetchFriends = async () => {
-  const { data } = await api.get("/users/friends");
-  return data?.friends ?? data;
+const toFieldParam = (fields) =>
+  Array.isArray(fields) ? fields.join(",") : fields;
+
+export const fetchFriends = async (options = {}) => {
+  const {
+    limit = 25,
+    cursor,
+    updatedAfter,
+    fields = [
+      "_id",
+      "fullName",
+      "profilePic",
+      "country",
+      "city",
+      "location",
+      "isOnline",
+      "lastActiveAt",
+      "updatedAt",
+    ],
+  } = typeof options === "number" ? { limit: options } : options;
+
+  const params = {
+    limit,
+    cursor,
+    updatedAfter,
+    fields: toFieldParam(fields),
+  };
+
+  const { data } = await api.get("/users/friends", { params });
+  const friends = data?.friends ?? data ?? [];
+
+  return {
+    friends,
+    nextCursor: data?.nextCursor ?? null,
+    hasMore: data?.hasMore ?? false,
+    total: data?.total ?? friends.length,
+  };
 };
 
 export const fetchRecommendedUsers = async (params = {}) => {
-  const { data } = await api.get("/users", { params });
+  const normalizedParams = {
+    ...params,
+    limit: params.limit,
+    cursor: params.cursor,
+    fields: toFieldParam(
+      params.fields || [
+        "_id",
+        "fullName",
+        "profilePic",
+        "country",
+        "city",
+        "location",
+        "isOnline",
+        "pendingRequestReceived",
+        "pendingRequestSent",
+      ]
+    ),
+  };
+  const { data } = await api.get("/users", { params: normalizedParams });
   return data?.users ?? data;
 };
 

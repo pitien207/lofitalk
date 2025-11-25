@@ -125,9 +125,12 @@ const ChatScreen = ({
   activeThread,
   messages,
   selectingThread,
+  loadingMoreThreads,
   loadingMoreMessages,
+  hasMoreThreads,
   hasMoreMessages,
   onRefresh,
+  onLoadMoreThreads,
   onThreadSelect,
   onBackToList,
   onSendMessage,
@@ -391,8 +394,22 @@ const ChatScreen = ({
           renderItem={renderThreadItem}
           refreshing={chatLoading}
           onRefresh={onRefresh}
+          onEndReachedThreshold={0.25}
+          onEndReached={() => {
+            if (threads?.length && hasMoreThreads && !loadingMoreThreads) {
+              onLoadMoreThreads?.()?.catch?.(() => null);
+            }
+          }}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           contentContainerStyle={{ paddingBottom: 40 }}
+          ListFooterComponent={
+            loadingMoreThreads ? (
+              <View style={styles.loaderRow}>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={styles.loaderText}>Loading more chats...</Text>
+              </View>
+            ) : null
+          }
         />
       )}
     </View>

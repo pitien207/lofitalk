@@ -867,7 +867,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Developer</Text>
-              <Text style={styles.aboutValue}>Nghia Pham</Text>
+              <Text style={styles.aboutValue}>Pitien</Text>
             </View>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>Inspired by</Text>

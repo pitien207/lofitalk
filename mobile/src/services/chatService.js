@@ -1,8 +1,26 @@
 import api from "./api";
 
-export const fetchChatThreads = async () => {
-  const { data } = await api.get("/chat/threads");
-  return data?.threads ?? data ?? [];
+const toFieldParam = (fields) =>
+  Array.isArray(fields) ? fields.join(",") : fields;
+
+export const fetchChatThreads = async (options = {}) => {
+  const { limit = 20, cursor, updatedAfter, fields } =
+    typeof options === "number" ? { limit: options } : options;
+
+  const params = {
+    limit,
+    cursor,
+    updatedAfter,
+    fields: toFieldParam(fields),
+  };
+
+  const { data } = await api.get("/chat/threads", { params });
+
+  return {
+    threads: data?.threads ?? data ?? [],
+    nextCursor: data?.nextCursor ?? null,
+    hasMore: data?.hasMore ?? false,
+  };
 };
 
 export const fetchThreadWithUser = async (userId, options = {}) => {

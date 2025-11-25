@@ -35,6 +35,9 @@ const AppContainer = () => {
   } = useAuth();
   const {
     friends,
+    friendsLoading,
+    loadingMoreFriends,
+    hasMoreFriends,
     selectedFriend,
     friendProfile,
     profileLoading,
@@ -44,7 +47,9 @@ const AppContainer = () => {
     recommendedLoading,
     recommendedError,
     requestingId,
+    refreshFriends,
     loadFriends,
+    loadMoreFriends,
     setInitialFriends,
     selectFriend,
     resetSelection,
@@ -58,6 +63,7 @@ const AppContainer = () => {
   } = useFriends();
   const {
     threads,
+    hasMoreThreads,
     chatLoading,
     chatError,
     activeThread,
@@ -65,9 +71,11 @@ const AppContainer = () => {
     selectingThread,
     hasMoreMessages,
     loadingMoreMessages,
+    loadingMoreThreads,
     connectChat,
     disconnectChat,
     refreshThreads,
+    loadMoreThreads,
     openThread,
     startDirectChat,
     closeThread,
@@ -275,6 +283,9 @@ const AppContainer = () => {
         {activePage === "friends" && (
           <FriendsScreen
             friends={friends}
+            friendsLoading={friendsLoading}
+            loadingMoreFriends={loadingMoreFriends}
+            hasMoreFriends={hasMoreFriends}
             selectedFriend={selectedFriend}
             friendProfile={friendProfile}
             profileLoading={profileLoading}
@@ -283,6 +294,8 @@ const AppContainer = () => {
             onResetFriendSelection={resetSelection}
             onNavigateHome={() => handleNavChange("home")}
             onStartChat={handleStartChatWith}
+            onRefreshFriends={refreshFriends}
+            onLoadMoreFriends={loadMoreFriends}
           />
         )}
         {activePage === "discover" && (
@@ -310,9 +323,12 @@ const AppContainer = () => {
             activeThread={activeThread}
             messages={messages}
             selectingThread={selectingThread}
+            loadingMoreThreads={loadingMoreThreads}
+            hasMoreThreads={hasMoreThreads}
             loadingMoreMessages={loadingMoreMessages}
             hasMoreMessages={hasMoreMessages}
-            onRefresh={refreshThreads}
+            onRefresh={() => refreshThreads({ fullReload: true })}
+            onLoadMoreThreads={loadMoreThreads}
             onThreadSelect={openThread}
             onBackToList={closeThread}
             onSendMessage={sendMessage}

@@ -23,17 +23,87 @@ const normalizeCursor = (value) => {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 
+const parseFieldList = (value, fallback = []) => {
+  if (!value) return fallback;
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return value
+    .toString()
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const CHAT_THREAD_ALLOWED_FIELDS = [
+  "_id",
+  "participants",
+  "lastMessageText",
+  "lastMessageAt",
+  "lastSender",
+  "unreadByUser",
+  "updatedAt",
+];
+
+const CHAT_THREAD_DEFAULT_FIELDS = [
+  "_id",
+  "participants",
+  "lastMessageText",
+  "lastMessageAt",
+  "lastSender",
+  "unreadByUser",
+  "updatedAt",
+];
+
+const normalizeThreadFields = (rawFields) => {
+  const requested = parseFieldList(rawFields, CHAT_THREAD_DEFAULT_FIELDS);
+  const set = new Set();
+  requested.forEach((field) => {
+    if (CHAT_THREAD_ALLOWED_FIELDS.includes(field)) {
+      set.add(field);
+    }
+  });
+
+  // ensure required fields for building thread metadata are always present
+  set.add("_id");
+  set.add("participants");
+  set.add("lastMessageAt");
+  set.add("updatedAt");
+
+  return Array.from(set);
+};
+
 export async function getChatThreads(req, res) {
   try {
     const viewerId = req.user._id;
+    const limit = normalizeLimit(req.query.limit, 20);
+    const cursor = normalizeCursor(req.query.cursor);
+    const updatedAfter = normalizeCursor(req.query.updatedAfter);
+    const selectFields = normalizeThreadFields(req.query.fields).join(" ");
     const Conversation = getChatConversationModel();
 
-    const threads = await Conversation.find({ participants: viewerId })
-      .select(
-        "_id participants lastMessageText lastMessageAt lastSender unreadByUser updatedAt"
-      )
-      .sort({ lastMessageAt: -1, updatedAt: -1 })
-      .lean();
+    const baseQuery = { participants: viewerId };
+
+    if (updatedAfter) {
+      baseQuery.updatedAt = { $gt: updatedAfter };
+    }
+
+    let query = Conversation.find(baseQuery)
+      .select(selectFields)
+      .sort({ lastMessageAt: -1, updatedAt: -1, _id: -1 });
+
+    if (cursor) {
+      query = query.where({
+        $or: [
+          { lastMessageAt: { $lt: cursor } },
+          { lastMessageAt: null, updatedAt: { $lt: cursor } },
+          { lastMessageAt: { $exists: false }, updatedAt: { $lt: cursor } },
+        ],
+      });
+    }
+
+    const threadsResult = await query.limit(limit + 1).lean();
+
+    const hasMore = threadsResult.length > limit;
+    const threads = hasMore ? threadsResult.slice(0, limit) : threadsResult;
 
     const participantIds = threads.flatMap((thread) => thread.participants || []);
     const userMap = await loadUserMap(participantIds);
@@ -42,7 +112,19 @@ export async function getChatThreads(req, res) {
       buildThreadSummary(thread, viewerId, userMap)
     );
 
-    res.status(200).json({ threads: payload });
+    const lastItem = threads[threads.length - 1];
+    const nextCursor =
+      hasMore && (lastItem?.lastMessageAt || lastItem?.updatedAt)
+        ? (lastItem.lastMessageAt || lastItem.updatedAt).toISOString?.() ||
+          lastItem.lastMessageAt ||
+          lastItem.updatedAt
+        : null;
+
+    res.status(200).json({
+      threads: payload,
+      hasMore,
+      nextCursor,
+    });
   } catch (error) {
     console.error("Error fetching chat threads:", error);
     res.status(500).json({ message: "Unable to load chat threads" });
