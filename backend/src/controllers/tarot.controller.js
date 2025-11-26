@@ -36,8 +36,25 @@ export async function consumeTarotEnergy(req, res) {
 
 export async function refillTarotEnergy(req, res) {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const lastRefill = req.user.lastEnergyRefill
+      ? new Date(req.user.lastEnergyRefill)
+      : null;
+    if (lastRefill) lastRefill.setHours(0, 0, 0, 0);
+
+    const alreadyRefilledToday =
+      lastRefill && lastRefill.getTime() === today.getTime();
+
+    if (alreadyRefilledToday && req.user.energy >= ENERGY_COST) {
+      return res
+        .status(429)
+        .json({ message: "Energy already full for today." });
+    }
+
     req.user.energy = ENERGY_COST;
-    req.user.lastEnergyRefill = new Date();
+    req.user.lastEnergyRefill = today;
     await req.user.save();
 
     res.status(200).json({

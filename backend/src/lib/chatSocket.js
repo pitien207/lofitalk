@@ -107,7 +107,7 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
       }
 
       const user = await User.findById(decoded.userId).select(
-        "_id fullName profilePic isOnline lastActiveAt"
+        "_id fullName profilePic isOnline lastActiveAt accountType"
       );
 
       if (!user) {
@@ -238,6 +238,13 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
       try {
         if (!toUserId) return callback({ error: "toUserId is required" });
         if (toUserId === userId) return callback({ error: "Cannot invite yourself" });
+
+        const isPlusOrAdmin = ["plus", "admin"].includes(
+          (user.accountType || "").toString().toLowerCase()
+        );
+        if (!isPlusOrAdmin) {
+          return callback({ error: "MatchMind is available for Plus or Admin users only" });
+        }
 
         const inviteId = buildInviteId();
         const expiresAt = Date.now() + MATCHMIND_INVITE_TTL_MS;
