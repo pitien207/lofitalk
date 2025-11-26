@@ -5,6 +5,7 @@ import {
   ensureConversation,
   fetchRecentMessages,
   formatMessage,
+  getUserClearedAt,
   loadUserMap,
   markConversationRead,
   saveChatMessage,
@@ -41,6 +42,7 @@ const CHAT_THREAD_ALLOWED_FIELDS = [
   "lastSender",
   "unreadByUser",
   "updatedAt",
+  "clearedAtByUser",
 ];
 
 const CHAT_THREAD_DEFAULT_FIELDS = [
@@ -51,6 +53,7 @@ const CHAT_THREAD_DEFAULT_FIELDS = [
   "lastSender",
   "unreadByUser",
   "updatedAt",
+  "clearedAtByUser",
 ];
 
 const normalizeThreadFields = (rawFields) => {
@@ -152,10 +155,12 @@ export async function getThreadWithUser(req, res) {
     }
 
     const conversation = await ensureConversation(viewerId, userId);
+    const clearedAt = getUserClearedAt(conversation, viewerId);
     const messages = await fetchRecentMessages(conversation._id, {
       limit,
       before,
       after,
+      clearedAt,
     });
     const updatedConversation = await markConversationRead(
       conversation._id,
@@ -198,7 +203,7 @@ export async function getThreadMessages(req, res) {
 
     const Conversation = getChatConversationModel();
     const conversation = await Conversation.findById(threadId)
-      .select("participants")
+      .select("participants clearedAtByUser")
       .lean();
 
     const isParticipant = (conversation?.participants || []).some(
@@ -209,10 +214,12 @@ export async function getThreadMessages(req, res) {
       return res.status(404).json({ message: "Thread not found" });
     }
 
+    const clearedAt = getUserClearedAt(conversation, viewerId);
     const messages = await fetchRecentMessages(threadId, {
       limit,
       before,
       after,
+      clearedAt,
     });
     await markConversationRead(threadId, viewerId);
 
@@ -330,5 +337,57 @@ export async function getUnreadCount(req, res) {
   } catch (error) {
     console.error("Error fetching unread count:", error);
     res.status(500).json({ message: "Unable to fetch unread count" });
+  }
+}
+
+export async function clearThreadMessages(req, res) {
+  try {
+    const viewerId = req.user._id;
+    const { threadId } = req.params;
+
+    if (!threadId) {
+      return res.status(400).json({ message: "Thread id is required" });
+    }
+
+    const Conversation = getChatConversationModel();
+    const conversation = await Conversation.findById(threadId);
+
+    const isParticipant = (conversation?.participants || []).some(
+      (participantId) => participantId.toString() === viewerId.toString()
+    );
+
+    if (!conversation || !isParticipant) {
+      return res.status(404).json({ message: "Thread not found" });
+    }
+
+    const now = new Date();
+    const viewerIdStr = viewerId.toString();
+
+    if (conversation.clearedAtByUser?.set) {
+      conversation.clearedAtByUser.set(viewerIdStr, now);
+    } else {
+      conversation.clearedAtByUser = {
+        ...(conversation.clearedAtByUser || {}),
+        [viewerIdStr]: now,
+      };
+    }
+
+    if (conversation.unreadByUser?.set) {
+      conversation.unreadByUser.set(viewerIdStr, 0);
+    } else {
+      conversation.unreadByUser = {
+        ...(conversation.unreadByUser || {}),
+        [viewerIdStr]: 0,
+      };
+    }
+
+    conversation.markModified("clearedAtByUser");
+    conversation.markModified("unreadByUser");
+    await conversation.save();
+
+    res.status(200).json({ success: true, clearedAt: now });
+  } catch (error) {
+    console.error("Error clearing chat thread:", error);
+    res.status(500).json({ message: "Unable to clear chat" });
   }
 }

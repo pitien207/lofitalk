@@ -77,6 +77,12 @@ const english = {
       "Start a chat from someone's profile and your conversations will show up here.",
     noMessages: "No messages yet",
   },
+  chatPage: {
+    clearForMe: "Delete chat for me",
+    clearing: "Deleting...",
+    clearSuccess: "Messages removed from your view",
+    clearError: "Unable to clear chat",
+  },
   friends: {
     filters: {
       energyTitle: "Shared energy (with Tarot)",
@@ -582,6 +588,12 @@ const vietnamese = {
     emptyHint:
       "Mở trò chuyện từ trang cá nhân của ai đó để cuộc trò chuyện hiển thị tại đây.",
     noMessages: "Chưa có tin nhắn",
+  },
+  chatPage: {
+    clearForMe: "Xóa toàn bộ tin nhắn (chỉ phía bạn)",
+    clearing: "Đang xóa...",
+    clearSuccess: "Đã xóa tin nhắn phía bạn",
+    clearError: "Không thể xóa tin nhắn",
   },
   friends: {
     filters: {
@@ -1089,6 +1101,12 @@ const german = {
     emptyHint:
       "Starte einen Chat über das Profil einer Person, dann erscheinen eure Unterhaltungen hier.",
     noMessages: "Noch keine Nachrichten",
+  },
+  chatPage: {
+    clearForMe: "Chat nur für mich löschen",
+    clearing: "Lösche...",
+    clearSuccess: "Nachrichten wurden für dich ausgeblendet",
+    clearError: "Chat konnte nicht gelöscht werden",
   },
   friends: {
     filters: {

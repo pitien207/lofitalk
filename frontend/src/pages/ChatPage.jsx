@@ -2,20 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { SendIcon } from "lucide-react";
+import { MoreVerticalIcon, SendIcon, Trash2Icon } from "lucide-react";
 
 import useAuthUser from "../hooks/useAuthUser";
 import {
   getChatThreadWithUser,
   markChatThreadRead,
   sendChatMessage,
+  getChatMessages,
+  clearChatThread,
 } from "../lib/api";
 import useChatSocket from "../hooks/useChatSocket";
 import ChatLoader from "../components/ChatLoader";
 import EmojiPickerButton from "../components/EmojiPickerButton";
 import { useTranslation } from "../languages/useTranslation";
 import { formatRelativeTimeFromNow } from "../utils/time";
-import { getChatMessages } from "../lib/api";
 
 const PAGE_SIZE = 20;
 
@@ -30,8 +31,11 @@ const ChatPage = () => {
   const [messageText, setMessageText] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   const messageListRef = useRef(null);
+  const actionMenuRef = useRef(null);
   const [visibleTimestamps, setVisibleTimestamps] = useState(() => new Set());
 
   const {
@@ -138,9 +142,38 @@ const ChatPage = () => {
   }, [socket, threadId, upsertMessage, queryClient]);
 
   useEffect(() => {
+    if (!isMenuOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
+
+  useEffect(() => {
     setVisibleTimestamps(new Set());
     setHasMore(true);
     setLoadingMore(false);
+    setIsMenuOpen(false);
+    setIsClearing(false);
   }, [threadId]);
 
   const toggleTimestampVisibility = useCallback((messageId) => {
@@ -155,6 +188,34 @@ const ChatPage = () => {
       return next;
     });
   }, []);
+
+  const handleClearConversation = async () => {
+    if (!threadId) {
+      toast.error(t("chatPage.clearError") || "Unable to clear chat");
+      return;
+    }
+
+    setIsClearing(true);
+    try {
+      await clearChatThread(threadId);
+      setMessages([]);
+      setHasMore(false);
+      setVisibleTimestamps(new Set());
+      queryClient.invalidateQueries({ queryKey: ["chatThreads"] });
+      toast.success(
+        t("chatPage.clearSuccess") || "Messages deleted for you"
+      );
+    } catch (error) {
+      const fallbackMessage =
+        error?.response?.data?.message ||
+        t("chatPage.clearError") ||
+        "Unable to clear chat";
+      toast.error(fallbackMessage);
+    } finally {
+      setIsClearing(false);
+      setIsMenuOpen(false);
+    }
+  };
 
   const handleSendMessage = async (event) => {
     event.preventDefault();
@@ -328,6 +389,33 @@ const ChatPage = () => {
             <p className="text-xs text-base-content/70">
               {presenceText || t("common.loading")}
             </p>
+          </div>
+        </div>
+        <div className="flex items-center">
+          <div ref={actionMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="btn btn-ghost btn-sm px-2"
+              disabled={!threadId || isClearing}
+            >
+              <MoreVerticalIcon className="size-5" />
+            </button>
+            {isMenuOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-48 rounded-xl border border-base-200 bg-base-100 shadow-lg">
+                <button
+                  type="button"
+                  onClick={handleClearConversation}
+                  disabled={isClearing}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-error hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2Icon className="size-4" />
+                  {isClearing
+                    ? t("chatPage.clearing") || "Deleting..."
+                    : t("chatPage.clearForMe") || "Delete chat for me"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>

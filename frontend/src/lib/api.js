@@ -134,6 +134,13 @@ export async function markChatThreadRead(threadId) {
   return response.data;
 }
 
+export async function clearChatThread(threadId) {
+  const response = await axiosInstance.delete(
+    `/chat/threads/${threadId}/messages`
+  );
+  return response.data;
+}
+
 export async function getChatUnreadCount() {
   const response = await axiosInstance.get("/chat/unread-count");
   return response.data;

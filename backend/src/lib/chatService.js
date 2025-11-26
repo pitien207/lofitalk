@@ -18,6 +18,17 @@ const toObjectId = (value) =>
 const buildRoomKey = (userId, peerId) =>
   [userId.toString(), peerId.toString()].sort().join(":");
 
+export const getUserClearedAt = (conversation, userId) => {
+  if (!conversation || !userId) return null;
+  const key = userId.toString();
+  if (conversation.clearedAtByUser?.get) {
+    const value = conversation.clearedAtByUser.get(key);
+    return value ? new Date(value) : null;
+  }
+  const fallbackValue = conversation.clearedAtByUser?.[key];
+  return fallbackValue ? new Date(fallbackValue) : null;
+};
+
 const normalizePresence = (userDoc) => {
   if (!userDoc) return null;
   const base = userDoc.toObject ? userDoc.toObject() : { ...userDoc };
@@ -112,23 +123,43 @@ export const saveChatMessage = async ({
 
 export const fetchRecentMessages = async (
   conversationId,
-  { limit = 20, before = null, after = null } = {}
+  { limit = 20, before = null, after = null, clearedAt = null } = {}
 ) => {
   const Message = getChatMessageModel();
   const filters = { conversation: conversationId };
+  const createdAtFilters = {};
 
   if (before) {
     const beforeDate = new Date(before);
     if (!Number.isNaN(beforeDate.getTime())) {
-      filters.createdAt = { ...(filters.createdAt || {}), $lt: beforeDate };
+      createdAtFilters.$lt = beforeDate;
     }
   }
+
+  let lowerBound = null;
 
   if (after) {
     const afterDate = new Date(after);
     if (!Number.isNaN(afterDate.getTime())) {
-      filters.createdAt = { ...(filters.createdAt || {}), $gt: afterDate };
+      lowerBound = afterDate;
     }
+  }
+
+  if (clearedAt) {
+    const clearedDate = new Date(clearedAt);
+    if (!Number.isNaN(clearedDate.getTime())) {
+      if (!lowerBound || clearedDate.getTime() > lowerBound.getTime()) {
+        lowerBound = clearedDate;
+      }
+    }
+  }
+
+  if (lowerBound) {
+    createdAtFilters.$gt = lowerBound;
+  }
+
+  if (Object.keys(createdAtFilters).length) {
+    filters.createdAt = createdAtFilters;
   }
 
   const items = await Message.find(filters)
@@ -204,6 +235,12 @@ export const buildThreadSummary = (conversation, viewerId, userMap = {}) => {
     p.toString()
   );
   const partnerId = participantIds.find((id) => id !== viewerIdStr) || null;
+  const clearedAt = getUserClearedAt(conversation, viewerIdStr);
+  const lastTimestamp =
+    conversation.lastMessageAt || conversation.updatedAt || null;
+  const hasVisibleLastMessage =
+    lastTimestamp &&
+    (!clearedAt || new Date(lastTimestamp).getTime() > clearedAt.getTime());
 
   const unreadCount =
     (conversation.unreadByUser?.get?.(viewerIdStr) ??
@@ -214,9 +251,9 @@ export const buildThreadSummary = (conversation, viewerId, userMap = {}) => {
     id: conversation._id?.toString(),
     partnerId,
     partner: partnerId ? userMap[partnerId] : null,
-    lastMessage: conversation.lastMessageText || "",
-    lastMessageAt: conversation.lastMessageAt || conversation.updatedAt,
+    lastMessage: hasVisibleLastMessage ? conversation.lastMessageText || "" : "",
+    lastMessageAt: hasVisibleLastMessage ? lastTimestamp : null,
     lastSender: conversation.lastSender?.toString() || null,
-    unreadCount,
+    unreadCount: hasVisibleLastMessage ? unreadCount : 0,
   };
 };

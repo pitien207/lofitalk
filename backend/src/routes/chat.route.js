@@ -7,6 +7,7 @@ import {
   getUnreadCount,
   markThreadRead,
   sendMessage,
+  clearThreadMessages,
 } from "../controllers/chat.controller.js";
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.get("/threads/:threadId/messages", getThreadMessages);
 router.post("/threads/:threadId/read", markThreadRead);
 router.get("/unread-count", getUnreadCount);
 router.post("/messages", sendMessage);
+router.delete("/threads/:threadId/messages", clearThreadMessages);
 
 export default router;
