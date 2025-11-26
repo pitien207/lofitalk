@@ -7,6 +7,7 @@ import {
   MessageSquareIcon,
   MoonStarIcon,
   CrownIcon,
+  Gamepad2Icon,
   ShieldCheckIcon,
   ShieldIcon,
   SmartphoneIcon,
@@ -26,6 +27,8 @@ const Sidebar = () => {
   const { hasUnread } = useUnreadChats();
   const isChatRoute =
     currentPath === "/chats" || currentPath.startsWith("/chat/");
+  const isPlusOrAdmin =
+    authUser?.accountType === "plus" || authUser?.accountType === "admin";
 
   return (
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
@@ -106,8 +109,25 @@ const Sidebar = () => {
         }`}
       >
         <MoonStarIcon className="size-5 text-base-content opacity-70" />
-        <span>{t("sidebar.tarot")}</span>
+          <span>{t("sidebar.tarot")}</span>
       </Link>
+
+        {isPlusOrAdmin ? (
+          <Link
+            to="/match-mind"
+            className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+              currentPath === "/match-mind" ? "btn-active" : ""
+            }`}
+          >
+            <Gamepad2Icon className="size-5 text-base-content opacity-70" />
+            <span>{t("sidebar.matchMind")}</span>
+          </Link>
+        ) : (
+          <div className="btn btn-ghost justify-start w-full gap-3 px-3 normal-case opacity-60 cursor-not-allowed">
+            <Gamepad2Icon className="size-5 text-base-content opacity-70" />
+            <span>{t("sidebar.matchMindComingSoon")}</span>
+          </div>
+        )}
 
         <Link
           to="/fortune"
