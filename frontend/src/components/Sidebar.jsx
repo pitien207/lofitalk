@@ -184,22 +184,15 @@ const Sidebar = () => {
 
           {openGames && (
             <div className="pl-8 space-y-1">
-              {isPlusOrAdmin ? (
-                <Link
-                  to="/match-mind"
-                  className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-                    currentPath === "/match-mind" ? "btn-active" : ""
-                  }`}
-                >
-                  <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
-                  <span>{t("sidebar.matchMind")}</span>
-                </Link>
-              ) : (
-                <div className="btn btn-ghost justify-start w-full gap-3 px-3 normal-case opacity-60 cursor-not-allowed">
-                  <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
-                  <span>{t("sidebar.matchMindComingSoon")}</span>
-                </div>
-              )}
+              <Link
+                to="/match-mind"
+                className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+                  currentPath === "/match-mind" ? "btn-active" : ""
+                }`}
+              >
+                <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
+                <span>{t("sidebar.matchMind")}</span>
+              </Link>
             </div>
           )}
         </div>
