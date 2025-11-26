@@ -1,4 +1,4 @@
-﻿﻿export const AVAILABLE_LANGUAGES = [
+export const AVAILABLE_LANGUAGES = [
   { value: "English", label: "English" },
   { value: "Vietnamese", label: "Tiếng Việt" },
   { value: "German", label: "Deutsch" },
@@ -115,7 +115,7 @@ const english = {
     version: "Version",
     developer: "Developer",
     inspiredBy: "Inspired by",
-    inspiredNames: "Codesistency / Fremdchat / avocadorable / SayedSayedy",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable / Kaytiem",
   },
   notifications: {
     title: "Notifications",
@@ -287,6 +287,11 @@ const english = {
     inviteCanceled: "{name} canceled this invite.",
     inviteExpired: "Invite expired. Send another?",
     startGame: "Start game",
+    startEasy: "Start (Easy)",
+    startHard: "Start (Hard)",
+    selectDifficulty: "Choose a difficulty to begin",
+    easyMode: "Easy",
+    hardMode: "Hard",
     gameStarting: "Game starting",
     gameTitle: "Playing MatchMind",
     questionCounter: "Question {index} of {total}",
@@ -689,7 +694,7 @@ const vietnamese = {
     version: "Phiên bản",
     developer: "Nhà phát triển",
     inspiredBy: "Lấy cảm hứng từ",
-    inspiredNames: "Codesistency / Fremdchat / avocadorable / SayedSayedy",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable / Kaytiem",
   },
   notifications: {
     title: "Thông báo",
@@ -826,8 +831,7 @@ const vietnamese = {
   },
   matchMind: {
     title: "Trò chơi MatchMind",
-    subtitle:
-      "Rủ bạn trả lời 10 câu hỏi nhanh và xem hai bạn hợp ý thế nào.",
+    subtitle: "Rủ bạn trả lời 10 câu hỏi nhanh và xem hai bạn hợp ý thế nào.",
     comingSoonTitle: "MatchMind sắp ra mắt",
     comingSoonSubtitle: "Người dùng Plus hoặc Admin có thể chơi ngay bây giờ.",
     howItWorksTitle: "Cách chơi",
@@ -861,6 +865,11 @@ const vietnamese = {
     inviteCanceled: "{name} đã hủy lời mời này.",
     inviteExpired: "Lời mời đã hết hạn. Gửi lại nhé?",
     startGame: "Bắt đầu chơi",
+    startEasy: "Bắt đầu (Dễ)",
+    startHard: "Bắt đầu (Khó)",
+    selectDifficulty: "Chọn mức để bắt đầu",
+    easyMode: "Dễ",
+    hardMode: "Khó",
     gameStarting: "Đang bắt đầu",
     gameTitle: "Đang chơi MatchMind",
     questionCounter: "Câu {index}/{total}",
@@ -1267,7 +1276,7 @@ const german = {
     version: "Version",
     developer: "Entwickler",
     inspiredBy: "Inspiriert von",
-    inspiredNames: "Codesistency / Fremdchat / avocadorable / SayedSayedy",
+    inspiredNames: "Codesistency / Fremdchat / avocadorable / Kaytiem",
   },
   notifications: {
     title: "Benachrichtigungen",
@@ -1440,6 +1449,11 @@ const german = {
     inviteCanceled: "{name} hat diese Einladung storniert.",
     inviteExpired: "Einladung abgelaufen. Neue senden?",
     startGame: "Spiel starten",
+    startEasy: "Start (Leicht)",
+    startHard: "Start (Schwer)",
+    selectDifficulty: "Schwierigkeit wählen",
+    easyMode: "Leicht",
+    hardMode: "Schwer",
     gameStarting: "Spiel startet",
     gameTitle: "MatchMind läuft",
     questionCounter: "Frage {index} von {total}",
@@ -1450,7 +1464,8 @@ const german = {
     friendLocked: "Freund hat seine Antwort gesperrt",
     timePerQuestion: "10s pro Frage",
     resultsTitle: "Ergebnisse",
-    resultsDescription: "Euer gemeinsamer Score basiert auf passenden Antworten.",
+    resultsDescription:
+      "Euer gemeinsamer Score basiert auf passenden Antworten.",
     playAgain: "Spiel verlassen",
     answerLabel: {
       you: "Du",

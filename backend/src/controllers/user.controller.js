@@ -192,6 +192,7 @@ const FRIEND_DEFAULT_FIELDS = [
   "isOnline",
   "lastActiveAt",
   "updatedAt",
+  "accountType",
 ];
 
 export async function getFriendFilterStatus(req, res) {

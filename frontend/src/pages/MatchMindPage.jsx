@@ -51,6 +51,7 @@ const MatchMindPage = () => {
     chooseAnswer,
     setFriendAnswer,
     history,
+    difficulty,
     matches,
     liveScore,
     sessionId,
@@ -68,9 +69,17 @@ const MatchMindPage = () => {
     queryFn: getUserFriends,
   });
 
-  const sortedFriends = useMemo(
-    () => [...friends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+  const eligibleFriends = useMemo(
+    () =>
+      friends.filter((friend) =>
+        ["plus", "admin"].includes(friend?.accountType)
+      ),
     [friends]
+  );
+
+  const sortedFriends = useMemo(
+    () => [...eligibleFriends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    [eligibleFriends]
   );
 
   const currentQuestionId = currentQuestion?.id;
@@ -138,7 +147,7 @@ const MatchMindPage = () => {
       if (stage === "playing" && activeSession === payload.inviteId) return;
 
       setInviteId(payload.inviteId);
-      startGameFromRemote(payload.inviteId);
+      startGameFromRemote(payload.inviteId, payload.difficulty);
       toast.success(t("matchMind.gameStarting"));
     };
 
@@ -235,6 +244,11 @@ const MatchMindPage = () => {
     setSelectedFriend(friend || null);
   };
 
+  const difficultyLabel =
+    difficulty === "hard"
+      ? t("matchMind.hardMode")
+      : t("matchMind.easyMode");
+
   const handleIncomingRespond = (invite, accepted) => {
     if (!socket) {
       toast.error("Connecting to game server. Try again in a moment.");
@@ -293,14 +307,14 @@ const MatchMindPage = () => {
     );
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = (mode) => {
     if (stage !== "accepted") {
       toast.error("Wait until your friend accepts the invite.");
       return;
     }
-    startGame();
+    startGame(mode);
     if (socket && inviteId) {
-      socket.emit("matchmind:start", { inviteId });
+      socket.emit("matchmind:start", { inviteId, difficulty: mode });
     }
   };
 
@@ -619,9 +633,25 @@ const MatchMindPage = () => {
                   </span>
                 </div>
                 {isHostSession ? (
-                  <button className="btn btn-success w-full" onClick={handleStartGame}>
-                    {t("matchMind.startGame")}
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-success/80">
+                      {t("matchMind.selectDifficulty")}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        className="btn btn-success w-full"
+                        onClick={() => handleStartGame("easy")}
+                      >
+                        {t("matchMind.startEasy")}
+                      </button>
+                      <button
+                        className="btn btn-outline btn-success w-full border-success/60"
+                        onClick={() => handleStartGame("hard")}
+                      >
+                        {t("matchMind.startHard")}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <p className="text-sm text-success/80">
                     {t("matchMind.waitingHost")}

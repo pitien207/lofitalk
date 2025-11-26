@@ -34,10 +34,10 @@ const Sidebar = () => {
   const isPlusOrAdmin =
     authUser?.accountType === "plus" || authUser?.accountType === "admin";
   const [openMystic, setOpenMystic] = useState(
-    currentPath === "/tarot" || currentPath === "/fortune",
+    currentPath === "/tarot" || currentPath === "/fortune"
   );
   const [openGames, setOpenGames] = useState(
-    currentPath.startsWith("/match-mind"),
+    currentPath.startsWith("/match-mind")
   );
 
   useEffect(() => {
@@ -53,7 +53,11 @@ const Sidebar = () => {
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
       <div className="p-5 border-b border-base-300">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={logo} alt="LofiTalk logo" className="w-10 h-10 rounded-full object-cover" />
+          <img
+            src={logo}
+            alt="LofiTalk logo"
+            className="w-10 h-10 rounded-full object-cover"
+          />
           <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-[#FF5E5E] to-[#FF9A9A] tracking-wider">
             LofiTalk
           </span>

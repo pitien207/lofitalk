@@ -3,61 +3,116 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 const INVITE_DURATION = 30;
 const QUESTION_DURATION = 10;
 
-const QUESTION_BANK = [
-  {
-    id: "q1",
-    prompt: "Pick the ideal Friday night with your friend",
-    options: ["Street food & strolling", "Board games at home", "Live music night", "Long drive with playlists"],
-  },
-  {
-    id: "q2",
-    prompt: "Your focus drink when you need to get things done",
-    options: ["Black coffee", "Milk tea", "Matcha latte", "Fruit smoothie"],
-  },
-  {
-    id: "q3",
-    prompt: "Preferred way to recharge after a busy week",
-    options: ["Solo reading", "Gym session", "Cooking something new", "Power nap"],
-  },
-  {
-    id: "q4",
-    prompt: "Dream mini trip for the two of you",
-    options: ["Beach sunrise", "Mountain cabin", "City museum crawl", "Theme park rides"],
-  },
-  {
-    id: "q5",
-    prompt: "Your default chat reaction style",
-    options: ["Memes & gifs", "Voice notes", "Long texts", "Short replies & emojis"],
-  },
-  {
-    id: "q6",
-    prompt: "Song to start a shared playlist",
-    options: ["Lo-fi beats", "Indie folk", "Pop banger", "Old-school R&B"],
-  },
-  {
-    id: "q7",
-    prompt: "Comfort food when you're rushing",
-    options: ["Instant noodles", "Banh mi / sandwich", "Sushi rolls", "Pizza slice"],
-  },
-  {
-    id: "q8",
-    prompt: "Best time for deep talks",
-    options: ["Late at night", "Early morning", "Lunch break", "Random commute"],
-  },
-  {
-    id: "q9",
-    prompt: "Pick a challenge to try together",
-    options: ["Learn a dance", "Cook a new cuisine", "Language flashcards", "Daily journaling"],
-  },
-  {
-    id: "q10",
-    prompt: "Rainy day plan",
-    options: ["Movie marathon", "Coffee shop writing", "Declutter the room", "Call a friend and chat"],
-  },
-];
+const QUESTION_BANK = {
+  easy: [
+    {
+      id: "easy-1",
+      prompt: "Nếu đi chơi chung, bạn muốn vibe gì?",
+      options: ["Vui – năng lượng", "Chill nhẹ", "Im lặng nhưng dễ chịu", "Cà khịa nhau suốt"],
+    },
+    {
+      id: "easy-2",
+      prompt: "Hoạt động muốn thử cùng “người kia”?",
+      options: ["Đi cafe", "Xem phim", "Đi dạo", "Chụp ảnh chung"],
+    },
+    {
+      id: "easy-3",
+      prompt: "Điều bạn để ý nhất khi đi chơi với một người “không phải bạn bè bình thường”?",
+      options: ["Cảm giác thoải mái", "Phản ứng và ánh mắt của họ", "Cách họ quan tâm", "Cách họ nói chuyện với mình"],
+    },
+    {
+      id: "easy-4",
+      prompt: "Nếu cả hai vô tình chạm tay, bạn sẽ…",
+      options: ["Giật mình", "Giả vờ không thấy gì", "Đỏ mặt", "Để yên cho tự nhiên 😌"],
+    },
+    {
+      id: "easy-5",
+      prompt: "Một buổi hẹn nhẹ nhàng hoàn hảo là…",
+      options: ["Ngồi xem phim", "Nói chuyện cả tối", "Đi ăn vặt", "Đi dạo buổi tối"],
+    },
+    {
+      id: "easy-6",
+      prompt: "Kiểu tin nhắn khiến bạn thấy thích thích?",
+      options: ["“Về chưa?”", "“Ăn gì chưa?”", "“Tao đang rảnh nè”", "“Hôm nay có gì vui không?”"],
+    },
+    {
+      id: "easy-7",
+      prompt: "Nếu hai đứa cùng làm một hoạt động, bạn thích gì nhất?",
+      options: ["Nấu ăn", "Decor góc phòng", "Chụp ảnh sống ảo", "Nghe nhạc + chill"],
+    },
+    {
+      id: "easy-8",
+      prompt: "Điều làm bạn tò mò nhất về người kia?",
+      options: ["Gu tình yêu", "Gu nhạc", "Tính cách thật khi thân rồi", "Ai là “crush” của họ 🤨"],
+    },
+    {
+      id: "easy-9",
+      prompt: "Bạn nghĩ hai người hợp nhau khi…",
+      options: ["Không sợ im lặng", "Hay nghĩ giống nhau", "Cảm giác thân thuộc lạ", "Cà khịa hợp vibe"],
+    },
+    {
+      id: "easy-10",
+      prompt: "Nếu lỡ cả hai đều thích nhau 1 chút, bạn muốn điều gì xảy ra?",
+      options: ["Không ai nói nhưng ngầm hiểu", "Một trong hai chủ động", "Cứ để tự nhiên", "Chơi minigame để tỏ tình 😏"],
+    },
+  ],
+  hard: [
+    {
+      id: "hard-1",
+      prompt: "Kiểu hẹn hò bạn thích nhất?",
+      options: ["Ở nhà nấu ăn", "Đi chơi xa", "Cafe tâm sự", "Hoạt động đôi (gym/yoga/đạp xe)"],
+    },
+    {
+      id: "hard-2",
+      prompt: "Điều khiến bạn cảm thấy an toàn khi ở cạnh ai đó?",
+      options: ["Họ lắng nghe", "Họ hành động nhất quán", "Sự nhẹ nhàng", "Sự chủ động"],
+    },
+    {
+      id: "hard-3",
+      prompt: "Trong một mối quan hệ, bạn coi trọng nhất điều gì?",
+      options: ["Niềm tin", "Quan tâm", "Tôn trọng", "Sự đồng hành"],
+    },
+    {
+      id: "hard-4",
+      prompt: "Khi giận, bạn muốn người kia làm gì?",
+      options: ["Nói chuyện ngay", "Ôm", "Cho mình thời gian", "Mua đồ ăn xin lỗi 😌"],
+    },
+    {
+      id: "hard-5",
+      prompt: "Hoạt động đôi mà bạn muốn thử nhất?",
+      options: ["Du lịch chung", "Tập thể dục chung", "Học nấu ăn chung", "Chụp ảnh/ làm kỷ niệm"],
+    },
+    {
+      id: "hard-6",
+      prompt: "Kiểu thể hiện tình cảm của bạn là…",
+      options: ["Hành động", "Lời nói", "Chạm", "Dành thời gian"],
+    },
+    {
+      id: "hard-7",
+      prompt: "Nếu hai đứa bất đồng quan điểm, bạn chọn…",
+      options: ["Ngồi xuống nói chuyện", "Mỗi người nghĩ 1 lúc rồi nói", "Nhường", "Đi chơi cho hết căng rồi nói tiếp"],
+    },
+    {
+      id: "hard-8",
+      prompt: "Bạn quan tâm điều gì nhất khi yêu?",
+      options: ["Tương lai chung", "Cách đối phương đối xử với mình", "Giá trị sống", "Sự phù hợp tính cách"],
+    },
+    {
+      id: "hard-9",
+      prompt: "Trong tình yêu, bạn muốn “vai” nào?",
+      options: ["Chủ động dẫn dắt", "Nửa chủ động nửa mềm", "Dịu dàng – quan tâm", "Cùng nhau cân bằng"],
+    },
+    {
+      id: "hard-10",
+      prompt: "Nếu phải mô tả tình cảm hiện tại dành cho đối phương?",
+      options: ["Ngọt", "Ấm", "Tò mò", "Đậm dần"],
+    },
+  ],
+};
 
 export const useMatchMindGame = () => {
   const [stage, setStage] = useState("lobby"); // lobby | inviting | accepted | declined | expired | playing | results
+  const [difficulty, setDifficulty] = useState("easy");
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [inviteRemaining, setInviteRemaining] = useState(INVITE_DURATION);
   const [inviteExpiresAt, setInviteExpiresAt] = useState(null);
@@ -70,11 +125,15 @@ export const useMatchMindGame = () => {
 
   const resolvingRef = useRef(false);
 
-  const questions = useMemo(() => QUESTION_BANK.slice(0, 10), []);
+  const questions = useMemo(
+    () => QUESTION_BANK[difficulty] || QUESTION_BANK.easy,
+    [difficulty]
+  );
   const currentQuestion = questions[roundIndex] || null;
 
   const resetToLobby = useCallback(() => {
     setStage("lobby");
+    setDifficulty("easy");
     setInviteRemaining(INVITE_DURATION);
     setInviteExpiresAt(null);
     setInviteId(null);
@@ -135,18 +194,25 @@ export const useMatchMindGame = () => {
     }
   }, [stage]);
 
-  const startGame = useCallback(() => {
-    setStage("playing");
-    setSessionId((prev) => prev || inviteId || null);
-    setRoundIndex(0);
-    setQuestionTimer(QUESTION_DURATION);
-    setCurrentAnswers({ yours: null, friend: null });
-    setHistory([]);
-    resolvingRef.current = false;
-  }, [inviteId]);
+  const startGame = useCallback(
+    (mode = "easy") => {
+      const nextMode = QUESTION_BANK[mode] ? mode : "easy";
+      setDifficulty(nextMode);
+      setStage("playing");
+      setSessionId((prev) => prev || inviteId || null);
+      setRoundIndex(0);
+      setQuestionTimer(QUESTION_DURATION);
+      setCurrentAnswers({ yours: null, friend: null });
+      setHistory([]);
+      resolvingRef.current = false;
+    },
+    [inviteId]
+  );
 
   const startGameFromRemote = useCallback(
-    (session) => {
+    (session, mode = "easy") => {
+      const nextMode = QUESTION_BANK[mode] ? mode : "easy";
+      setDifficulty(nextMode);
       if (session) setSessionId(session);
       setStage("playing");
       setRoundIndex(0);
@@ -305,5 +371,6 @@ export const useMatchMindGame = () => {
     markAcceptedByFriend,
     markDeclinedByFriend,
     markInviteExpired,
+    difficulty,
   };
 };

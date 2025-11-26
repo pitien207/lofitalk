@@ -345,23 +345,31 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
       }
     );
 
-    socket.on("matchmind:start", ({ inviteId } = {}, callback = () => {}) => {
-      try {
-        const invite = inviteId ? matchMindInvites.get(inviteId) : null;
-        if (!invite) return callback({ error: "Invite not found" });
-        if (invite.hostId !== userId)
-          return callback({ error: "Only the host can start the game" });
-        if (invite.status !== "accepted")
-          return callback({ error: "Invite not accepted yet" });
+    socket.on(
+      "matchmind:start",
+      ({ inviteId, difficulty } = {}, callback = () => {}) => {
+        try {
+          const invite = inviteId ? matchMindInvites.get(inviteId) : null;
+          if (!invite) return callback({ error: "Invite not found" });
+          if (invite.hostId !== userId)
+            return callback({ error: "Only the host can start the game" });
+          if (invite.status !== "accepted")
+            return callback({ error: "Invite not accepted yet" });
 
-        invite.status = "started";
-        matchMindInvites.set(inviteId, invite);
+          const normalizedDifficulty = ["easy", "hard"].includes(difficulty)
+            ? difficulty
+            : "easy";
+
+          invite.status = "started";
+          invite.difficulty = normalizedDifficulty;
+          matchMindInvites.set(inviteId, invite);
 
         io.to(toUserRoom(invite.guestId)).emit("matchmind:start", {
           inviteId,
           hostId: invite.hostId,
           hostName: invite.hostName,
           hostPic: invite.hostPic,
+          difficulty: normalizedDifficulty,
         });
 
         io.to(toUserRoom(invite.hostId)).emit("matchmind:start", {
@@ -369,6 +377,7 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
           hostId: invite.hostId,
           hostName: invite.hostName,
           hostPic: invite.hostPic,
+          difficulty: normalizedDifficulty,
         });
 
         return callback({ ok: true });
