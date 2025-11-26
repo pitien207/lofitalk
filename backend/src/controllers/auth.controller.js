@@ -436,6 +436,7 @@ export async function resetPassword(req, res) {
 export async function onboard(req, res) {
   try {
     const userId = req.user._id;
+    const isAdmin = req.user?.accountType === "admin";
 
     const {
       fullName,
@@ -449,6 +450,7 @@ export async function onboard(req, res) {
       hobbies,
       pets,
       profilePic,
+      accountType: _ignoredAccountType,
     } = req.body;
 
     if (
@@ -485,7 +487,8 @@ export async function onboard(req, res) {
       isOnboarded: true,
     };
 
-    if (profilePic) {
+    // Only admins may set a custom profile picture; always ignore client-sent accountType
+    if (isAdmin && profilePic) {
       const version = Date.now();
       updatePayload.avatarVersion = version;
       updatePayload.profilePic = withAvatarVersion(profilePic, version);

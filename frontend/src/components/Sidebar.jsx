@@ -1,11 +1,15 @@
 import { Link, useLocation } from "react-router";
+import { useEffect, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
+  ChevronDownIcon,
   CookieIcon,
+  HeartHandshakeIcon,
+  MoonStarIcon,
+  Wand2Icon,
   HomeIcon,
   MessageSquareIcon,
-  MoonStarIcon,
   CrownIcon,
   Gamepad2Icon,
   ShieldCheckIcon,
@@ -29,6 +33,21 @@ const Sidebar = () => {
     currentPath === "/chats" || currentPath.startsWith("/chat/");
   const isPlusOrAdmin =
     authUser?.accountType === "plus" || authUser?.accountType === "admin";
+  const [openMystic, setOpenMystic] = useState(
+    currentPath === "/tarot" || currentPath === "/fortune",
+  );
+  const [openGames, setOpenGames] = useState(
+    currentPath.startsWith("/match-mind"),
+  );
+
+  useEffect(() => {
+    if (currentPath === "/tarot" || currentPath === "/fortune") {
+      setOpenMystic(true);
+    }
+    if (currentPath.startsWith("/match-mind")) {
+      setOpenGames(true);
+    }
+  }, [currentPath]);
 
   return (
     <aside className="w-64 bg-base-200 border-r border-base-300 hidden lg:flex flex-col h-screen sticky top-0">
@@ -102,42 +121,88 @@ const Sidebar = () => {
           <span>{t("sidebar.notifications")}</span>
         </Link>
 
-        <Link
-        to="/tarot"
-        className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-          currentPath === "/tarot" ? "btn-active" : ""
-        }`}
-      >
-        <MoonStarIcon className="size-5 text-base-content opacity-70" />
-          <span>{t("sidebar.tarot")}</span>
-      </Link>
-
-        {isPlusOrAdmin ? (
-          <Link
-            to="/match-mind"
-            className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-              currentPath === "/match-mind" ? "btn-active" : ""
-            }`}
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => setOpenMystic((prev) => !prev)}
+            className="btn btn-ghost justify-between w-full px-3 normal-case"
+            aria-expanded={openMystic}
           >
-            <Gamepad2Icon className="size-5 text-base-content opacity-70" />
-            <span>{t("sidebar.matchMind")}</span>
-          </Link>
-        ) : (
-          <div className="btn btn-ghost justify-start w-full gap-3 px-3 normal-case opacity-60 cursor-not-allowed">
-            <Gamepad2Icon className="size-5 text-base-content opacity-70" />
-            <span>{t("sidebar.matchMindComingSoon")}</span>
-          </div>
-        )}
+            <div className="flex items-center gap-3">
+              <MoonStarIcon className="size-5 text-base-content opacity-70" />
+              <span>{t("sidebar.mystic")}</span>
+            </div>
+            <ChevronDownIcon
+              className={`size-4 transition-transform ${
+                openMystic ? "rotate-180" : ""
+              }`}
+            />
+          </button>
 
-        <Link
-          to="/fortune"
-          className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
-            currentPath === "/fortune" ? "btn-active" : ""
-          }`}
-        >
-          <CookieIcon className="size-5 text-base-content opacity-70" />
-          <span>{t("sidebar.fortune.linkLabel")}</span>
-        </Link>
+          {openMystic && (
+            <div className="pl-8 space-y-1">
+              <Link
+                to="/tarot"
+                className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+                  currentPath === "/tarot" ? "btn-active" : ""
+                }`}
+              >
+                <Wand2Icon className="size-4 text-base-content opacity-70" />
+                <span>{t("sidebar.tarot")}</span>
+              </Link>
+
+              <Link
+                to="/fortune"
+                className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+                  currentPath === "/fortune" ? "btn-active" : ""
+                }`}
+              >
+                <CookieIcon className="size-4 text-base-content opacity-70" />
+                <span>{t("sidebar.fortune.linkLabel")}</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => setOpenGames((prev) => !prev)}
+            className="btn btn-ghost justify-between w-full px-3 normal-case"
+            aria-expanded={openGames}
+          >
+            <div className="flex items-center gap-3">
+              <Gamepad2Icon className="size-5 text-base-content opacity-70" />
+              <span>{t("sidebar.games")}</span>
+            </div>
+            <ChevronDownIcon
+              className={`size-4 transition-transform ${
+                openGames ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {openGames && (
+            <div className="pl-8 space-y-1">
+              {isPlusOrAdmin ? (
+                <Link
+                  to="/match-mind"
+                  className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+                    currentPath === "/match-mind" ? "btn-active" : ""
+                  }`}
+                >
+                  <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
+                  <span>{t("sidebar.matchMind")}</span>
+                </Link>
+              ) : (
+                <div className="btn btn-ghost justify-start w-full gap-3 px-3 normal-case opacity-60 cursor-not-allowed">
+                  <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
+                  <span>{t("sidebar.matchMindComingSoon")}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {authUser?.accountType === "admin" && (
           <Link
