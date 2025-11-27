@@ -304,6 +304,7 @@ const english = {
     resultsTitle: "Results",
     resultsDescription: "Your shared score is based on matching answers.",
     playAgain: "Exit game",
+    gameEnded: "Game ended by the other player.",
     answerLabel: {
       you: "You",
       friend: "{name}'s pick",
@@ -952,6 +953,7 @@ const vietnamese = {
     resultsTitle: "Kết quả",
     resultsDescription: "Điểm chung dựa trên số câu trả lời trùng nhau.",
     playAgain: "Thoát game",
+    gameEnded: "Đối phương đã thoát trận.",
     answerLabel: {
       you: "Bạn",
       friend: "Lựa chọn của {name}",

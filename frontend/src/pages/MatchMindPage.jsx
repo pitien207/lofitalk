@@ -43,7 +43,6 @@ const MatchMindPage = () => {
     startGameFromRemote,
     exitGame,
     cancelInvite,
-    questionTimer,
     currentQuestion,
     roundIndex,
     questions,
@@ -59,8 +58,19 @@ const MatchMindPage = () => {
     markDeclinedByFriend,
     markInviteExpired,
   } = useMatchMindGame();
-  const [incomingInvites, setIncomingInvites] = useState([]);
-  const [isHostSession, setIsHostSession] = useState(false);
+  const [incomingInvites, setIncomingInvites] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("matchmind-incoming");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
+  const [isHostSession, setIsHostSession] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("matchmind-is-host") === "true";
+  });
   const socket = useChatSocket(true);
   const playNotificationSound = useNotificationSound();
 
@@ -81,6 +91,16 @@ const MatchMindPage = () => {
     () => [...eligibleFriends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
     [eligibleFriends]
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("matchmind-incoming", JSON.stringify(incomingInvites));
+  }, [incomingInvites]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("matchmind-is-host", isHostSession ? "true" : "false");
+  }, [isHostSession]);
 
   const currentQuestionId = currentQuestion?.id;
   const friendLabel = selectedFriend?.fullName || t("matchMind.answerLabel.friendFallback");
@@ -198,12 +218,22 @@ const MatchMindPage = () => {
       }
     };
 
+    const handleExitBoth = (payload = {}) => {
+      if (!payload.inviteId || payload.inviteId !== activeSession) return;
+      exitGame();
+      setIsHostSession(false);
+      setInviteId(null);
+      setIncomingInvites([]);
+      toast.error(t("matchMind.gameEnded"));
+    };
+
     socket.on("matchmind:invite", handleInvite);
     socket.on("matchmind:response", handleResponse);
     socket.on("matchmind:start", handleStart);
     socket.on("matchmind:answer", handleAnswer);
     socket.on("matchmind:expired", handleExpired);
     socket.on("matchmind:cancelled", handleCancelled);
+    socket.on("matchmind:exit", handleExitBoth);
 
     return () => {
       socket.off("matchmind:invite", handleInvite);
@@ -212,6 +242,7 @@ const MatchMindPage = () => {
       socket.off("matchmind:answer", handleAnswer);
       socket.off("matchmind:expired", handleExpired);
       socket.off("matchmind:cancelled", handleCancelled);
+      socket.off("matchmind:exit", handleExitBoth);
     };
   }, [
     socket,
@@ -229,6 +260,7 @@ const MatchMindPage = () => {
     friendLabel,
     setInviteId,
     t,
+    exitGame,
   ]);
 
   useEffect(() => {
@@ -354,8 +386,18 @@ const MatchMindPage = () => {
   };
 
   const handleExitGame = () => {
+    const session = activeSession;
+    if (socket && session) {
+      socket.emit("matchmind:exit", { inviteId: session }, (response = {}) => {
+        if (response.error) {
+          toast.error(response.error);
+        }
+      });
+    }
     exitGame();
     setIsHostSession(false);
+    setIncomingInvites([]);
+    setInviteId(null);
   };
 
   const renderProgressDots = () => (
@@ -398,12 +440,6 @@ const MatchMindPage = () => {
             <span className="badge badge-outline">
               {t("matchMind.sharedScore")}: {isResults ? matches : liveScore}/{questions.length}
             </span>
-            {!isResults && (
-              <span className="badge badge-primary badge-lg gap-2">
-                <TimerIcon className="size-4" />
-                {questionTimer}s
-              </span>
-            )}
             <span className="badge badge-ghost gap-1">
               <UsersIcon className="size-4" />
               {authUser?.fullName || "You"} & {friendLabel}
@@ -449,9 +485,6 @@ const MatchMindPage = () => {
                 <h2 className="text-2xl font-semibold text-base-content">
                   {currentQuestion?.prompt}
                 </h2>
-                <p className="text-sm text-base-content/70">
-                  {t("matchMind.timePerQuestion")}
-                </p>
               </div>
               <div className="flex items-center gap-2 rounded-full bg-base-200 px-3 py-1 text-sm">
                 <SparklesIcon className="size-4 text-primary" />
@@ -503,6 +536,12 @@ const MatchMindPage = () => {
               </div>
               {renderProgressDots()}
             </div>
+
+            <div className="flex justify-end">
+              <button className="btn btn-ghost" onClick={handleExitGame}>
+                {t("matchMind.playAgain")}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -546,7 +585,6 @@ const MatchMindPage = () => {
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge icon={Gamepad2Icon} label="10 questions" />
-              <Badge icon={TimerIcon} label={t("matchMind.timePerQuestion")} />
               <Badge icon={CheckCircle2Icon} label="Score = matching answers" />
             </div>
           </div>

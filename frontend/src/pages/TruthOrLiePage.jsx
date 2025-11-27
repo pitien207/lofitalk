@@ -140,8 +140,19 @@ const TruthOrLiePage = () => {
     markInviteExpired,
   } = useTruthOrLieGame();
 
-  const [incomingInvites, setIncomingInvites] = useState([]);
-  const [isHostSession, setIsHostSession] = useState(false);
+  const [incomingInvites, setIncomingInvites] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("truthlie-incoming");
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      return [];
+    }
+  });
+  const [isHostSession, setIsHostSession] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("truthlie-is-host") === "true";
+  });
   const isPlusOrAdmin =
     authUser?.accountType === "plus" || authUser?.accountType === "admin";
 
@@ -162,6 +173,16 @@ const TruthOrLiePage = () => {
     () => [...eligibleFriends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
     [eligibleFriends]
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("truthlie-incoming", JSON.stringify(incomingInvites));
+  }, [incomingInvites]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("truthlie-is-host", isHostSession ? "true" : "false");
+  }, [isHostSession]);
 
   const friendLabel = selectedFriend?.fullName || t("truthOrLiar.friendFallback");
   const activeSession = sessionId || inviteId;
@@ -520,6 +541,7 @@ const TruthOrLiePage = () => {
     }
     exitGame();
     setIsHostSession(false);
+    setIncomingInvites([]);
   };
 
   const renderResultList = (isHostView) => {

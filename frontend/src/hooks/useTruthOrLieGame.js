@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const INVITE_DURATION = 30;
 const QUESTION_COUNTS = {
   short: 3,
   long: 5,
 };
+const STORAGE_KEY = "truthlie-game-state";
 
 const makeQuestion = (index, base = {}) => {
   const options = Array.isArray(base.options) ? base.options : [];
@@ -38,19 +39,72 @@ const isQuestionComplete = (question) =>
   question.options.length === 3 &&
   question.options.every((option) => Boolean(option?.trim()));
 
+const defaultState = {
+  stage: "lobby",
+  mode: "short",
+  selectedFriend: null,
+  inviteRemaining: INVITE_DURATION,
+  inviteExpiresAt: null,
+  inviteId: null,
+  sessionId: null,
+  roundIndex: 0,
+  questions: sanitizeQuestions([], QUESTION_COUNTS.short),
+  answers: { yours: {}, friend: {} },
+};
+
+const safeParse = (value) => {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+};
+
+const getInitialState = () => {
+  if (typeof window === "undefined") return defaultState;
+  const saved = safeParse(localStorage.getItem(STORAGE_KEY));
+  if (!saved) return defaultState;
+
+  const mode = saved.mode === "long" ? "long" : "short";
+  const now = Date.now();
+  const inviteExpiresAt =
+    typeof saved.inviteExpiresAt === "number" ? saved.inviteExpiresAt : null;
+  const inviteRemaining = inviteExpiresAt
+    ? Math.max(0, Math.ceil((inviteExpiresAt - now) / 1000))
+    : INVITE_DURATION;
+  const stage =
+    saved.stage === "inviting" && inviteRemaining <= 0
+      ? "expired"
+      : saved.stage || defaultState.stage;
+  const questionCount = QUESTION_COUNTS[mode];
+
+  return {
+    ...defaultState,
+    ...saved,
+    stage,
+    mode,
+    inviteExpiresAt,
+    inviteRemaining,
+    questions: sanitizeQuestions(saved.questions || [], questionCount),
+    answers: {
+      yours: (saved.answers && saved.answers.yours) || {},
+      friend: (saved.answers && saved.answers.friend) || {},
+    },
+  };
+};
+
 export const useTruthOrLieGame = () => {
-  const [stage, setStage] = useState("lobby"); // lobby | inviting | accepted | declined | expired | playing | review
-  const [mode, setModeState] = useState("short"); // short | long
-  const [selectedFriend, setSelectedFriend] = useState(null);
-  const [inviteRemaining, setInviteRemaining] = useState(INVITE_DURATION);
-  const [inviteExpiresAt, setInviteExpiresAt] = useState(null);
-  const [inviteId, setInviteId] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [roundIndex, setRoundIndex] = useState(0);
-  const [questions, setQuestions] = useState(() =>
-    sanitizeQuestions([], QUESTION_COUNTS.short)
-  );
-  const [answers, setAnswers] = useState({ yours: {}, friend: {} });
+  const initialState = useRef(getInitialState()).current;
+  const [stage, setStage] = useState(initialState.stage); // lobby | inviting | accepted | declined | expired | playing | review
+  const [mode, setModeState] = useState(initialState.mode); // short | long
+  const [selectedFriend, setSelectedFriend] = useState(initialState.selectedFriend);
+  const [inviteRemaining, setInviteRemaining] = useState(initialState.inviteRemaining);
+  const [inviteExpiresAt, setInviteExpiresAt] = useState(initialState.inviteExpiresAt);
+  const [inviteId, setInviteId] = useState(initialState.inviteId);
+  const [sessionId, setSessionId] = useState(initialState.sessionId);
+  const [roundIndex, setRoundIndex] = useState(initialState.roundIndex);
+  const [questions, setQuestions] = useState(initialState.questions);
+  const [answers, setAnswers] = useState(initialState.answers);
 
   const questionCount = useMemo(
     () => QUESTION_COUNTS[mode] || QUESTION_COUNTS.short,
@@ -74,6 +128,9 @@ export const useTruthOrLieGame = () => {
     setRoundIndex(0);
     setQuestions(sanitizeQuestions([], QUESTION_COUNTS.short));
     setAnswers({ yours: {}, friend: {} });
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   const setMode = useCallback((nextMode = "short") => {
@@ -107,6 +164,34 @@ export const useTruthOrLieGame = () => {
       )
     );
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const payload = {
+      stage,
+      mode,
+      selectedFriend,
+      inviteRemaining,
+      inviteExpiresAt,
+      inviteId,
+      sessionId,
+      roundIndex,
+      questions,
+      answers,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [
+    stage,
+    mode,
+    selectedFriend,
+    inviteRemaining,
+    inviteExpiresAt,
+    inviteId,
+    sessionId,
+    roundIndex,
+    questions,
+    answers,
+  ]);
 
   const sendInvite = useCallback(
     ({ inviteId: providedInviteId, expiresAt } = {}) => {

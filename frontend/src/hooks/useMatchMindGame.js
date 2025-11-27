@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const INVITE_DURATION = 30;
-const QUESTION_DURATION = 10;
+const STORAGE_KEY = "matchmind-game-state";
 
 const QUESTION_BANK = {
   easy: [
@@ -110,20 +110,69 @@ const QUESTION_BANK = {
   ],
 };
 
+const defaultState = {
+  stage: "lobby",
+  difficulty: "easy",
+  selectedFriend: null,
+  inviteRemaining: INVITE_DURATION,
+  inviteExpiresAt: null,
+  inviteId: null,
+  sessionId: null,
+  roundIndex: 0,
+  currentAnswers: { yours: null, friend: null },
+  history: [],
+};
+
+const safeParse = (value) => {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return null;
+  }
+};
+
+const getInitialState = () => {
+  if (typeof window === "undefined") return defaultState;
+  const saved = safeParse(localStorage.getItem(STORAGE_KEY));
+  if (!saved) return defaultState;
+
+  const now = Date.now();
+  const inviteExpiresAt =
+    typeof saved.inviteExpiresAt === "number" ? saved.inviteExpiresAt : null;
+  const inviteRemaining = inviteExpiresAt
+    ? Math.max(0, Math.ceil((inviteExpiresAt - now) / 1000))
+    : INVITE_DURATION;
+  const stage =
+    saved.stage === "inviting" && inviteRemaining <= 0
+      ? "expired"
+      : saved.stage || defaultState.stage;
+
+  return {
+    ...defaultState,
+    ...saved,
+    stage,
+    inviteExpiresAt,
+    inviteRemaining,
+    history: Array.isArray(saved.history) ? saved.history : defaultState.history,
+    currentAnswers: saved.currentAnswers || defaultState.currentAnswers,
+  };
+};
+
 export const useMatchMindGame = () => {
-  const [stage, setStage] = useState("lobby"); // lobby | inviting | accepted | declined | expired | playing | results
-  const [difficulty, setDifficulty] = useState("easy");
-  const [selectedFriend, setSelectedFriend] = useState(null);
-  const [inviteRemaining, setInviteRemaining] = useState(INVITE_DURATION);
-  const [inviteExpiresAt, setInviteExpiresAt] = useState(null);
-  const [inviteId, setInviteId] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
-  const [roundIndex, setRoundIndex] = useState(0);
-  const [questionTimer, setQuestionTimer] = useState(QUESTION_DURATION);
-  const [currentAnswers, setCurrentAnswers] = useState({ yours: null, friend: null });
-  const [history, setHistory] = useState([]);
+  const initialState = useRef(getInitialState()).current;
+  const [stage, setStage] = useState(initialState.stage); // lobby | inviting | accepted | declined | expired | playing | results
+  const [difficulty, setDifficulty] = useState(initialState.difficulty);
+  const [selectedFriend, setSelectedFriend] = useState(initialState.selectedFriend);
+  const [inviteRemaining, setInviteRemaining] = useState(initialState.inviteRemaining);
+  const [inviteExpiresAt, setInviteExpiresAt] = useState(initialState.inviteExpiresAt);
+  const [inviteId, setInviteId] = useState(initialState.inviteId);
+  const [sessionId, setSessionId] = useState(initialState.sessionId);
+  const [roundIndex, setRoundIndex] = useState(initialState.roundIndex);
+  const [currentAnswers, setCurrentAnswers] = useState(initialState.currentAnswers);
+  const [history, setHistory] = useState(initialState.history);
 
   const resolvingRef = useRef(false);
+  const previousRoundRef = useRef(initialState.roundIndex);
 
   const questions = useMemo(
     () => QUESTION_BANK[difficulty] || QUESTION_BANK.easy,
@@ -139,10 +188,13 @@ export const useMatchMindGame = () => {
     setInviteId(null);
     setSessionId(null);
     setRoundIndex(0);
-    setQuestionTimer(QUESTION_DURATION);
     setCurrentAnswers({ yours: null, friend: null });
     setHistory([]);
+    previousRoundRef.current = 0;
     resolvingRef.current = false;
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   const sendInvite = useCallback(
@@ -201,9 +253,9 @@ export const useMatchMindGame = () => {
       setStage("playing");
       setSessionId((prev) => prev || inviteId || null);
       setRoundIndex(0);
-      setQuestionTimer(QUESTION_DURATION);
       setCurrentAnswers({ yours: null, friend: null });
       setHistory([]);
+      previousRoundRef.current = 0;
       resolvingRef.current = false;
     },
     [inviteId]
@@ -216,9 +268,9 @@ export const useMatchMindGame = () => {
       if (session) setSessionId(session);
       setStage("playing");
       setRoundIndex(0);
-      setQuestionTimer(QUESTION_DURATION);
       setCurrentAnswers({ yours: null, friend: null });
       setHistory([]);
+      previousRoundRef.current = 0;
       resolvingRef.current = false;
     },
     []
@@ -278,6 +330,34 @@ export const useMatchMindGame = () => {
   );
 
   useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const payload = {
+      stage,
+      difficulty,
+      selectedFriend,
+      inviteRemaining,
+      inviteExpiresAt,
+      inviteId,
+      sessionId,
+      roundIndex,
+      currentAnswers,
+      history,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  }, [
+    stage,
+    difficulty,
+    selectedFriend,
+    inviteRemaining,
+    inviteExpiresAt,
+    inviteId,
+    sessionId,
+    roundIndex,
+    currentAnswers,
+    history,
+  ]);
+
+  useEffect(() => {
     if (stage !== "inviting" || !inviteExpiresAt) return;
 
     const intervalId = setInterval(() => {
@@ -295,29 +375,15 @@ export const useMatchMindGame = () => {
   useEffect(() => {
     if (stage !== "playing") return;
 
-    resolvingRef.current = false;
-    setCurrentAnswers({ yours: null, friend: null });
-    setQuestionTimer(QUESTION_DURATION);
-
-    const countdownId = setInterval(() => {
-      setQuestionTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownId);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(countdownId);
-  }, [stage, roundIndex]);
-
-  useEffect(() => {
-    if (stage !== "playing") return;
-    if (questionTimer === 0) {
-      resolveRound("timeout");
+    const isNewRound = previousRoundRef.current !== roundIndex;
+    if (isNewRound) {
+      previousRoundRef.current = roundIndex;
+      setCurrentAnswers({ yours: null, friend: null });
+      resolvingRef.current = false;
+    } else {
+      resolvingRef.current = false;
     }
-  }, [questionTimer, stage, resolveRound]);
+  }, [stage, roundIndex]);
 
   useEffect(() => {
     if (stage !== "playing") return;
@@ -357,7 +423,6 @@ export const useMatchMindGame = () => {
     startGameFromRemote,
     exitGame,
     cancelInvite: resetToLobby,
-    questionTimer,
     currentQuestion,
     roundIndex,
     questions,
