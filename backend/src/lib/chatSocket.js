@@ -14,7 +14,7 @@ import {
   saveChatMessage,
 } from "./chatService.js";
 import { attachMatchMindHandlers } from "./matchmindSocket.js";
-import { attachTruthOrLiarHandlers } from "./truthOrLiarSocket.js";
+import { attachTruthOrLieHandlers } from "./truthOrLieSocket.js";
 
 const USER_MAP_CACHE_TTL_MS = parseInt(
   process.env.CHAT_USERMAP_TTL_MS || "120000",
@@ -204,7 +204,7 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
 
     // Game sockets (Truth or Liar / MatchMind)
     attachMatchMindHandlers(io, socket, user, toUserRoom);
-    attachTruthOrLiarHandlers(io, socket, user, toUserRoom);
+    attachTruthOrLieHandlers(io, socket, user, toUserRoom);
 
     socket.on("disconnect", async () => {
       try {

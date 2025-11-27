@@ -46,7 +46,7 @@ const scheduleInviteExpiry = (io, inviteId, toUserRoom) => {
   }, TRUTH_INVITE_TTL_MS + 500);
 };
 
-export const attachTruthOrLiarHandlers = (io, socket, user, toUserRoom) => {
+export const attachTruthOrLieHandlers = (io, socket, user, toUserRoom) => {
   const userId = user._id.toString();
 
   socket.on("truthlie:invite", async ({ toUserId } = {}, callback = () => {}) => {

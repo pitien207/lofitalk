@@ -19,7 +19,7 @@ import { getUserFriends } from "../lib/api";
 import useAuthUser from "../hooks/useAuthUser";
 import useChatSocket from "../hooks/useChatSocket";
 import useNotificationSound from "../hooks/useNotificationSound";
-import { useTruthOrLiarGame } from "../hooks/useTruthOrLiarGame";
+import { useTruthOrLieGame } from "../hooks/useTruthOrLieGame";
 
 const Badge = ({ icon: Icon, label }) => (
   <span className="inline-flex items-center gap-2 rounded-full bg-base-200 px-3 py-1 text-sm text-base-content/80">
@@ -103,7 +103,7 @@ const QuestionEditor = ({
   </div>
 );
 
-const TruthOrLiarPage = () => {
+const TruthOrLiePage = () => {
   const { t } = useTranslation();
   const { authUser } = useAuthUser();
   const socket = useChatSocket(true);
@@ -138,7 +138,7 @@ const TruthOrLiarPage = () => {
     markAcceptedByFriend,
     markDeclinedByFriend,
     markInviteExpired,
-  } = useTruthOrLiarGame();
+  } = useTruthOrLieGame();
 
   const [incomingInvites, setIncomingInvites] = useState([]);
   const [isHostSession, setIsHostSession] = useState(false);
@@ -1045,5 +1045,5 @@ const TruthOrLiarPage = () => {
   );
 };
 
-export default TruthOrLiarPage;
+export default TruthOrLiePage;
 
