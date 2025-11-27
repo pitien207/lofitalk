@@ -12,6 +12,7 @@ import {
   MessageSquareIcon,
   CrownIcon,
   Gamepad2Icon,
+  DramaIcon,
   ShieldCheckIcon,
   ShieldIcon,
   SmartphoneIcon,
@@ -37,14 +38,14 @@ const Sidebar = () => {
     currentPath === "/tarot" || currentPath === "/fortune"
   );
   const [openGames, setOpenGames] = useState(
-    currentPath.startsWith("/match-mind")
+    currentPath.startsWith("/match-mind") || currentPath.startsWith("/truth-or-liar")
   );
 
   useEffect(() => {
     if (currentPath === "/tarot" || currentPath === "/fortune") {
       setOpenMystic(true);
     }
-    if (currentPath.startsWith("/match-mind")) {
+    if (currentPath.startsWith("/match-mind") || currentPath.startsWith("/truth-or-liar")) {
       setOpenGames(true);
     }
   }, [currentPath]);
@@ -196,6 +197,15 @@ const Sidebar = () => {
               >
                 <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
                 <span>{t("sidebar.matchMind")}</span>
+              </Link>
+              <Link
+                to="/truth-or-liar"
+                className={`btn btn-ghost justify-start w-full gap-3 px-3 normal-case ${
+                  currentPath === "/truth-or-liar" ? "btn-active" : ""
+                }`}
+              >
+                <DramaIcon className="size-4 text-base-content opacity-70" />
+                <span>{t("sidebar.truthOrLiar")}</span>
               </Link>
             </div>
           )}

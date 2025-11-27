@@ -1,4 +1,4 @@
-import { Server as SocketIOServer } from "socket.io";
+﻿import { Server as SocketIOServer } from "socket.io";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 
@@ -13,14 +13,8 @@ import {
   markConversationRead,
   saveChatMessage,
 } from "./chatService.js";
-
-const MATCHMIND_INVITE_TTL_MS = parseInt(
-  process.env.MATCHMIND_INVITE_TTL_MS || "30000",
-  10
-);
-const MATCHMIND_CANCEL_TTL_MS = 60000;
-
-const matchMindInvites = new Map();
+import { attachMatchMindHandlers } from "./matchmindSocket.js";
+import { attachTruthOrLiarHandlers } from "./truthOrLiarSocket.js";
 
 const USER_MAP_CACHE_TTL_MS = parseInt(
   process.env.CHAT_USERMAP_TTL_MS || "120000",
@@ -59,32 +53,6 @@ const getAuthToken = (socket) => {
 
 const toRoomName = (threadId) => `thread:${threadId}`;
 const toUserRoom = (userId) => `user:${userId}`;
-const buildInviteId = () =>
-  `mm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-const scheduleInviteCleanup = (inviteId, delayMs = MATCHMIND_CANCEL_TTL_MS) => {
-  setTimeout(() => {
-    if (matchMindInvites.get(inviteId)?.status === "canceled") {
-      matchMindInvites.delete(inviteId);
-    }
-  }, delayMs);
-};
-
-const scheduleInviteExpiry = (io, inviteId) => {
-  setTimeout(() => {
-    const invite = matchMindInvites.get(inviteId);
-    if (!invite) return;
-    if (invite.expiresAt <= Date.now() && invite.status === "pending") {
-      matchMindInvites.delete(inviteId);
-      io.to(toUserRoom(invite.hostId)).emit("matchmind:response", {
-        inviteId,
-        accepted: false,
-        reason: "expired",
-      });
-      io.to(toUserRoom(invite.guestId)).emit("matchmind:expired", { inviteId });
-    }
-  }, MATCHMIND_INVITE_TTL_MS + 500);
-};
 
 export const setupChatSocket = (httpServer, allowedOrigins = []) => {
   const io = new SocketIOServer(httpServer, {
@@ -234,192 +202,9 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
       }
     });
 
-    socket.on("matchmind:invite", async ({ toUserId } = {}, callback = () => {}) => {
-      try {
-        if (!toUserId) return callback({ error: "toUserId is required" });
-        if (toUserId === userId) return callback({ error: "Cannot invite yourself" });
-
-        const isPlusOrAdmin = ["plus", "admin"].includes(
-          (user.accountType || "").toString().toLowerCase()
-        );
-        if (!isPlusOrAdmin) {
-          return callback({ error: "MatchMind is available for Plus or Admin users only" });
-        }
-
-        const inviteId = buildInviteId();
-        const expiresAt = Date.now() + MATCHMIND_INVITE_TTL_MS;
-
-        const invite = {
-          inviteId,
-          hostId: userId,
-          hostName: user.fullName,
-          hostPic: user.profilePic,
-          guestId: toUserId,
-          status: "pending",
-          expiresAt,
-        };
-
-        matchMindInvites.set(inviteId, invite);
-        scheduleInviteExpiry(io, inviteId);
-
-        io.to(toUserRoom(toUserId)).emit("matchmind:invite", {
-          inviteId,
-          expiresAt,
-          fromUser: {
-            id: userId,
-            fullName: user.fullName,
-            profilePic: user.profilePic,
-          },
-        });
-
-        return callback({ ok: true, inviteId, expiresAt });
-      } catch (error) {
-        console.error("Error in matchmind:invite", error);
-        return callback({ error: "Unable to send invite" });
-      }
-    });
-
-    socket.on("matchmind:cancel", ({ inviteId } = {}, callback = () => {}) => {
-      try {
-        const invite = inviteId ? matchMindInvites.get(inviteId) : null;
-        if (!invite) return callback({ error: "Invite not found" });
-        if (invite.hostId !== userId) return callback({ error: "Only host can cancel" });
-        if (invite.status !== "pending" && invite.status !== "accepted") {
-          return callback({ error: "Cannot cancel at this stage" });
-        }
-
-        invite.status = "canceled";
-        invite.canceledAt = Date.now();
-        matchMindInvites.set(inviteId, invite);
-        scheduleInviteCleanup(inviteId);
-
-        io.to(toUserRoom(invite.guestId)).emit("matchmind:cancelled", {
-          inviteId,
-          hostId: invite.hostId,
-          hostName: invite.hostName,
-        });
-
-        return callback({ ok: true });
-      } catch (error) {
-        console.error("Error in matchmind:cancel", error);
-        return callback({ error: "Unable to cancel invite" });
-      }
-    });
-
-    socket.on(
-      "matchmind:respond",
-      async ({ inviteId, accepted } = {}, callback = () => {}) => {
-        try {
-          const invite = inviteId ? matchMindInvites.get(inviteId) : null;
-          if (!invite) return callback({ error: "Invite not found or expired" });
-          if (invite.status === "canceled") {
-            return callback({ error: "Invite was canceled by the host" });
-          }
-          if (invite.guestId !== userId)
-            return callback({ error: "You are not the recipient of this invite" });
-          if (invite.expiresAt <= Date.now()) {
-            matchMindInvites.delete(inviteId);
-            io.to(toUserRoom(invite.hostId)).emit("matchmind:response", {
-              inviteId,
-              accepted: false,
-              reason: "expired",
-            });
-            return callback({ error: "Invite expired" });
-          }
-
-          invite.status = accepted ? "accepted" : "declined";
-          invite.guestName = user.fullName;
-          invite.guestPic = user.profilePic;
-          matchMindInvites.set(inviteId, invite);
-
-          io.to(toUserRoom(invite.hostId)).emit("matchmind:response", {
-            inviteId,
-            accepted: Boolean(accepted),
-            guestId: userId,
-            guestName: user.fullName,
-            guestPic: user.profilePic,
-          });
-
-          if (!accepted) {
-            matchMindInvites.delete(inviteId);
-          }
-
-          return callback({ ok: true });
-        } catch (error) {
-          console.error("Error in matchmind:respond", error);
-          return callback({ error: "Unable to respond to invite" });
-        }
-      }
-    );
-
-    socket.on(
-      "matchmind:start",
-      ({ inviteId, difficulty } = {}, callback = () => {}) => {
-        try {
-          const invite = inviteId ? matchMindInvites.get(inviteId) : null;
-          if (!invite) return callback({ error: "Invite not found" });
-          if (invite.hostId !== userId)
-            return callback({ error: "Only the host can start the game" });
-          if (invite.status !== "accepted")
-            return callback({ error: "Invite not accepted yet" });
-
-          const normalizedDifficulty = ["easy", "hard"].includes(difficulty)
-            ? difficulty
-            : "easy";
-
-          invite.status = "started";
-          invite.difficulty = normalizedDifficulty;
-          matchMindInvites.set(inviteId, invite);
-
-        io.to(toUserRoom(invite.guestId)).emit("matchmind:start", {
-          inviteId,
-          hostId: invite.hostId,
-          hostName: invite.hostName,
-          hostPic: invite.hostPic,
-          difficulty: normalizedDifficulty,
-        });
-
-        io.to(toUserRoom(invite.hostId)).emit("matchmind:start", {
-          inviteId,
-          hostId: invite.hostId,
-          hostName: invite.hostName,
-          hostPic: invite.hostPic,
-          difficulty: normalizedDifficulty,
-        });
-
-        return callback({ ok: true });
-      } catch (error) {
-        console.error("Error in matchmind:start", error);
-        return callback({ error: "Unable to start game" });
-      }
-    });
-
-    socket.on(
-      "matchmind:answer",
-      ({ inviteId, questionId, answer } = {}, callback = () => {}) => {
-        try {
-          const invite = inviteId ? matchMindInvites.get(inviteId) : null;
-          if (!invite) return callback({ error: "Invite not found" });
-          if (invite.status !== "started")
-            return callback({ error: "Game not started for this invite" });
-          const isHost = invite.hostId === userId;
-          const partnerId = isHost ? invite.guestId : invite.hostId;
-          if (!partnerId) return callback({ error: "Partner not found" });
-
-          io.to(toUserRoom(partnerId)).emit("matchmind:answer", {
-            inviteId,
-            questionId,
-            answer,
-            userId,
-          });
-
-          return callback({ ok: true });
-        } catch (error) {
-          console.error("Error in matchmind:answer", error);
-          return callback({ error: "Unable to send answer" });
-        }
-      }
-    );
+    // Game sockets (Truth or Liar / MatchMind)
+    attachMatchMindHandlers(io, socket, user, toUserRoom);
+    attachTruthOrLiarHandlers(io, socket, user, toUserRoom);
 
     socket.on("disconnect", async () => {
       try {

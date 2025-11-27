@@ -89,11 +89,14 @@ const MatchMindPage = () => {
   const activeSession = sessionId || inviteId;
   const isPlusOrAdmin =
     authUser?.accountType === "plus" || authUser?.accountType === "admin";
+  const isMatchMindPayload = (payload = {}) =>
+    !payload.channel || payload.channel === "matchmind";
 
   useEffect(() => {
     if (!socket) return;
 
     const handleInvite = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
       setIncomingInvites((prev) => {
         const without = prev.filter((item) => item.inviteId !== payload.inviteId);
@@ -104,6 +107,7 @@ const MatchMindPage = () => {
     };
 
     const handleResponse = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId || payload.inviteId !== inviteId) return;
 
       if (payload.accepted) {
@@ -133,6 +137,7 @@ const MatchMindPage = () => {
     };
 
     const handleStart = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
       if (activeSession && payload.inviteId !== activeSession) return;
 
@@ -152,12 +157,14 @@ const MatchMindPage = () => {
     };
 
     const handleAnswer = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId || payload.inviteId !== activeSession) return;
       if (!payload.answer) return;
       setFriendAnswer(payload.answer);
     };
 
     const handleCancelled = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
       setIncomingInvites((prev) =>
         prev.filter((invite) => invite.inviteId !== payload.inviteId)
@@ -180,6 +187,7 @@ const MatchMindPage = () => {
     };
 
     const handleExpired = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
       setIncomingInvites((prev) =>
         prev.filter((invite) => invite.inviteId !== payload.inviteId)

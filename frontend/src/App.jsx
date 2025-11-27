@@ -15,6 +15,7 @@ import AdminPage from "./pages/AdminPage.jsx";
 import FortuneCookiePage from "./pages/FortuneCookiePage.jsx";
 import MobileAppPage from "./pages/MobileAppPage.jsx";
 import MatchMindPage from "./pages/MatchMindPage.jsx";
+import TruthOrLiarPage from "./pages/TruthOrLiarPage.jsx";
 
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
@@ -153,6 +154,18 @@ const App = () => {
             isAuthenticated && isOnboarded ? (
               <Layout showSidebar={true}>
                 <MatchMindPage />
+              </Layout>
+            ) : (
+              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
+            )
+          }
+        />
+        <Route
+          path="/truth-or-liar"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <TruthOrLiarPage />
               </Layout>
             ) : (
               <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
