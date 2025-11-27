@@ -1,7 +1,6 @@
 const LANGUAGE_TO_LOCALE = {
   English: "en",
   Vietnamese: "vi",
-  German: "de",
 };
 
 const TIME_UNITS = [
