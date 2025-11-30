@@ -51,6 +51,13 @@ export const countryCityOptions = [
       "Munich",
       "Nuremberg",
       "Stuttgart",
+      "Essen",
+      "Dortmund",
+      "Bochum",
+      "Karlsruhe",
+      "Aachen",
+      "Freiburg",
+      "Regensburg",
     ],
   },
   {
@@ -105,3 +112,42 @@ export const hobbyOptions = [
 ];
 
 export const petOptions = ["Dog", "Cat", "Hamster", "Bird", "Fish"];
+
+export const birthCountryOptions = [
+  {
+    value: "Vietnam",
+    label: "Vietnam",
+    cities: [
+      "Hanoi",
+      "Ho Chi Minh City",
+      "Hai Phong",
+      "Da Nang",
+      "Can Tho",
+      "Thua Thien Hue",
+      "Khanh Hoa",
+      "Binh Dinh",
+      "Nghe An",
+      "Dak Lak",
+      "Lam Dong",
+      "Dong Nai",
+      "Binh Duong",
+      "Quang Ninh",
+      "Thanh Hoa",
+      "Hai Duong",
+      "Nam Dinh",
+      "Thai Nguyen",
+      "Phu Tho",
+      "Kien Giang",
+      "Bac Ninh",
+      "Bac Giang",
+      "Ha Nam",
+      "Ninh Binh",
+      "Ha Tinh",
+      "Quang Binh",
+      "Quang Tri",
+      "Quang Ngai",
+      "Binh Thuan",
+      "An Giang",
+    ],
+  },
+];

@@ -425,6 +425,11 @@ const FriendProfile = ({ profile, loading, error, onStartChat }) => {
   const gender = genderLabels[profile.gender] || profile.gender || "";
   const avatarSource = resolveImageSource(profile.profilePic);
   const location = formatLocation(profile);
+  const birthPlace = formatLocation({
+    city: profile.birthCity,
+    country: profile.birthCountry,
+    location: profile.birthLocation,
+  });
   const birthDate = formatDate(profile.birthDate);
   const age = computeAge(profile.birthDate);
   const hobbies = parseListField(profile.hobbies);
@@ -472,6 +477,7 @@ const FriendProfile = ({ profile, loading, error, onStartChat }) => {
         <InfoRow label="Birthday" value={birthDate} />
         <InfoRow label="Country" value={profile.country} />
         <InfoRow label="City" value={profile.city} />
+        <InfoRow label="Birthplace" value={birthPlace} />
         <InfoRow label="Education" value={profile.education} />
       </SectionCard>
 

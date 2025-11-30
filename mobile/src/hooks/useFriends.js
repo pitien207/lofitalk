@@ -17,6 +17,8 @@ const createEmptyFilters = () => ({
   gender: "",
   country: "",
   city: "",
+  birthCountry: "",
+  birthCity: "",
   heightMin: "",
   education: "",
   hobby: "",
@@ -259,6 +261,7 @@ const useFriends = () => {
       ...prev,
       [key]: value,
       ...(key === "country" ? { city: "" } : {}),
+      ...(key === "birthCountry" ? { birthCity: "" } : {}),
     }));
   };
 

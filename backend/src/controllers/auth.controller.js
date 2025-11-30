@@ -55,6 +55,9 @@ const PUBLIC_USER_FIELDS = [
   "birthDate",
   "country",
   "city",
+  "birthCountry",
+  "birthCity",
+  "birthLocation",
   "height",
   "education",
   "hobbies",
@@ -438,13 +441,15 @@ export async function onboard(req, res) {
     const userId = req.user._id;
     const isAdmin = req.user?.accountType === "admin";
 
-    const {
+  const {
       fullName,
       bio,
       gender,
       birthDate,
       country,
       city,
+      birthCountry,
+      birthCity,
       height,
       education,
       hobbies,
@@ -479,6 +484,9 @@ export async function onboard(req, res) {
       birthDate: birthDate ? new Date(birthDate) : undefined,
       country,
       city,
+      birthCountry: birthCountry || "",
+      birthCity: birthCity || "",
+      birthLocation: [birthCity, birthCountry].filter(Boolean).join(", "),
       height: height || "",
       education: education || "",
       hobbies: hobbies || "",

@@ -62,6 +62,8 @@ const HomePage = () => {
     birthDate: "",
     country: "",
     city: "",
+    birthCountry: "",
+    birthCity: "",
     height: "",
     education: "",
     hobbies: [],
@@ -89,6 +91,8 @@ const HomePage = () => {
           : "",
       country: authUser.country || "",
       city: authUser.city || "",
+      birthCountry: authUser.birthCountry || "",
+      birthCity: authUser.birthCity || "",
       height: authUser.height || "",
       education: authUser.education || "",
       hobbies: parseListField(authUser.hobbies),
@@ -117,9 +121,15 @@ const HomePage = () => {
         value: "Vietnam",
         label: t("onboarding.countryOptions.vietnam"),
         cities: sortOptionsByLabel([
-          { value: "Can Tho", label: t("onboarding.cityOptions.vietnam.cantho") },
+          {
+            value: "Can Tho",
+            label: t("onboarding.cityOptions.vietnam.cantho"),
+          },
           { value: "Da Lat", label: t("onboarding.cityOptions.vietnam.dalat") },
-          { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
+          {
+            value: "Da Nang",
+            label: t("onboarding.cityOptions.vietnam.danang"),
+          },
           {
             value: "Hai Phong",
             label: t("onboarding.cityOptions.vietnam.haiphong"),
@@ -130,28 +140,46 @@ const HomePage = () => {
             label: t("onboarding.cityOptions.vietnam.hcmc"),
           },
           { value: "Hue", label: t("onboarding.cityOptions.vietnam.hue") },
-          { value: "Nam Dinh", label: t("onboarding.cityOptions.vietnam.namdinh") },
-          { value: "Nghe An", label: t("onboarding.cityOptions.vietnam.nghean") },
+          {
+            value: "Nam Dinh",
+            label: t("onboarding.cityOptions.vietnam.namdinh"),
+          },
+          {
+            value: "Nghe An",
+            label: t("onboarding.cityOptions.vietnam.nghean"),
+          },
           {
             value: "Ninh Binh",
             label: t("onboarding.cityOptions.vietnam.ninhbinh"),
           },
-          { value: "Quy Nhon", label: t("onboarding.cityOptions.vietnam.quynhon") },
+          {
+            value: "Quy Nhon",
+            label: t("onboarding.cityOptions.vietnam.quynhon"),
+          },
           {
             value: "Thanh Hoa",
             label: t("onboarding.cityOptions.vietnam.thanhhoa"),
           },
           { value: "Vinh", label: t("onboarding.cityOptions.vietnam.vinh") },
-          { value: "Vung Tau", label: t("onboarding.cityOptions.vietnam.vungtau") },
+          {
+            value: "Vung Tau",
+            label: t("onboarding.cityOptions.vietnam.vungtau"),
+          },
         ]),
       },
       {
         value: "Germany",
         label: t("onboarding.countryOptions.germany"),
         cities: sortOptionsByLabel([
-          { value: "Berlin", label: t("onboarding.cityOptions.germany.berlin") },
+          {
+            value: "Berlin",
+            label: t("onboarding.cityOptions.germany.berlin"),
+          },
           { value: "Bonn", label: t("onboarding.cityOptions.germany.bonn") },
-          { value: "Bremen", label: t("onboarding.cityOptions.germany.bremen") },
+          {
+            value: "Bremen",
+            label: t("onboarding.cityOptions.germany.bremen"),
+          },
           { value: "Cologne", label: t("onboarding.cityOptions.germany.koln") },
           {
             value: "Dresden",
@@ -173,8 +201,14 @@ const HomePage = () => {
             value: "Hamburg",
             label: t("onboarding.cityOptions.germany.hamburg"),
           },
-          { value: "Leipzig", label: t("onboarding.cityOptions.germany.leipzig") },
-          { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
+          {
+            value: "Leipzig",
+            label: t("onboarding.cityOptions.germany.leipzig"),
+          },
+          {
+            value: "Munich",
+            label: t("onboarding.cityOptions.germany.munich"),
+          },
           {
             value: "Nuremberg",
             label: t("onboarding.cityOptions.germany.nurnberg"),
@@ -184,19 +218,40 @@ const HomePage = () => {
             label: t("onboarding.cityOptions.germany.stuttgart"),
           },
           { value: "Essen", label: t("onboarding.cityOptions.germany.essen") },
-          { value: "Dortmund", label: t("onboarding.cityOptions.germany.dortmund") },
-          { value: "Bochum", label: t("onboarding.cityOptions.germany.bochum") },
-          { value: "Karlsruhe", label: t("onboarding.cityOptions.germany.karlsruhe") },
-          { value: "Aachen", label: t("onboarding.cityOptions.germany.aachen") },
-          { value: "Freiburg", label: t("onboarding.cityOptions.germany.freiburg") },
-          { value: "Regensburg", label: t("onboarding.cityOptions.germany.regensburg") },
+          {
+            value: "Dortmund",
+            label: t("onboarding.cityOptions.germany.dortmund"),
+          },
+          {
+            value: "Bochum",
+            label: t("onboarding.cityOptions.germany.bochum"),
+          },
+          {
+            value: "Karlsruhe",
+            label: t("onboarding.cityOptions.germany.karlsruhe"),
+          },
+          {
+            value: "Aachen",
+            label: t("onboarding.cityOptions.germany.aachen"),
+          },
+          {
+            value: "Freiburg",
+            label: t("onboarding.cityOptions.germany.freiburg"),
+          },
+          {
+            value: "Regensburg",
+            label: t("onboarding.cityOptions.germany.regensburg"),
+          },
         ]),
       },
       {
         value: "Japan",
         label: t("onboarding.countryOptions.japan"),
         cities: sortOptionsByLabel([
-          { value: "Fukuoka", label: t("onboarding.cityOptions.japan.fukuoka") },
+          {
+            value: "Fukuoka",
+            label: t("onboarding.cityOptions.japan.fukuoka"),
+          },
           {
             value: "Hiroshima",
             label: t("onboarding.cityOptions.japan.hiroshima"),
@@ -241,8 +296,146 @@ const HomePage = () => {
             value: "Melbourne",
             label: t("onboarding.cityOptions.australia.melbourne"),
           },
-          { value: "Perth", label: t("onboarding.cityOptions.australia.perth") },
-          { value: "Sydney", label: t("onboarding.cityOptions.australia.sydney") },
+          {
+            value: "Perth",
+            label: t("onboarding.cityOptions.australia.perth"),
+          },
+          {
+            value: "Sydney",
+            label: t("onboarding.cityOptions.australia.sydney"),
+          },
+        ]),
+      },
+    ],
+    [t]
+  );
+
+  const birthCountryOptions = useMemo(
+    () => [
+      {
+        value: "Vietnam",
+        label: t("onboarding.birthCountryOptions.vietnam"),
+        cities: sortOptionsByLabel([
+          {
+            value: "Hanoi",
+            label: t("onboarding.birthCityOptions.vietnam.hanoi"),
+          },
+          {
+            value: "Ho Chi Minh City",
+            label: t("onboarding.birthCityOptions.vietnam.hochiminh"),
+          },
+          {
+            value: "Hai Phong",
+            label: t("onboarding.birthCityOptions.vietnam.haiphong"),
+          },
+          {
+            value: "Da Nang",
+            label: t("onboarding.birthCityOptions.vietnam.danang"),
+          },
+          {
+            value: "Can Tho",
+            label: t("onboarding.birthCityOptions.vietnam.cantho"),
+          },
+          {
+            value: "Thua Thien Hue",
+            label: t("onboarding.birthCityOptions.vietnam.thuathienhue"),
+          },
+          {
+            value: "Khanh Hoa",
+            label: t("onboarding.birthCityOptions.vietnam.khanhhoa"),
+          },
+          {
+            value: "Binh Dinh",
+            label: t("onboarding.birthCityOptions.vietnam.binhdinh"),
+          },
+          {
+            value: "Nghe An",
+            label: t("onboarding.birthCityOptions.vietnam.nghean"),
+          },
+          {
+            value: "Dak Lak",
+            label: t("onboarding.birthCityOptions.vietnam.daklak"),
+          },
+          {
+            value: "Lam Dong",
+            label: t("onboarding.birthCityOptions.vietnam.lamdong"),
+          },
+          {
+            value: "Dong Nai",
+            label: t("onboarding.birthCityOptions.vietnam.dongnai"),
+          },
+          {
+            value: "Binh Duong",
+            label: t("onboarding.birthCityOptions.vietnam.binhduong"),
+          },
+          {
+            value: "Quang Ninh",
+            label: t("onboarding.birthCityOptions.vietnam.quangninh"),
+          },
+          {
+            value: "Thanh Hoa",
+            label: t("onboarding.birthCityOptions.vietnam.thanhhoa"),
+          },
+          {
+            value: "Hai Duong",
+            label: t("onboarding.birthCityOptions.vietnam.haiduong"),
+          },
+          {
+            value: "Nam Dinh",
+            label: t("onboarding.birthCityOptions.vietnam.namdinh"),
+          },
+          {
+            value: "Thai Nguyen",
+            label: t("onboarding.birthCityOptions.vietnam.thainguyen"),
+          },
+          {
+            value: "Phu Tho",
+            label: t("onboarding.birthCityOptions.vietnam.phutho"),
+          },
+          {
+            value: "Kien Giang",
+            label: t("onboarding.birthCityOptions.vietnam.kiengiang"),
+          },
+          {
+            value: "Bac Ninh",
+            label: t("onboarding.birthCityOptions.vietnam.bacninh"),
+          },
+          {
+            value: "Bac Giang",
+            label: t("onboarding.birthCityOptions.vietnam.bacgiang"),
+          },
+          {
+            value: "Ha Nam",
+            label: t("onboarding.birthCityOptions.vietnam.hanam"),
+          },
+          {
+            value: "Ninh Binh",
+            label: t("onboarding.birthCityOptions.vietnam.ninhbinh"),
+          },
+          {
+            value: "Ha Tinh",
+            label: t("onboarding.birthCityOptions.vietnam.hatinh"),
+          },
+          {
+            value: "Quang Binh",
+            label: t("onboarding.birthCityOptions.vietnam.quangbinh"),
+          },
+          {
+            value: "Quang Tri",
+            label: t("onboarding.birthCityOptions.vietnam.quangtri"),
+          },
+          {
+            value: "Quang Ngai",
+            label: t("onboarding.birthCityOptions.vietnam.quangngai"),
+          },
+          {
+            value: "Binh Thuan",
+            label: t("onboarding.birthCityOptions.vietnam.binhthuan"),
+          },
+          {
+            value: "An Giang",
+            label: t("onboarding.birthCityOptions.vietnam.angiang"),
+          },
         ]),
       },
     ],
@@ -255,7 +448,10 @@ const HomePage = () => {
         value: "High school graduate",
         label: t("onboarding.educationOptions.highSchool"),
       },
-      { value: "University", label: t("onboarding.educationOptions.university") },
+      {
+        value: "University",
+        label: t("onboarding.educationOptions.university"),
+      },
       {
         value: "Vocational training",
         label: t("onboarding.educationOptions.vocational"),
@@ -272,14 +468,20 @@ const HomePage = () => {
     () => [
       { value: "Music & concerts", label: t("onboarding.hobbyOptions.music") },
       { value: "Traveling", label: t("onboarding.hobbyOptions.travel") },
-      { value: "Cooking & baking", label: t("onboarding.hobbyOptions.cooking") },
+      {
+        value: "Cooking & baking",
+        label: t("onboarding.hobbyOptions.cooking"),
+      },
       { value: "Video games", label: t("onboarding.hobbyOptions.gaming") },
       { value: "Reading", label: t("onboarding.hobbyOptions.reading") },
       { value: "Fitness & gym", label: t("onboarding.hobbyOptions.fitness") },
       { value: "Photography", label: t("onboarding.hobbyOptions.photography") },
       { value: "Art & design", label: t("onboarding.hobbyOptions.art") },
       { value: "Movies & series", label: t("onboarding.hobbyOptions.movies") },
-      { value: "Hiking & outdoors", label: t("onboarding.hobbyOptions.outdoors") },
+      {
+        value: "Hiking & outdoors",
+        label: t("onboarding.hobbyOptions.outdoors"),
+      },
     ],
     [t]
   );
@@ -329,6 +531,18 @@ const HomePage = () => {
   const hasCustomCity =
     formState.city &&
     !availableCities.some((city) => city.value === formState.city);
+  const selectedBirthCountry = birthCountryOptions.find(
+    (country) => country.value === formState.birthCountry
+  );
+  const availableBirthCities = selectedBirthCountry?.cities || [];
+  const hasCustomBirthCountry =
+    formState.birthCountry &&
+    !birthCountryOptions.some(
+      (country) => country.value === formState.birthCountry
+    );
+  const hasCustomBirthCity =
+    formState.birthCity &&
+    !availableBirthCities.some((city) => city.value === formState.birthCity);
   const hasCustomHeight =
     formState.height && !heightOptions.includes(formState.height);
   const hasCustomEducation =
@@ -340,11 +554,27 @@ const HomePage = () => {
 
   const handleCountryChange = (value) => {
     const allowedCities =
-      countryCityOptions.find((country) => country.value === value)?.cities || [];
+      countryCityOptions.find((country) => country.value === value)?.cities ||
+      [];
     setFormState((prev) => ({
       ...prev,
       country: value,
-      city: allowedCities.some((city) => city.value === prev.city) ? prev.city : "",
+      city: allowedCities.some((city) => city.value === prev.city)
+        ? prev.city
+        : "",
+    }));
+  };
+
+  const handleBirthCountryChange = (value) => {
+    const allowedCities =
+      birthCountryOptions.find((country) => country.value === value)?.cities ||
+      [];
+    setFormState((prev) => ({
+      ...prev,
+      birthCountry: value,
+      birthCity: allowedCities.some((city) => city.value === prev.birthCity)
+        ? prev.birthCity
+        : "",
     }));
   };
 
@@ -371,7 +601,6 @@ const HomePage = () => {
   const selectBaseClass =
     "select select-bordered lofitalk-select w-full bg-base-100 border-base-300 focus:outline-none focus:border-primary/70 focus:ring focus:ring-primary/20 transition";
 
-
   const { mutate: saveProfile, isPending } = useMutation({
     mutationFn: completeOnboarding,
     onSuccess: () => {
@@ -383,21 +612,24 @@ const HomePage = () => {
     },
   });
 
-  const {
-    mutate: changePassword,
-    isPending: isUpdatingPassword,
-  } = useMutation({
-    mutationFn: updatePassword,
-    onSuccess: () => {
-      toast.success(t("profile.passwordSuccess"));
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    },
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message || t("profile.passwordError")
-      );
-    },
-  });
+  const { mutate: changePassword, isPending: isUpdatingPassword } = useMutation(
+    {
+      mutationFn: updatePassword,
+      onSuccess: () => {
+        toast.success(t("profile.passwordSuccess"));
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.message || t("profile.passwordError")
+        );
+      },
+    }
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -471,6 +703,9 @@ const HomePage = () => {
       )
     : null;
   const homeFlag = getCountryFlag(formState.country, formState.city);
+  const birthPlaceValue = [formState.birthCity, formState.birthCountry]
+    .filter(Boolean)
+    .join(", ");
 
   if (isLoading) {
     return (
@@ -539,6 +774,11 @@ const HomePage = () => {
               }
             />
             <InfoBadge
+              icon={MapPinIcon}
+              label={t("profile.birthPlace")}
+              value={birthPlaceValue}
+            />
+            <InfoBadge
               icon={BookOpenIcon}
               label={t("profile.education")}
               value={formState.education}
@@ -562,7 +802,7 @@ const HomePage = () => {
               }
             />
             <InfoBadge
-              icon={MapPinIcon}
+              icon={HeartIcon}
               label={t("profile.height")}
               value={formState.height}
             />
@@ -626,277 +866,372 @@ const HomePage = () => {
                   )}
                 </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">{t("onboarding.fullName")}</span>
-                </label>
-                <input
-                  type="text"
-                  value={formState.fullName}
-                  onChange={(e) => updateFormField("fullName", e.target.value)}
-                  className="input input-bordered w-full"
-                />
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">{t("onboarding.bio")}</span>
-                </label>
-                <textarea
-                  value={formState.bio}
-                  onChange={(e) => updateFormField("bio", e.target.value)}
-                  className="textarea textarea-bordered h-24"
-                  placeholder={t("onboarding.bioPlaceholder")}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">{t("onboarding.gender")}</span>
-                  </label>
-                  <select
-                    value={formState.gender}
-                    className={selectBaseClass}
-                    onChange={(e) => updateFormField("gender", e.target.value)}
-                  >
-                    {genderOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text">
-                      {t("onboarding.birthDate")}
+                      {t("onboarding.fullName")}
                     </span>
                   </label>
                   <input
-                    type="date"
-                    value={formState.birthDate}
+                    type="text"
+                    value={formState.fullName}
                     onChange={(e) =>
-                      updateFormField("birthDate", e.target.value)
+                      updateFormField("fullName", e.target.value)
                     }
                     className="input input-bordered w-full"
-                    max={new Date().toISOString().slice(0, 10)}
-                    required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="form-control">
                   <label className="label">
-                    <span className="label-text">{t("onboarding.country")}</span>
+                    <span className="label-text">{t("onboarding.bio")}</span>
                   </label>
-                  <select
-                    value={formState.country}
-                    onChange={(e) => handleCountryChange(e.target.value)}
-                    className={selectBaseClass}
-                    required
-                  >
-                    <option value="">{t("onboarding.countryPlaceholder")}</option>
-                    {hasCustomCountry && (
-                      <option value={formState.country}>{formState.country}</option>
-                    )}
-                    {countryCityOptions.map((country) => (
-                      <option key={country.value} value={country.value}>
-                        {country.label}
-                      </option>
-                    ))}
-                  </select>
+                  <textarea
+                    value={formState.bio}
+                    onChange={(e) => updateFormField("bio", e.target.value)}
+                    className="textarea textarea-bordered h-24"
+                    placeholder={t("onboarding.bioPlaceholder")}
+                  />
                 </div>
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">{t("onboarding.city")}</span>
-                  </label>
-                  <select
-                    value={formState.city}
-                    onChange={(e) => updateFormField("city", e.target.value)}
-                    className={`${selectBaseClass} ${
-                      !availableCities.length && !hasCustomCity ? "opacity-60" : ""
-                    }`}
-                    disabled={!availableCities.length && !hasCustomCity}
-                    required
-                  >
-                    <option value="">
-                      {formState.country
-                        ? t("onboarding.cityPlaceholder")
-                        : t("onboarding.cityDisabledPlaceholder")}
-                    </option>
-                    {hasCustomCity && (
-                      <option value={formState.city}>{formState.city}</option>
-                    )}
-                    {availableCities.map((city) => (
-                      <option key={city.value} value={city.value}>
-                        {city.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        {t("onboarding.gender")}
+                      </span>
+                    </label>
+                    <select
+                      value={formState.gender}
+                      className={selectBaseClass}
+                      onChange={(e) =>
+                        updateFormField("gender", e.target.value)
+                      }
+                    >
+                      {genderOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        {t("onboarding.birthDate")}
+                      </span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formState.birthDate}
+                      onChange={(e) =>
+                        updateFormField("birthDate", e.target.value)
+                      }
+                      className="input input-bordered w-full"
+                      max={new Date().toISOString().slice(0, 10)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">
+                          {t("onboarding.birthCountryLabel")}
+                        </span>
+                      </label>
+                      <select
+                        value={formState.birthCountry}
+                        onChange={(e) =>
+                          handleBirthCountryChange(e.target.value)
+                        }
+                        className={selectBaseClass}
+                      >
+                        <option value="">
+                          {t("onboarding.birthCountryPlaceholder")}
+                        </option>
+                        {hasCustomBirthCountry && (
+                          <option value={formState.birthCountry}>
+                            {formState.birthCountry}
+                          </option>
+                        )}
+                        {birthCountryOptions.map((country) => (
+                          <option key={country.value} value={country.value}>
+                            {country.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">
+                          {t("onboarding.birthCityLabel")}
+                        </span>
+                      </label>
+                      <select
+                        value={formState.birthCity}
+                        onChange={(e) =>
+                          updateFormField("birthCity", e.target.value)
+                        }
+                        className={`${selectBaseClass} ${
+                          !availableBirthCities.length && !hasCustomBirthCity
+                            ? "opacity-60"
+                            : ""
+                        }`}
+                        disabled={
+                          !availableBirthCities.length && !hasCustomBirthCity
+                        }
+                      >
+                        <option value="">
+                          {formState.birthCountry
+                            ? t("onboarding.birthCityPlaceholder")
+                            : t("onboarding.cityDisabledPlaceholder")}
+                        </option>
+                        {hasCustomBirthCity && (
+                          <option value={formState.birthCity}>
+                            {formState.birthCity}
+                          </option>
+                        )}
+                        {availableBirthCities.map((city) => (
+                          <option key={city.value} value={city.value}>
+                            {city.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        {t("onboarding.country")}
+                      </span>
+                    </label>
+                    <select
+                      value={formState.country}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                      className={selectBaseClass}
+                      required
+                    >
+                      <option value="">
+                        {t("onboarding.countryPlaceholder")}
+                      </option>
+                      {hasCustomCountry && (
+                        <option value={formState.country}>
+                          {formState.country}
+                        </option>
+                      )}
+                      {countryCityOptions.map((country) => (
+                        <option key={country.value} value={country.value}>
+                          {country.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">{t("onboarding.city")}</span>
+                    </label>
+                    <select
+                      value={formState.city}
+                      onChange={(e) => updateFormField("city", e.target.value)}
+                      className={`${selectBaseClass} ${
+                        !availableCities.length && !hasCustomCity
+                          ? "opacity-60"
+                          : ""
+                      }`}
+                      disabled={!availableCities.length && !hasCustomCity}
+                      required
+                    >
+                      <option value="">
+                        {formState.country
+                          ? t("onboarding.cityPlaceholder")
+                          : t("onboarding.cityDisabledPlaceholder")}
+                      </option>
+                      {hasCustomCity && (
+                        <option value={formState.city}>{formState.city}</option>
+                      )}
+                      {availableCities.map((city) => (
+                        <option key={city.value} value={city.value}>
+                          {city.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        {t("onboarding.height")}{" "}
+                        <span className="text-xs opacity-60">
+                          ({t("onboarding.optional")})
+                        </span>
+                      </span>
+                    </label>
+                    <select
+                      value={formState.height}
+                      onChange={(e) =>
+                        updateFormField("height", e.target.value)
+                      }
+                      className={selectBaseClass}
+                    >
+                      <option value="">
+                        {t("onboarding.heightPlaceholder")}
+                      </option>
+                      {hasCustomHeight && (
+                        <option value={formState.height}>
+                          {formState.height}
+                        </option>
+                      )}
+                      {heightOptions.map((height) => (
+                        <option key={height} value={height}>
+                          {height}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        {t("onboarding.education")}{" "}
+                        <span className="text-xs opacity-60">
+                          ({t("onboarding.optional")})
+                        </span>
+                      </span>
+                    </label>
+                    <select
+                      value={formState.education}
+                      onChange={(e) =>
+                        updateFormField("education", e.target.value)
+                      }
+                      className={selectBaseClass}
+                    >
+                      <option value="">
+                        {t("onboarding.educationPlaceholder")}
+                      </option>
+                      {hasCustomEducation && (
+                        <option value={formState.education}>
+                          {formState.education}
+                        </option>
+                      )}
+                      {educationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text">
-                      {t("onboarding.height")}{" "}
+                      {t("onboarding.hobbies")}{" "}
                       <span className="text-xs opacity-60">
                         ({t("onboarding.optional")})
                       </span>
                     </span>
                   </label>
-                  <select
-                    value={formState.height}
-                    onChange={(e) => updateFormField("height", e.target.value)}
-                    className={selectBaseClass}
-                  >
-                    <option value="">{t("onboarding.heightPlaceholder")}</option>
-                    {hasCustomHeight && (
-                      <option value={formState.height}>{formState.height}</option>
-                    )}
-                    {heightOptions.map((height) => (
-                      <option key={height} value={height}>
-                        {height}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {hobbyOptions.map((option) => {
+                      const selected = formState.hobbies.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm cursor-pointer transition ${
+                            selected
+                              ? "border-primary bg-primary/10"
+                              : "border-base-content/20 bg-base-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={selected}
+                            onChange={() =>
+                              toggleMultiSelect("hobbies", option.value)
+                            }
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {formState.hobbies.length > 0 && (
+                    <p className="text-xs opacity-70 mt-2">
+                      {t("onboarding.selectedLabel", {
+                        items: formState.hobbies.join(", "),
+                      })}
+                    </p>
+                  )}
                 </div>
+
                 <div className="form-control">
                   <label className="label">
                     <span className="label-text">
-                      {t("onboarding.education")}{" "}
+                      {t("onboarding.pets")}{" "}
                       <span className="text-xs opacity-60">
                         ({t("onboarding.optional")})
                       </span>
                     </span>
                   </label>
-                  <select
-                    value={formState.education}
-                    onChange={(e) =>
-                      updateFormField("education", e.target.value)
-                    }
-                    className={selectBaseClass}
-                  >
-                    <option value="">
-                      {t("onboarding.educationPlaceholder")}
-                    </option>
-                    {hasCustomEducation && (
-                      <option value={formState.education}>
-                        {formState.education}
-                      </option>
-                    )}
-                    {educationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    {t("onboarding.hobbies")}{" "}
-                    <span className="text-xs opacity-60">
-                      ({t("onboarding.optional")})
-                    </span>
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {hobbyOptions.map((option) => {
-                    const selected = formState.hobbies.includes(option.value);
-                    return (
-                      <label
-                        key={option.value}
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm cursor-pointer transition ${
-                          selected
-                            ? "border-primary bg-primary/10"
-                            : "border-base-content/20 bg-base-100"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm"
-                          checked={selected}
-                          onChange={() => toggleMultiSelect("hobbies", option.value)}
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {formState.hobbies.length > 0 && (
-                  <p className="text-xs opacity-70 mt-2">
-                    {t("onboarding.selectedLabel", {
-                      items: formState.hobbies.join(", "),
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {petOptions.map((option) => {
+                      const selected = formState.pets.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm cursor-pointer transition ${
+                            selected
+                              ? "border-secondary bg-secondary/10"
+                              : "border-base-content/20 bg-base-100"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm"
+                            checked={selected}
+                            onChange={() =>
+                              toggleMultiSelect("pets", option.value)
+                            }
+                          />
+                          <span>{option.label}</span>
+                        </label>
+                      );
                     })}
-                  </p>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    {t("onboarding.pets")}{" "}
-                    <span className="text-xs opacity-60">
-                      ({t("onboarding.optional")})
-                    </span>
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {petOptions.map((option) => {
-                    const selected = formState.pets.includes(option.value);
-                    return (
-                      <label
-                        key={option.value}
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm cursor-pointer transition ${
-                          selected
-                            ? "border-secondary bg-secondary/10"
-                            : "border-base-content/20 bg-base-100"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-sm"
-                          checked={selected}
-                          onChange={() => toggleMultiSelect("pets", option.value)}
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    );
-                  })}
+                  </div>
+                  {formState.pets.length > 0 && (
+                    <p className="text-xs opacity-70 mt-2">
+                      {t("onboarding.selectedLabel", {
+                        items: formState.pets.join(", "),
+                      })}
+                    </p>
+                  )}
                 </div>
-                {formState.pets.length > 0 && (
-                  <p className="text-xs opacity-70 mt-2">
-                    {t("onboarding.selectedLabel", {
-                      items: formState.pets.join(", "),
-                    })}
-                  </p>
-                )}
-              </div>
 
-              <button
-                className="btn btn-primary w-full"
-                disabled={isPending}
-                type="submit"
-              >
-                {!isPending ? (
-                  <>
-                    <ShipWheelIcon className="size-5 mr-2" />
-                    {t("profile.saveButton")}
-                  </>
-                ) : (
-                  <>
-                    <LoaderIcon className="animate-spin size-5 mr-2" />
-                    {t("profile.saving")}
-                  </>
-                )}
-              </button>
+                <button
+                  className="btn btn-primary w-full"
+                  disabled={isPending}
+                  type="submit"
+                >
+                  {!isPending ? (
+                    <>
+                      <ShipWheelIcon className="size-5 mr-2" />
+                      {t("profile.saveButton")}
+                    </>
+                  ) : (
+                    <>
+                      <LoaderIcon className="animate-spin size-5 mr-2" />
+                      {t("profile.saving")}
+                    </>
+                  )}
+                </button>
               </form>
             </div>
           </div>

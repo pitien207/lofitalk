@@ -120,6 +120,9 @@ const UserProfilePage = () => {
 
   const locationText =
     [user.city, user.country].filter(Boolean).join(", ") || user.location || "";
+  const birthPlace =
+    user.birthLocation ||
+    [user.birthCity, user.birthCountry].filter(Boolean).join(", ");
   const showActions = !user.isSelf && authUser?._id !== user._id;
   const profileFlag = getCountryFlag(user.country, user.city, locationText);
 
@@ -240,6 +243,11 @@ const UserProfilePage = () => {
                 ? new Date(user.birthDate).toLocaleDateString()
                 : null
             }
+          />
+          <InfoRow
+            icon={MapPinIcon}
+            label={t("profile.birthPlace")}
+            value={birthPlace}
           />
           <InfoRow
             icon={BookOpenIcon}

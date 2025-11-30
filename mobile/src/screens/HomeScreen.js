@@ -39,6 +39,7 @@ import {
   REQUIRED_FIELDS,
   genderOptions,
   countryCityOptions,
+  birthCountryOptions,
   educationOptions,
   hobbyOptions,
   petOptions,
@@ -54,6 +55,8 @@ const buildProfileFormState = (baseUser = {}) => ({
     : "",
   country: baseUser?.country || "",
   city: baseUser?.city || "",
+  birthCountry: baseUser?.birthCountry || "",
+  birthCity: baseUser?.birthCity || "",
   height: baseUser?.height || "",
   education: baseUser?.education || "",
   hobbies: parseListField(baseUser?.hobbies),
@@ -68,6 +71,8 @@ const serializeProfilePayload = (formState) => ({
   birthDate: formState.birthDate || "",
   country: formState.country || "",
   city: formState.city || "",
+  birthCountry: formState.birthCountry || "",
+  birthCity: formState.birthCity || "",
   height: formState.height || "",
   education: formState.education || "",
   hobbies: Array.isArray(formState.hobbies)
@@ -102,6 +107,11 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
   const canUploadAvatar = user?.accountType === "admin";
   const gender = genderLabels[user?.gender] || user?.gender || "";
   const location = formatLocation(user);
+  const birthPlace = formatLocation({
+    city: user?.birthCity,
+    country: user?.birthCountry,
+    location: user?.birthLocation,
+  });
   const birthDate = formatDate(user?.birthDate);
   const age = computeAge(user?.birthDate);
   const hobbies = parseListField(user?.hobbies);
@@ -113,6 +123,14 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
       )?.cities || []
     );
   }, [profileForm.country]);
+
+  const availableBirthCities = useMemo(() => {
+    return (
+      birthCountryOptions.find(
+        (country) => country.value === profileForm.birthCountry
+      )?.cities || []
+    );
+  }, [profileForm.birthCountry]);
 
   useEffect(() => {
     if (!editModalVisible) {
@@ -171,6 +189,20 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
       ...prev,
       country,
       city: keepCity,
+    }));
+    setProfileError("");
+  };
+
+  const handleProfileBirthCountrySelect = (country) => {
+    const currentCities =
+      birthCountryOptions.find((item) => item.value === country)?.cities || [];
+    const keepCity = currentCities.includes(profileForm.birthCity)
+      ? profileForm.birthCity
+      : "";
+    setProfileForm((prev) => ({
+      ...prev,
+      birthCountry: country,
+      birthCity: keepCity,
     }));
     setProfileError("");
   };
@@ -497,6 +529,7 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
           <InfoRow label="Birthday" value={birthDate} />
           <InfoRow label="Country" value={user?.country} />
           <InfoRow label="City" value={user?.city} />
+          <InfoRow label="Birthplace" value={birthPlace} />
           <InfoRow label="Education" value={user?.education} />
         </SectionCard>
 
@@ -639,6 +672,32 @@ const HomeScreen = ({ user, onSignOut, onProfileUpdate }) => {
                   }))}
                   disabled={!availableCities.length}
                   onSelect={(value) => handleProfileFieldChange("city", value)}
+                />
+
+                <DropdownSelect
+                  label="Birth country"
+                  value={profileForm.birthCountry}
+                  placeholder="Select birth country"
+                  options={birthCountryOptions}
+                  onSelect={(value) => handleProfileBirthCountrySelect(value)}
+                />
+
+                <DropdownSelect
+                  label="Birth city"
+                  value={profileForm.birthCity}
+                  placeholder={
+                    availableBirthCities.length
+                      ? "Select birth city"
+                      : "Select a country first"
+                  }
+                  options={availableBirthCities.map((city) => ({
+                    value: city,
+                    label: city,
+                  }))}
+                  disabled={!availableBirthCities.length}
+                  onSelect={(value) =>
+                    handleProfileFieldChange("birthCity", value)
+                  }
                 />
 
                 <TextInput

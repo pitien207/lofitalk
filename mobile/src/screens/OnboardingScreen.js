@@ -22,6 +22,7 @@ import {
   REQUIRED_FIELDS,
   genderOptions,
   countryCityOptions,
+  birthCountryOptions,
   educationOptions,
   hobbyOptions,
   petOptions,
@@ -38,6 +39,8 @@ const OnboardingScreen = ({ user, onComplete }) => {
       : "",
     country: user?.country || "",
     city: user?.city || "",
+    birthCountry: user?.birthCountry || "",
+    birthCity: user?.birthCity || "",
     height: user?.height || "",
     education: user?.education || "",
     hobbies: parseListField(user?.hobbies),
@@ -57,6 +60,14 @@ const OnboardingScreen = ({ user, onComplete }) => {
     );
   }, [formState.country]);
 
+  const availableBirthCities = useMemo(() => {
+    return (
+      birthCountryOptions.find(
+        (country) => country.value === formState.birthCountry
+      )?.cities || []
+    );
+  }, [formState.birthCountry]);
+
   const handleFieldChange = (field, value) => {
     setFormState((prev) => ({ ...prev, [field]: value }));
     setError("");
@@ -72,6 +83,20 @@ const OnboardingScreen = ({ user, onComplete }) => {
       ...prev,
       country,
       city: keepCity,
+    }));
+    setError("");
+  };
+
+  const handleBirthCountrySelect = (country) => {
+    const currentCities =
+      birthCountryOptions.find((item) => item.value === country)?.cities || [];
+    const keepCity = currentCities.includes(formState.birthCity)
+      ? formState.birthCity
+      : "";
+    setFormState((prev) => ({
+      ...prev,
+      birthCountry: country,
+      birthCity: keepCity,
     }));
     setError("");
   };
@@ -298,6 +323,30 @@ const OnboardingScreen = ({ user, onComplete }) => {
           }))}
           onSelect={(value) => handleFieldChange("city", value)}
           disabled={!availableCities.length}
+        />
+
+        <DropdownSelect
+          label="Birth country"
+          value={formState.birthCountry}
+          placeholder="Select birth country"
+          options={birthCountryOptions}
+          onSelect={(value) => handleBirthCountrySelect(value)}
+        />
+
+        <DropdownSelect
+          label="Birth city"
+          value={formState.birthCity}
+          placeholder={
+            availableBirthCities.length
+              ? "Select birth city"
+              : "Select a country first"
+          }
+          options={availableBirthCities.map((city) => ({
+            value: city,
+            label: city,
+          }))}
+          onSelect={(value) => handleFieldChange("birthCity", value)}
+          disabled={!availableBirthCities.length}
         />
 
         <TextInput

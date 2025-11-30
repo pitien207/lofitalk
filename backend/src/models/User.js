@@ -36,6 +36,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    birthCountry: {
+      type: String,
+      default: "",
+    },
+    birthCity: {
+      type: String,
+      default: "",
+    },
+    birthLocation: {
+      type: String,
+      default: "",
+    },
     height: {
       type: String,
       default: "",

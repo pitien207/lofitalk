@@ -173,6 +173,9 @@ const FRIEND_ALLOWED_FIELDS = [
   "profilePic",
   "country",
   "city",
+  "birthCountry",
+  "birthCity",
+  "birthLocation",
   "location",
   "isOnline",
   "lastActiveAt",
@@ -191,6 +194,8 @@ const FRIEND_DEFAULT_FIELDS = [
   "profilePic",
   "country",
   "city",
+  "birthCountry",
+  "birthCity",
   "location",
   "isOnline",
   "lastActiveAt",
@@ -258,7 +263,15 @@ export async function getRecommendedUsers(req, res) {
     );
     const excludedIds = [toObjectId(viewerId), ...friendIds, ...blockedIds];
 
-    const { gender, country, city, education, heightMin } = req.query;
+    const {
+      gender,
+      country,
+      city,
+      birthCountry,
+      birthCity,
+      education,
+      heightMin,
+    } = req.query;
     const requestedHobby = req.query.hobbies || req.query.hobby;
     const requestedPet = req.query.pets || req.query.pet;
 
@@ -272,6 +285,8 @@ export async function getRecommendedUsers(req, res) {
     if (country) matchStage.country = country;
     if (city) matchStage.city = city;
     if (education) matchStage.education = education;
+    if (birthCountry) matchStage.birthCountry = birthCountry;
+    if (birthCity) matchStage.birthCity = birthCity;
 
     const candidates = await User.aggregate([
       { $match: matchStage },
@@ -284,6 +299,9 @@ export async function getRecommendedUsers(req, res) {
           gender: 1,
           country: 1,
           city: 1,
+          birthCountry: 1,
+          birthCity: 1,
+          birthLocation: 1,
           height: 1,
           education: 1,
           hobbies: 1,
@@ -672,7 +690,7 @@ export async function getUserProfile(req, res) {
 
     const user = await User.findById(id)
       .select(
-        "fullName profilePic bio gender birthDate country city height education hobbies pets friends location createdAt isOnline lastActiveAt"
+        "fullName profilePic bio gender birthDate country city birthCountry birthCity birthLocation height education hobbies pets friends location createdAt isOnline lastActiveAt"
       )
       .lean();
 
@@ -713,7 +731,7 @@ export async function getCurrentUser(req, res) {
     const viewerId = req.user.id;
     const user = await User.findById(viewerId)
       .select(
-        "fullName profilePic bio gender birthDate country city height education hobbies pets location isOnline lastActiveAt isOnboarded accountType email"
+        "fullName profilePic bio gender birthDate country city birthCountry birthCity birthLocation height education hobbies pets location isOnline lastActiveAt isOnboarded accountType email"
       )
       .lean();
 

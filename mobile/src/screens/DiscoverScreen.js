@@ -13,6 +13,7 @@ import { formatLocation } from "../utils/profile";
 import DropdownSelect from "../components/common/DropdownSelect";
 import { useMemo, useState } from "react";
 import { resolveImageSource } from "../utils/imageSource";
+import { birthCountryOptions as baseBirthCountryOptions } from "../constants/profileOptions";
 
 const DiscoverScreen = ({
   filters,
@@ -113,6 +114,11 @@ const DiscoverScreen = ({
     []
   );
 
+  const birthCountryOptions = useMemo(
+    () => baseBirthCountryOptions,
+    []
+  );
+
   const educationOptions = useMemo(
     () => [
       { value: "High school graduate", label: "High school graduate" },
@@ -157,6 +163,13 @@ const DiscoverScreen = ({
     return match?.cities || [];
   }, [countryCityOptions, filters.country]);
 
+  const availableBirthCities = useMemo(() => {
+    const match = birthCountryOptions.find(
+      (country) => country.value === filters.birthCountry
+    );
+    return match?.cities || [];
+  }, [birthCountryOptions, filters.birthCountry]);
+
   return (
     <ScrollView
       contentContainerStyle={styles.scroll}
@@ -176,6 +189,8 @@ const DiscoverScreen = ({
         genderOptions={genderOptions}
         countryCityOptions={countryCityOptions}
         cityOptions={availableCities}
+        birthCountryOptions={birthCountryOptions}
+        birthCityOptions={availableBirthCities}
         educationOptions={educationOptions}
         hobbyOptions={hobbyOptions}
         petOptions={petOptions}
@@ -209,6 +224,8 @@ const FilterPanel = ({
   genderOptions,
   countryCityOptions,
   cityOptions,
+  birthCountryOptions,
+  birthCityOptions,
   educationOptions,
   hobbyOptions,
   petOptions,
@@ -266,6 +283,32 @@ const FilterPanel = ({
             ]}
             disabled={!filters.country}
             onSelect={(value) => onFilterChange("city", value)}
+          />
+          <DropdownSelect
+            label="Birth country"
+            value={filters.birthCountry}
+            placeholder="Any country"
+            options={[
+              { value: "", label: "Any" },
+              ...birthCountryOptions.map((option) => ({
+                value: option.value,
+                label: option.label,
+              })),
+            ]}
+            onSelect={(value) => onFilterChange("birthCountry", value)}
+          />
+          <DropdownSelect
+            label="Birth city"
+            value={filters.birthCity}
+            placeholder={
+              filters.birthCountry ? "Any city" : "Select a country first"
+            }
+            options={[
+              { value: "", label: "Any" },
+              ...birthCityOptions.map((city) => ({ value: city, label: city })),
+            ]}
+            disabled={!filters.birthCountry}
+            onSelect={(value) => onFilterChange("birthCity", value)}
           />
           <DropdownSelect
             label="Education"

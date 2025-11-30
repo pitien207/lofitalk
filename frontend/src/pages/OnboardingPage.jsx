@@ -50,6 +50,8 @@ const OnboardingPage = () => {
     birthDate: initialBirthDate,
     country: authUser?.country || "",
     city: authUser?.city || "",
+    birthCountry: authUser?.birthCountry || "",
+    birthCity: authUser?.birthCity || "",
     height: authUser?.height || "",
     education: authUser?.education || "",
     hobbies: initialHobbies,
@@ -207,6 +209,48 @@ const OnboardingPage = () => {
     [t]
   );
 
+  const birthCountryOptions = useMemo(
+    () => [
+      {
+        value: "Vietnam",
+        label: t("onboarding.birthCountryOptions.vietnam"),
+        cities: sortOptionsByLabel([
+          { value: "Hanoi", label: t("onboarding.birthCityOptions.vietnam.hanoi") },
+          { value: "Ho Chi Minh City", label: t("onboarding.birthCityOptions.vietnam.hochiminh") },
+          { value: "Hai Phong", label: t("onboarding.birthCityOptions.vietnam.haiphong") },
+          { value: "Da Nang", label: t("onboarding.birthCityOptions.vietnam.danang") },
+          { value: "Can Tho", label: t("onboarding.birthCityOptions.vietnam.cantho") },
+          { value: "Thua Thien Hue", label: t("onboarding.birthCityOptions.vietnam.thuathienhue") },
+          { value: "Khanh Hoa", label: t("onboarding.birthCityOptions.vietnam.khanhhoa") },
+          { value: "Binh Dinh", label: t("onboarding.birthCityOptions.vietnam.binhdinh") },
+          { value: "Nghe An", label: t("onboarding.birthCityOptions.vietnam.nghean") },
+          { value: "Dak Lak", label: t("onboarding.birthCityOptions.vietnam.daklak") },
+          { value: "Lam Dong", label: t("onboarding.birthCityOptions.vietnam.lamdong") },
+          { value: "Dong Nai", label: t("onboarding.birthCityOptions.vietnam.dongnai") },
+          { value: "Binh Duong", label: t("onboarding.birthCityOptions.vietnam.binhduong") },
+          { value: "Quang Ninh", label: t("onboarding.birthCityOptions.vietnam.quangninh") },
+          { value: "Thanh Hoa", label: t("onboarding.birthCityOptions.vietnam.thanhhoa") },
+          { value: "Hai Duong", label: t("onboarding.birthCityOptions.vietnam.haiduong") },
+          { value: "Nam Dinh", label: t("onboarding.birthCityOptions.vietnam.namdinh") },
+          { value: "Thai Nguyen", label: t("onboarding.birthCityOptions.vietnam.thainguyen") },
+          { value: "Phu Tho", label: t("onboarding.birthCityOptions.vietnam.phutho") },
+          { value: "Kien Giang", label: t("onboarding.birthCityOptions.vietnam.kiengiang") },
+          { value: "Bac Ninh", label: t("onboarding.birthCityOptions.vietnam.bacninh") },
+          { value: "Bac Giang", label: t("onboarding.birthCityOptions.vietnam.bacgiang") },
+          { value: "Ha Nam", label: t("onboarding.birthCityOptions.vietnam.hanam") },
+          { value: "Ninh Binh", label: t("onboarding.birthCityOptions.vietnam.ninhbinh") },
+          { value: "Ha Tinh", label: t("onboarding.birthCityOptions.vietnam.hatinh") },
+          { value: "Quang Binh", label: t("onboarding.birthCityOptions.vietnam.quangbinh") },
+          { value: "Quang Tri", label: t("onboarding.birthCityOptions.vietnam.quangtri") },
+          { value: "Quang Ngai", label: t("onboarding.birthCityOptions.vietnam.quangngai") },
+          { value: "Binh Thuan", label: t("onboarding.birthCityOptions.vietnam.binhthuan") },
+          { value: "An Giang", label: t("onboarding.birthCityOptions.vietnam.angiang") },
+        ]),
+      },
+    ],
+    [t]
+  );
+
   const educationOptions = useMemo(
     () => [
       {
@@ -286,6 +330,18 @@ const OnboardingPage = () => {
   const hasCustomCity =
     formState.city &&
     !availableCities.some((city) => city.value === formState.city);
+  const selectedBirthCountry = birthCountryOptions.find(
+    (country) => country.value === formState.birthCountry
+  );
+  const availableBirthCities = selectedBirthCountry?.cities || [];
+  const hasCustomBirthCountry =
+    formState.birthCountry &&
+    !birthCountryOptions.some(
+      (country) => country.value === formState.birthCountry
+    );
+  const hasCustomBirthCity =
+    formState.birthCity &&
+    !availableBirthCities.some((city) => city.value === formState.birthCity);
   const hasCustomHeight =
     formState.height && !heightOptions.includes(formState.height);
   const hasCustomEducation =
@@ -302,6 +358,18 @@ const OnboardingPage = () => {
       ...prev,
       country: value,
       city: allowedCities.some((city) => city.value === prev.city) ? prev.city : "",
+    }));
+  };
+
+  const handleBirthCountryChange = (value) => {
+    const allowedCities =
+      birthCountryOptions.find((country) => country.value === value)?.cities || [];
+    setFormState((prev) => ({
+      ...prev,
+      birthCountry: value,
+      birthCity: allowedCities.some((city) => city.value === prev.birthCity)
+        ? prev.birthCity
+        : "",
     }));
   };
 
@@ -521,12 +589,81 @@ const OnboardingPage = () => {
                 max={new Date().toISOString().slice(0, 10)}
                 required
                 />
-              </div>
             </div>
+          </div>
 
+          <div className="space-y-3">
+            <h3 className="text-base font-semibold">
+              {t("onboarding.birthPlaceTitle")}
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.birthCountryLabel")}
+                  </span>
+                </label>
+                <select
+                  name="birthCountry"
+                  value={formState.birthCountry}
+                  onChange={(e) => handleBirthCountryChange(e.target.value)}
+                  className={selectBaseClass}
+                >
+                  <option value="">
+                    {t("onboarding.birthCountryPlaceholder")}
+                  </option>
+                  {hasCustomBirthCountry && (
+                    <option value={formState.birthCountry}>
+                      {formState.birthCountry}
+                    </option>
+                  )}
+                  {birthCountryOptions.map((country) => (
+                    <option key={country.value} value={country.value}>
+                      {country.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.birthCityLabel")}
+                  </span>
+                </label>
+                <select
+                  name="birthCity"
+                  value={formState.birthCity}
+                  onChange={(e) => updateFormField("birthCity", e.target.value)}
+                  className={`${selectBaseClass} ${
+                    !availableBirthCities.length && !hasCustomBirthCity
+                      ? "opacity-60"
+                      : ""
+                  }`}
+                  disabled={!availableBirthCities.length && !hasCustomBirthCity}
+                >
+                  <option value="">
+                    {formState.birthCountry
+                      ? t("onboarding.birthCityPlaceholder")
+                      : t("onboarding.cityDisabledPlaceholder")}
+                  </option>
+                  {hasCustomBirthCity && (
+                    <option value={formState.birthCity}>
+                      {formState.birthCity}
+                    </option>
+                  )}
+                  {availableBirthCities.map((city) => (
+                    <option key={city.value} value={city.value}>
+                      {city.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-control">
+              <label className="label">
                   <span className="label-text">{t("onboarding.country")}</span>
                 </label>
                 <select

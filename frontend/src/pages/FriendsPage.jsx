@@ -33,6 +33,8 @@ const createEmptyFilters = () => ({
   gender: "",
   country: "",
   city: "",
+  birthCountry: "",
+  birthCity: "",
   heightMin: "",
   education: "",
   hobby: "",
@@ -44,6 +46,8 @@ const buildFilterParams = (filterState) => {
   if (filterState.gender) params.gender = filterState.gender;
   if (filterState.country) params.country = filterState.country;
   if (filterState.city) params.city = filterState.city;
+  if (filterState.birthCountry) params.birthCountry = filterState.birthCountry;
+  if (filterState.birthCity) params.birthCity = filterState.birthCity;
   if (filterState.heightMin) params.heightMin = filterState.heightMin;
   if (filterState.education) params.education = filterState.education;
   if (filterState.hobby) params.hobby = filterState.hobby;
@@ -153,6 +157,48 @@ const FriendsPage = () => {
     [t]
   );
 
+  const birthCountryOptions = useMemo(
+    () => [
+      {
+        value: "Vietnam",
+        label: t("onboarding.birthCountryOptions.vietnam"),
+        cities: sortOptionsByLabel([
+          { value: "Hanoi", label: t("onboarding.birthCityOptions.vietnam.hanoi") },
+          { value: "Ho Chi Minh City", label: t("onboarding.birthCityOptions.vietnam.hochiminh") },
+          { value: "Hai Phong", label: t("onboarding.birthCityOptions.vietnam.haiphong") },
+          { value: "Da Nang", label: t("onboarding.birthCityOptions.vietnam.danang") },
+          { value: "Can Tho", label: t("onboarding.birthCityOptions.vietnam.cantho") },
+          { value: "Thua Thien Hue", label: t("onboarding.birthCityOptions.vietnam.thuathienhue") },
+          { value: "Khanh Hoa", label: t("onboarding.birthCityOptions.vietnam.khanhhoa") },
+          { value: "Binh Dinh", label: t("onboarding.birthCityOptions.vietnam.binhdinh") },
+          { value: "Nghe An", label: t("onboarding.birthCityOptions.vietnam.nghean") },
+          { value: "Dak Lak", label: t("onboarding.birthCityOptions.vietnam.daklak") },
+          { value: "Lam Dong", label: t("onboarding.birthCityOptions.vietnam.lamdong") },
+          { value: "Dong Nai", label: t("onboarding.birthCityOptions.vietnam.dongnai") },
+          { value: "Binh Duong", label: t("onboarding.birthCityOptions.vietnam.binhduong") },
+          { value: "Quang Ninh", label: t("onboarding.birthCityOptions.vietnam.quangninh") },
+          { value: "Thanh Hoa", label: t("onboarding.birthCityOptions.vietnam.thanhhoa") },
+          { value: "Hai Duong", label: t("onboarding.birthCityOptions.vietnam.haiduong") },
+          { value: "Nam Dinh", label: t("onboarding.birthCityOptions.vietnam.namdinh") },
+          { value: "Thai Nguyen", label: t("onboarding.birthCityOptions.vietnam.thainguyen") },
+          { value: "Phu Tho", label: t("onboarding.birthCityOptions.vietnam.phutho") },
+          { value: "Kien Giang", label: t("onboarding.birthCityOptions.vietnam.kiengiang") },
+          { value: "Bac Ninh", label: t("onboarding.birthCityOptions.vietnam.bacninh") },
+          { value: "Bac Giang", label: t("onboarding.birthCityOptions.vietnam.bacgiang") },
+          { value: "Ha Nam", label: t("onboarding.birthCityOptions.vietnam.hanam") },
+          { value: "Ninh Binh", label: t("onboarding.birthCityOptions.vietnam.ninhbinh") },
+          { value: "Ha Tinh", label: t("onboarding.birthCityOptions.vietnam.hatinh") },
+          { value: "Quang Binh", label: t("onboarding.birthCityOptions.vietnam.quangbinh") },
+          { value: "Quang Tri", label: t("onboarding.birthCityOptions.vietnam.quangtri") },
+          { value: "Quang Ngai", label: t("onboarding.birthCityOptions.vietnam.quangngai") },
+          { value: "Binh Thuan", label: t("onboarding.birthCityOptions.vietnam.binhthuan") },
+          { value: "An Giang", label: t("onboarding.birthCityOptions.vietnam.angiang") },
+        ]),
+      },
+    ],
+    [t]
+  );
+
   const educationOptions = useMemo(
     () => [
       { value: "High school graduate", label: t("onboarding.educationOptions.highSchool") },
@@ -192,6 +238,10 @@ const FriendsPage = () => {
 
   const selectedCountry = countryCityOptions.find((country) => country.value === filters.country);
   const availableCities = selectedCountry?.cities || [];
+  const selectedBirthCountry = birthCountryOptions.find(
+    (country) => country.value === filters.birthCountry
+  );
+  const availableBirthCities = selectedBirthCountry?.cities || [];
 
   const filterParams = useMemo(
     () => (hasAppliedFilters ? buildFilterParams(appliedFilters) : {}),
@@ -222,7 +272,7 @@ const FriendsPage = () => {
     setFriendsPage(1);
   }, [friends.length]);
 
-  const FRIENDS_PER_PAGE = 10;
+  const FRIENDS_PER_PAGE = 12;
   const totalFriendPages = Math.max(1, Math.ceil(friends.length / FRIENDS_PER_PAGE));
   const boundedFriendsPage = Math.min(friendsPage, totalFriendPages);
   useEffect(() => {
@@ -334,6 +384,7 @@ const FriendsPage = () => {
       ...prev,
       [field]: value,
       ...(field === "country" ? { city: "" } : {}),
+      ...(field === "birthCountry" ? { birthCity: "" } : {}),
     }));
   };
 
@@ -592,6 +643,47 @@ const FriendsPage = () => {
                   >
                     <option value="">{t("friends.filters.anyOption")}</option>
                     {availableCities.map((city) => (
+                      <option key={city.value} value={city.value}>
+                        {city.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold">
+                      {t("friends.filters.birthCountryLabel")}
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered lofitalk-select"
+                    value={filters.birthCountry}
+                    onChange={(e) => updateFilterField("birthCountry", e.target.value)}
+                  >
+                    <option value="">{t("friends.filters.anyOption")}</option>
+                    {birthCountryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text font-semibold">
+                      {t("friends.filters.birthCityLabel")}
+                    </span>
+                  </label>
+                  <select
+                    className="select select-bordered lofitalk-select"
+                    value={filters.birthCity}
+                    onChange={(e) => updateFilterField("birthCity", e.target.value)}
+                    disabled={!filters.birthCountry}
+                  >
+                    <option value="">{t("friends.filters.anyOption")}</option>
+                    {availableBirthCities.map((city) => (
                       <option key={city.value} value={city.value}>
                         {city.label}
                       </option>
