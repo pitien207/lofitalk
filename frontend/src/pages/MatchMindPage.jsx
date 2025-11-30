@@ -71,6 +71,9 @@ const MatchMindPage = () => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("matchmind-is-host") === "true";
   });
+  const [isSharingAnswers, setIsSharingAnswers] = useState(false);
+  const [hasSharedAnswers, setHasSharedAnswers] = useState(false);
+  const [sharedAnswers, setSharedAnswers] = useState(null);
   const socket = useChatSocket(true);
   const playNotificationSound = useNotificationSound();
 
@@ -111,6 +114,36 @@ const MatchMindPage = () => {
     authUser?.accountType === "plus" || authUser?.accountType === "admin";
   const isMatchMindPayload = (payload = {}) =>
     !payload.channel || payload.channel === "matchmind";
+  const totalQuestions = questions.length || 1;
+  const resultRemarkKey = isResults
+    ? (() => {
+        const ratio = totalQuestions ? matches / totalQuestions : 0;
+        if (ratio === 1) return "perfect";
+        if (ratio >= 0.8) return "excellent";
+        if (ratio >= 0.5) return "solid";
+        if (ratio >= 0.2) return "warmup";
+        return "retry";
+      })()
+    : null;
+  const resultRemark = resultRemarkKey
+    ? t(`matchMind.resultRemark.${resultRemarkKey}`)
+    : null;
+
+  useEffect(() => {
+    if (stage === "playing" || stage === "lobby" || stage === "inviting") {
+      setSharedAnswers(null);
+      setHasSharedAnswers(false);
+      setIsSharingAnswers(false);
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    if (!activeSession) {
+      setSharedAnswers(null);
+      setHasSharedAnswers(false);
+      setIsSharingAnswers(false);
+    }
+  }, [activeSession]);
 
   useEffect(() => {
     if (!socket) return;
@@ -183,6 +216,20 @@ const MatchMindPage = () => {
       setFriendAnswer(payload.answer);
     };
 
+    const handleShareAnswersEvent = (payload = {}) => {
+      if (!isMatchMindPayload(payload)) return;
+      if (!payload.inviteId || payload.inviteId !== activeSession) return;
+      setSharedAnswers({
+        fromUser: payload.fromUser,
+        history: Array.isArray(payload.history) ? payload.history : [],
+      });
+      toast.success(
+        t("matchMind.shareAnswersReceivedToast", {
+          name: payload.fromUser?.fullName || friendLabel,
+        })
+      );
+    };
+
     const handleCancelled = (payload = {}) => {
       if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
@@ -231,6 +278,7 @@ const MatchMindPage = () => {
     socket.on("matchmind:response", handleResponse);
     socket.on("matchmind:start", handleStart);
     socket.on("matchmind:answer", handleAnswer);
+    socket.on("matchmind:share-answers", handleShareAnswersEvent);
     socket.on("matchmind:expired", handleExpired);
     socket.on("matchmind:cancelled", handleCancelled);
     socket.on("matchmind:exit", handleExitBoth);
@@ -240,6 +288,7 @@ const MatchMindPage = () => {
       socket.off("matchmind:response", handleResponse);
       socket.off("matchmind:start", handleStart);
       socket.off("matchmind:answer", handleAnswer);
+      socket.off("matchmind:share-answers", handleShareAnswersEvent);
       socket.off("matchmind:expired", handleExpired);
       socket.off("matchmind:cancelled", handleCancelled);
       socket.off("matchmind:exit", handleExitBoth);
@@ -385,6 +434,36 @@ const MatchMindPage = () => {
     setIsHostSession(false);
   };
 
+  const handleShareAnswers = useCallback(() => {
+    if (!socket) {
+      toast.error("Connecting to game server. Try again in a moment.");
+      return;
+    }
+    if (!activeSession || !history.length) {
+      toast.error(t("matchMind.shareAnswersError"));
+      return;
+    }
+    setIsSharingAnswers(true);
+    const payloadHistory = history.map((item) => ({
+      id: item.id,
+      question: item.question,
+      yourAnswer: item.yourAnswer || item.answer || "",
+    }));
+    socket.emit(
+      "matchmind:share-answers",
+      { inviteId: activeSession, history: payloadHistory },
+      (response = {}) => {
+        setIsSharingAnswers(false);
+        if (response.error) {
+          toast.error(response.error);
+          return;
+        }
+        setHasSharedAnswers(true);
+        toast.success(t("matchMind.shareAnswersToast", { name: friendLabel }));
+      }
+    );
+  }, [socket, activeSession, history, t, friendLabel]);
+
   const handleExitGame = () => {
     const session = activeSession;
     if (socket && session) {
@@ -398,6 +477,9 @@ const MatchMindPage = () => {
     setIsHostSession(false);
     setIncomingInvites([]);
     setInviteId(null);
+    setSharedAnswers(null);
+    setHasSharedAnswers(false);
+    setIsSharingAnswers(false);
   };
 
   const renderProgressDots = () => (
@@ -465,12 +547,88 @@ const MatchMindPage = () => {
                   {t("matchMind.sharedScore")}: {matches}/{questions.length}
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleShareAnswers}
+                  disabled={
+                    isSharingAnswers ||
+                    hasSharedAnswers ||
+                    !history.length ||
+                    !activeSession ||
+                    !socket
+                  }
+                >
+                  {isSharingAnswers
+                    ? t("matchMind.shareAnswersSending")
+                    : hasSharedAnswers
+                    ? t("matchMind.shareAnswersShared")
+                    : t("matchMind.shareAnswers")}
+                </button>
                 <button className="btn btn-outline" onClick={handleExitGame}>
                   {t("matchMind.playAgain")}
                 </button>
               </div>
             </div>
+            {resultRemark && (
+              <p className="text-base text-base-content/80">{resultRemark}</p>
+            )}
+            {hasSharedAnswers && (
+              <p className="text-sm text-success/80">{t("matchMind.shareAnswersStatus")}</p>
+            )}
+            {sharedAnswers && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <UsersIcon className="size-4 text-primary" />
+                  <div>
+                    <p className="font-semibold text-base-content">
+                      {t("matchMind.shareAnswersReceivedTitle", {
+                        name: sharedAnswers.fromUser?.fullName || friendLabel,
+                      })}
+                    </p>
+                    <p className="text-sm text-base-content/70">
+                      {t("matchMind.shareAnswersReceivedSubtitle")}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-72 overflow-auto pr-1">
+                  {sharedAnswers.history?.length ? (
+                    sharedAnswers.history.map((item, idx) => (
+                      <div
+                        key={`${item.id || idx}-${idx}`}
+                        className="flex gap-3 rounded-xl border border-base-200 bg-base-100/70 p-3"
+                      >
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-base-200 text-sm font-semibold">
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <div className="flex-1">
+                          <p className="font-medium text-base-content">
+                            {item.question ||
+                              t("matchMind.questionCounter", {
+                                index: idx + 1,
+                                total: sharedAnswers.history.length,
+                              })}
+                          </p>
+                          <p className="text-sm text-base-content/70">
+                            {t("matchMind.answerLabel.friend", {
+                              name: sharedAnswers.fromUser?.fullName || friendLabel,
+                            })}
+                            :{" "}
+                            <span className="font-semibold text-base-content">
+                              {item.yourAnswer || item.answer || t("matchMind.answerLabel.none")}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-base-content/70">
+                      {t("matchMind.shareAnswersEmpty")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="rounded-3xl border border-base-300 bg-base-100/80 p-6 shadow space-y-6">
@@ -691,7 +849,7 @@ const MatchMindPage = () => {
                         {t("matchMind.startEasy")}
                       </button>
                       <button
-                        className="btn btn-outline btn-success w-full border-success/60"
+                        className="btn btn-success w-full"
                         onClick={() => handleStartGame("hard")}
                       >
                         {t("matchMind.startHard")}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const INVITE_DURATION = 30;
 const STORAGE_KEY = "matchmind-game-state";
@@ -7,107 +7,695 @@ const QUESTION_BANK = {
   easy: [
     {
       id: "easy-1",
-      prompt: "Nếu đi chơi chung, bạn muốn vibe gì?",
-      options: ["Vui – năng lượng", "Chill nhẹ", "Im lặng nhưng dễ chịu", "Cà khịa nhau suốt"],
+      prompt: "Bạn muốn người kia gọi bạn bằng kiểu nào?",
+      options: [
+        "Tên + ơi",
+        "Gọi kiểu đáng yêu",
+        "Gọi nhẹ tên 😳",
+        "Biệt danh tự đặt",
+      ],
     },
     {
       id: "easy-2",
-      prompt: "Hoạt động muốn thử cùng “người kia”?",
-      options: ["Đi cafe", "Xem phim", "Đi dạo", "Chụp ảnh chung"],
+      prompt: "Đi chơi lần đầu bạn thích làm gì nhất?",
+      options: [
+        "Đi dạo phố",
+        "Cafe chuyện trò",
+        "Đi xem triển lãm",
+        "Chơi game nhẹ",
+      ],
     },
     {
       id: "easy-3",
-      prompt: "Điều bạn để ý nhất khi đi chơi với một người “không phải bạn bè bình thường”?",
-      options: ["Cảm giác thoải mái", "Phản ứng và ánh mắt của họ", "Cách họ quan tâm", "Cách họ nói chuyện với mình"],
+      prompt: "Kiểu tin nhắn bạn muốn nhận từ người kia?",
+      options: [
+        "Tin bất ngờ ấm áp",
+        "Tin chia sẻ chuyện ngày",
+        "Tin trêu cute",
+        "Tin nhắn hỏi thăm",
+      ],
     },
     {
       id: "easy-4",
-      prompt: "Nếu cả hai vô tình chạm tay, bạn sẽ…",
-      options: ["Giật mình", "Giả vờ không thấy gì", "Đỏ mặt", "Để yên cho tự nhiên 😌"],
+      prompt: "Bạn ấn tượng nhất điều gì khi gặp lần đầu?",
+      options: [
+        "Ánh mắt đầu tiên",
+        "Cách họ cười",
+        "Phong thái tự nhiên",
+        "Không khí khi nói chuyện",
+      ],
     },
     {
       id: "easy-5",
-      prompt: "Một buổi hẹn nhẹ nhàng hoàn hảo là…",
-      options: ["Ngồi xem phim", "Nói chuyện cả tối", "Đi ăn vặt", "Đi dạo buổi tối"],
+      prompt: "Bạn thích vibe buổi sáng hay buổi tối khi đi chơi chung?",
+      options: [
+        "Sáng nhẹ nhàng",
+        "Tối lãng mạn",
+        "Tối chill",
+        "Sáng năng lượng",
+      ],
     },
     {
       id: "easy-6",
-      prompt: "Kiểu tin nhắn khiến bạn thấy thích thích?",
-      options: ["“Về chưa?”", "“Ăn gì chưa?”", "“Tao đang rảnh nè”", "“Hôm nay có gì vui không?”"],
+      prompt: "Khi chụp ảnh chung, bạn chọn pose nào?",
+      options: [
+        "Pose nhí nhố",
+        "Pose nhìn nhau",
+        "Pose nghiêng đầu",
+        "Pose tự nhiên",
+      ],
     },
     {
       id: "easy-7",
-      prompt: "Nếu hai đứa cùng làm một hoạt động, bạn thích gì nhất?",
-      options: ["Nấu ăn", "Decor góc phòng", "Chụp ảnh sống ảo", "Nghe nhạc + chill"],
+      prompt: "Đi ăn chung bạn sẽ chọn món gì?",
+      options: ["Quán local", "Đồ Hàn", "Ăn vặt đường phố", "Đồ Nhật"],
     },
     {
       id: "easy-8",
-      prompt: "Điều làm bạn tò mò nhất về người kia?",
-      options: ["Gu tình yêu", "Gu nhạc", "Tính cách thật khi thân rồi", "Ai là “crush” của họ 🤨"],
+      prompt: "Bạn thích người kia chủ động mức nào?",
+      options: [
+        "Chủ động cute bất ngờ",
+        "Chủ động nhiều",
+        "Hơi chủ động",
+        "Chủ động vừa",
+      ],
     },
     {
       id: "easy-9",
-      prompt: "Bạn nghĩ hai người hợp nhau khi…",
-      options: ["Không sợ im lặng", "Hay nghĩ giống nhau", "Cảm giác thân thuộc lạ", "Cà khịa hợp vibe"],
+      prompt: "Khi cả hai cùng lười, bạn thích làm gì?",
+      options: [
+        "Nằm xem phim",
+        "Kể chuyện linh tinh",
+        "Nghe nhạc nằm cạnh",
+        "Ăn vặt + chill",
+      ],
     },
     {
       id: "easy-10",
-      prompt: "Nếu lỡ cả hai đều thích nhau 1 chút, bạn muốn điều gì xảy ra?",
-      options: ["Không ai nói nhưng ngầm hiểu", "Một trong hai chủ động", "Cứ để tự nhiên", "Chơi minigame để tỏ tình 😏"],
+      prompt: "Bạn thích loại nhạc nghe chung?",
+      options: ["Indie", "Pop nhẹ", "R&B", "Lofi"],
+    },
+    {
+      id: "easy-11",
+      prompt: "Bạn muốn người kia bất ngờ điều gì?",
+      options: [
+        "Gửi ảnh cute",
+        "Rủ đi chơi nhẹ",
+        "Tin nhắn tỏ ý quan tâm",
+        "Mua snack",
+      ],
+    },
+    {
+      id: "easy-12",
+      prompt: "Bạn để ý điều gì đầu tiên ở người kia?",
+      options: ["Cách họ cư xử", "Giọng nói", "Nụ cười", "Cách họ nhìn mình"],
+    },
+    {
+      id: "easy-13",
+      prompt: "Bạn thích đi đâu trong buổi hẹn nhẹ?",
+      options: ["Hiệu sách", "Cafe yên tĩnh", "Công viên", "Phố đi bộ"],
+    },
+    {
+      id: "easy-14",
+      prompt: "Khi cả hai chọn xem phim, bạn chọn thể loại gì?",
+      options: ["Tâm lý", "Romantic", "Comedy", "Hành động"],
+    },
+    {
+      id: "easy-15",
+      prompt: "Bạn thích kiểu nắm tay nào?",
+      options: ["Nắm hờ", "Đan tay", "Nắm bất ngờ sau lưng", "Nắm mạnh chắc"],
+    },
+    {
+      id: "easy-16",
+      prompt: "Khi đi dạo, bạn thích nhịp độ thế nào?",
+      options: ["Đi vừa", "Đi nhanh vui", "Đi chậm", "Đi vừa nói chuyện"],
+    },
+    {
+      id: "easy-17",
+      prompt: "Bạn thích nói chuyện về chủ đề gì?",
+      options: ["Ước mơ", "Cuộc sống", "Chuyện ngẫu nhiên", "Tình yêu"],
+    },
+    {
+      id: "easy-18",
+      prompt: "Kiểu outfit bạn muốn người kia mặc khi gặp?",
+      options: ["Basic", "Sporty", "Vintage nhẹ", "Casual cute"],
+    },
+    {
+      id: "easy-19",
+      prompt: "Bạn thích người kia cười kiểu nào?",
+      options: ["Cười ngại", "Cười to vô tư", "Cười mím môi", "Cười tít mắt"],
+    },
+    {
+      id: "easy-20",
+      prompt: "Bạn muốn thử trend couple nào?",
+      options: [
+        "Clip trend TikTok",
+        "Tạo album kỷ niệm",
+        "Matching đồ",
+        "Chụp film",
+      ],
+    },
+    {
+      id: "easy-21",
+      prompt: "Đi chơi xa, điều bạn quan tâm nhất là gì?",
+      options: ["Ảnh đẹp", "Địa điểm yên bình", "Lịch trình hợp", "Tiết kiệm"],
+    },
+    {
+      id: "easy-22",
+      prompt: "Bạn thích người kia trêu đùa kiểu gì?",
+      options: ["Không trêu nhiều", "Cà khịa vui", "Trêu nhẹ", "Trêu kiểu yêu"],
+    },
+    {
+      id: "easy-23",
+      prompt: "Bạn muốn được khen điều gì?",
+      options: ["Ngoại hình", "Mùi hương", "Tính cách", "Năng lượng dễ thương"],
+    },
+    {
+      id: "easy-24",
+      prompt: "Bạn muốn cả hai chơi game gì cùng nhau?",
+      options: ["UNO", "Đố vui nhanh", "Mini game app", "Truth or Dare"],
+    },
+    {
+      id: "easy-25",
+      prompt: "Bạn nghĩ dấu hiệu cho thấy hợp vibe là gì?",
+      options: [
+        "Không gượng",
+        "Cảm giác thân thuộc",
+        "Nói chuyện hợp vibe",
+        "Gu hợp",
+      ],
+    },
+    {
+      id: "easy-26",
+      prompt: "Bạn thích kiểu hẹn cà phê nào?",
+      options: ["Cafe sách", "View đẹp", "Cafe ngoài trời", "Yên tĩnh"],
+    },
+    {
+      id: "easy-27",
+      prompt: "Bạn muốn thử một thử thách couple gì?",
+      options: [
+        "24h không nhắn",
+        "Nói thật 10 phút",
+        "Trao đổi playlist",
+        "Chụp 10 ảnh bất kỳ",
+      ],
+    },
+    {
+      id: "easy-28",
+      prompt: "Bạn mong muốn buổi hẹn diễn ra như thế nào?",
+      options: ["Chill + tâm sự", "Tự nhiên", "Lãng mạn nhẹ", "Nhiều nói cười"],
+    },
+    {
+      id: "easy-29",
+      prompt: "Bạn muốn người kia share playlist gì?",
+      options: ["Vui", "Nhạc riêng họ thích", "Buồn", "Chill"],
+    },
+    {
+      id: "easy-30",
+      prompt: "Bạn tò mò điều gì nhất về cuộc sống của người kia?",
+      options: ["Công việc", "Bạn bè", "Thói quen", "Một ngày của họ"],
+    },
+    {
+      id: "easy-31",
+      prompt: "Bạn thích kiểu im lặng nào khi ở cạnh nhau?",
+      options: [
+        "Im nhưng vẫn ấm",
+        "Im lặng nghe nhạc",
+        "Im ngồi cạnh",
+        "Im lặng thoải mái",
+      ],
+    },
+    {
+      id: "easy-32",
+      prompt: "Bạn muốn người kia rủ đi chơi bằng câu nào?",
+      options: [
+        "Đi ăn không?",
+        "Đi dạo hong?",
+        "Đi chơi nhẹ hơm?",
+        "Cafe chút?",
+      ],
+    },
+    {
+      id: "easy-33",
+      prompt: "Bạn chọn hình thức thể hiện tình cảm cute nào?",
+      options: ["Xoa đầu", "Ôm nhẹ", "Nhìn nhau cười", "Nắm tay"],
+    },
+    {
+      id: "easy-34",
+      prompt: "Bạn muốn người kia giữ bí mật gì cho bạn?",
+      options: [
+        "Suy nghĩ thật",
+        "Crush cũ",
+        "Chuyện nhỏ riêng tư",
+        "Thói quen khó nói",
+      ],
+    },
+    {
+      id: "easy-35",
+      prompt: "Bạn thích loại trà sữa hay nước uống nào khi đi cùng?",
+      options: ["Sữa tươi đường đen", "Trà sữa", "Hồng trà", "Matcha"],
+    },
+    {
+      id: "easy-36",
+      prompt: "Bạn muốn cùng người kia thử trải nghiệm mới gì?",
+      options: ["Thử bộ môn mới", "Đi workshop", "Đạp xe cùng", "Học nấu ăn"],
+    },
+    {
+      id: "easy-37",
+      prompt: "Bạn thấy điều gì đáng yêu nhất ở người kia?",
+      options: ["Hơi ngại ngùng", "Cách cười", "Giọng nói", "Cách quan tâm"],
+    },
+    {
+      id: "easy-38",
+      prompt: "Bạn thích kiểu ghi nhớ ngày kỷ niệm kiểu nào?",
+      options: [
+        "Kỷ niệm ngày đầu gặp",
+        "Lưu tin nhắn",
+        "Chụp nhiều ảnh",
+        "Album chung",
+      ],
+    },
+    {
+      id: "easy-39",
+      prompt: "Bạn muốn cả hai tạo kỷ niệm gì trước?",
+      options: [
+        "Ăn món yêu thích",
+        "Ảnh cùng nhau",
+        "Đi dạo tối",
+        "Đi xem phim",
+      ],
+    },
+    {
+      id: "easy-40",
+      prompt: "Bạn thích ai mở lời trước trong các khoảnh khắc cute?",
+      options: [
+        "Tự nhiên xảy ra",
+        "Người kia mở lời",
+        "Bạn mở lời",
+        "Ai cũng được",
+      ],
     },
   ],
   hard: [
     {
       id: "hard-1",
-      prompt: "Kiểu hẹn hò bạn thích nhất?",
-      options: ["Ở nhà nấu ăn", "Đi chơi xa", "Cafe tâm sự", "Hoạt động đôi (gym/yoga/đạp xe)"],
+      prompt: "Điều gì khiến bạn cảm thấy thật sự kết nối sâu với một người?",
+      options: [
+        "Khi hai người nói chuyện rất tự nhiên, không hề gượng gạo",
+        "Khi họ tạo cho bạn cảm giác an toàn và được là chính mình",
+        "Khi bạn có thể chia sẻ cảm xúc sâu mà không sợ bị đánh giá",
+        "Khi bạn cảm nhận rõ hai người có cùng tần số – hợp vibe lạ kỳ",
+      ],
     },
     {
       id: "hard-2",
-      prompt: "Điều khiến bạn cảm thấy an toàn khi ở cạnh ai đó?",
-      options: ["Họ lắng nghe", "Họ hành động nhất quán", "Sự nhẹ nhàng", "Sự chủ động"],
+      prompt: "Mong muốn lâu dài nhất của bạn trong mối quan hệ?",
+      options: [
+        "Cùng sống chung",
+        "Đi nhiều nơi cùng nhau",
+        "Ổn định trước",
+        "Cùng làm dự án",
+      ],
     },
     {
       id: "hard-3",
-      prompt: "Trong một mối quan hệ, bạn coi trọng nhất điều gì?",
-      options: ["Niềm tin", "Quan tâm", "Tôn trọng", "Sự đồng hành"],
+      prompt: "Cách bạn xử lý khi cả hai hiểu lầm nhau?",
+      options: [
+        "Nghỉ 10 phút rồi nói",
+        "Viết tin nhắn dài",
+        "Gặp nhau nói thẳng",
+        "Nói rõ ngay",
+      ],
     },
     {
       id: "hard-4",
-      prompt: "Khi giận, bạn muốn người kia làm gì?",
-      options: ["Nói chuyện ngay", "Ôm", "Cho mình thời gian", "Mua đồ ăn xin lỗi 😌"],
+      prompt: "Bạn cần điều gì để cảm thấy được yêu?",
+      options: ["Quan tâm nhỏ", "Lời nói ấm", "Chạm nhẹ", "Dành thời gian"],
     },
     {
       id: "hard-5",
-      prompt: "Hoạt động đôi mà bạn muốn thử nhất?",
-      options: ["Du lịch chung", "Tập thể dục chung", "Học nấu ăn chung", "Chụp ảnh/ làm kỷ niệm"],
+      prompt: "Bạn mong người kia hiểu điều gì về bạn nhất?",
+      options: ["Thói quen tình cảm", "Giới hạn", "Gu yêu", "Nỗi sợ"],
     },
     {
       id: "hard-6",
-      prompt: "Kiểu thể hiện tình cảm của bạn là…",
-      options: ["Hành động", "Lời nói", "Chạm", "Dành thời gian"],
+      prompt: "Giới hạn trong tình yêu bạn đặt ra là gì?",
+      options: [
+        "Tôn trọng riêng tư",
+        "Không ghen quá",
+        "Không kiểm soát",
+        "Không xúc phạm",
+      ],
     },
     {
       id: "hard-7",
-      prompt: "Nếu hai đứa bất đồng quan điểm, bạn chọn…",
-      options: ["Ngồi xuống nói chuyện", "Mỗi người nghĩ 1 lúc rồi nói", "Nhường", "Đi chơi cho hết căng rồi nói tiếp"],
+      prompt: "Điều khiến bạn tin tưởng một người?",
+      options: [
+        "Không nói dối",
+        "Lời hứa giữ đúng",
+        "Không mập mờ",
+        "Minh bạch",
+      ],
     },
     {
       id: "hard-8",
-      prompt: "Bạn quan tâm điều gì nhất khi yêu?",
-      options: ["Tương lai chung", "Cách đối phương đối xử với mình", "Giá trị sống", "Sự phù hợp tính cách"],
+      prompt: "Bạn muốn xây dựng tương lai chung như thế nào?",
+      options: [
+        "Cùng sống chung",
+        "Cùng làm dự án",
+        "Ổn định trước",
+        "Đi nhiều nơi cùng nhau",
+      ],
     },
     {
       id: "hard-9",
-      prompt: "Trong tình yêu, bạn muốn “vai” nào?",
-      options: ["Chủ động dẫn dắt", "Nửa chủ động nửa mềm", "Dịu dàng – quan tâm", "Cùng nhau cân bằng"],
+      prompt: "Bạn nghĩ điều khó nhất khi yêu bạn là gì?",
+      options: ["Ít nói", "Nhạy cảm", "Tính khó đoán", "Ngại mở lòng"],
     },
     {
       id: "hard-10",
-      prompt: "Nếu phải mô tả tình cảm hiện tại dành cho đối phương?",
-      options: ["Ngọt", "Ấm", "Tò mò", "Đậm dần"],
+      prompt: "Bạn cần gì để mềm lòng sau khi giận?",
+      options: [
+        "Được để yên",
+        "Được xin lỗi chân thành",
+        "Được giải thích rõ",
+        "Được ôm",
+      ],
+    },
+    {
+      id: "hard-11",
+      prompt: "Bạn sợ điều gì nhất trong mối quan hệ?",
+      options: [
+        "Bị bỏ rơi",
+        "Không còn yêu",
+        "Xa cách cảm xúc",
+        "Mâu thuẫn kéo dài",
+      ],
+    },
+    {
+      id: "hard-12",
+      prompt: "Giá trị sống nào bạn muốn cả hai chia sẻ?",
+      options: ["Lạc quan", "Tôn trọng", "Tự do", "Chân thành"],
+    },
+    {
+      id: "hard-13",
+      prompt: "Bạn coi trọng điều gì trong giao tiếp cặp đôi?",
+      options: ["Lắng nghe", "Không công kích", "Ấm áp", "Thẳng thắn"],
+    },
+    {
+      id: "hard-14",
+      prompt: "Bạn muốn vai trò của mình trong tình yêu như thế nào?",
+      options: ["Cân bằng", "Chủ động", "Dịu dàng", "Lúc mạnh lúc mềm"],
+    },
+    {
+      id: "hard-15",
+      prompt: "Bạn nghĩ điều gì làm tình cảm bền lâu?",
+      options: ["Tôn trọng", "Quan tâm đều", "Chia sẻ", "Không giấu chuyện"],
+    },
+    {
+      id: "hard-16",
+      prompt: "Bạn muốn đối phương thể hiện sự chân thành ra sao?",
+      options: [
+        "Không gian dối",
+        "Lời nói thật",
+        "Không mập mờ",
+        "Hành động thật",
+      ],
+    },
+    {
+      id: "hard-17",
+      prompt: "Bạn kỳ vọng điều gì ở một mối quan hệ lành mạnh?",
+      options: [
+        "Tôn trọng giới hạn",
+        "Giao tiếp tốt",
+        "Tin tưởng",
+        "Không ép buộc",
+      ],
+    },
+    {
+      id: "hard-18",
+      prompt: "Bạn muốn học gì từ người kia?",
+      options: [
+        "Chấp nhận khác biệt",
+        "Kiên nhẫn",
+        "Thấu hiểu",
+        "Cách yêu đúng với nhau",
+      ],
+    },
+    {
+      id: "hard-19",
+      prompt: "Điều khiến bạn cảm thấy tự hào về người mình thích?",
+      options: ["Họ tốt bụng", "Họ chân thật", "Họ có mục tiêu", "Họ nỗ lực"],
+    },
+    {
+      id: "hard-20",
+      prompt: "Bạn muốn giải quyết mâu thuẫn theo cách nào lâu dài?",
+      options: ["Nói rõ", "Tìm điểm chung", "Thỏa hiệp", "Không công kích"],
+    },
+    {
+      id: "hard-21",
+      prompt: "Bạn nghĩ điều gì tạo nên sự tin cậy?",
+      options: ["Không nói dối", "Minh bạch", "Chia sẻ đều", "Không kiểm soát"],
+    },
+    {
+      id: "hard-22",
+      prompt: "Bạn quan niệm thế nào về sự hy sinh khi yêu?",
+      options: [
+        "Không gượng ép",
+        "Không mất mình",
+        "Vì nhau vừa đủ",
+        "Cùng nhường",
+      ],
+    },
+    {
+      id: "hard-23",
+      prompt: "Bạn muốn cách yêu của cả hai giống điều gì?",
+      options: ["Ổn định", "Thẳng thắn", "Lãng mạn", "Chậm mà chắc"],
+    },
+    {
+      id: "hard-24",
+      prompt: "Trong lúc yếu lòng, bạn cần điều gì nhất?",
+      options: ["Ở cạnh", "Ôm", "Lời động viên", "Hành động nhỏ"],
+    },
+    {
+      id: "hard-25",
+      prompt: "Bạn nghĩ hai người hợp nhau khi chia sẻ điều gì?",
+      options: ["Nỗi sợ", "Niềm vui nhỏ", "Cảm xúc", "Suy nghĩ"],
+    },
+    {
+      id: "hard-26",
+      prompt: "Bạn muốn cả hai cùng cải thiện điều gì?",
+      options: [
+        "Bớt nóng",
+        "Tin nhau hơn",
+        "Giao tiếp tốt hơn",
+        "Quan tâm nhiều hơn",
+      ],
+    },
+    {
+      id: "hard-27",
+      prompt: "Bạn mong muốn được người kia hiểu phần nào sâu nhất?",
+      options: ["Giới hạn", "Thói quen tình cảm", "Nỗi sợ", "Gu yêu"],
+    },
+    {
+      id: "hard-28",
+      prompt: "Bạn có niềm tin thế nào vào tình cảm hiện tại?",
+      options: [
+        "Tin hoàn toàn",
+        "Tin chắc 70%",
+        "Tin 80%",
+        "Tin nhưng vẫn quan sát",
+      ],
+    },
+    {
+      id: "hard-29",
+      prompt: "Điều khiến bạn thay đổi khi yêu là gì?",
+      options: [
+        "Kiên nhẫn hơn",
+        "Mềm hơn",
+        "Chia sẻ nhiều hơn",
+        "Lạc quan hơn",
+      ],
+    },
+    {
+      id: "hard-30",
+      prompt: "Bạn muốn người kia đồng hành với bạn trong chuyện gì?",
+      options: ["Cuộc sống", "Công việc", "Mơ ước", "Sở thích"],
+    },
+    {
+      id: "hard-31",
+      prompt: "Bạn thấy điều gì quan trọng hơn: lãng mạn hay ổn định?",
+      options: [
+        "Ít cãi nhau",
+        "Ít drama",
+        "Tôn trọng nhau",
+        "Nhịp yêu đều đặn",
+      ],
+    },
+    {
+      id: "hard-32",
+      prompt: "Bạn muốn người kia làm gì để bạn cảm thấy an tâm?",
+      options: [
+        "Nói rõ ràng",
+        "Không lạnh nhạt",
+        "Hành động nhất quán",
+        "Không mập mờ",
+      ],
+    },
+    {
+      id: "hard-33",
+      prompt: "Điều khiến bạn dễ rung động nhất?",
+      options: ["Ánh mắt", "Sự tinh tế", "Nụ cười", "Giọng nói"],
+    },
+    {
+      id: "hard-34",
+      prompt: "Bạn nghĩ điều gì là thử thách lớn nhất của hai người?",
+      options: ["Khác tính", "Ít thời gian", "Khác mục tiêu", "Xa cách"],
+    },
+    {
+      id: "hard-35",
+      prompt: "Bạn muốn mối quan hệ tiến triển theo tốc độ nào?",
+      options: ["Chậm", "Nhanh", "Vừa", "Tự nhiên"],
+    },
+    {
+      id: "hard-36",
+      prompt: "Bạn muốn chia sẻ bí mật nào khi đã đủ tin tưởng?",
+      options: [
+        "Chuyện tuổi thơ",
+        "Mơ ước thầm kín",
+        "Tình cảm quá khứ",
+        "Nỗi sợ",
+      ],
+    },
+    {
+      id: "hard-37",
+      prompt: "Bạn cần điều gì để cảm thấy bình yên?",
+      options: ["Ở cạnh", "Nói ít", "Ôm nhẹ", "Đi dạo"],
+    },
+    {
+      id: "hard-38",
+      prompt: "Bạn muốn học cách yêu theo hướng nào?",
+      options: ["Thể hiện cảm xúc", "Lắng nghe", "Kiên nhẫn", "Không so sánh"],
+    },
+    {
+      id: "hard-39",
+      prompt: "Điều nào bạn xem là ranh giới quan trọng?",
+      options: [
+        "Không đe dọa",
+        "Không xúc phạm",
+        "Không kiểm tra điện thoại",
+        "Không lôi chuyện cũ",
+      ],
+    },
+    {
+      id: "hard-40",
+      prompt: "Bạn mong hai người trở thành phiên bản như thế nào của nhau?",
+      options: [
+        "Cùng sống chung",
+        "Ổn định trước",
+        "Cùng làm dự án",
+        "Đi nhiều nơi cùng nhau",
+      ],
+    },
+    {
+      id: "hard-41",
+      prompt:
+        "Nếu bạn và người ấy cùng muốn đi ra ngoài, bạn sẽ muốn hai người đi đâu?",
+      options: [
+        "Đi ăn uống ở ngoài (nhà hàng, bar, tiệm cà phê, bánh ngọt,...)",
+        "Đi xem phim chung",
+        "Đi mua sắm, dạo các cửa hàng",
+        "Đi chơi thể thao (gym, leo núi, bowling,...)",
+      ],
+    },
+
+    {
+      id: "hard-42",
+      prompt:
+        "Nếu bạn và người ấy cùng ở nhà với nhau, bạn muốn hai người làm gì cùng nhau?",
+      options: [
+        "Nằm ôm nhau ngủ nướng hoặc xem phim",
+        "Cùng nhau nấu một món ăn hoặc nướng bánh",
+        "Cùng nhau dọn dẹp lại nhà cửa",
+        "Chơi một trò chơi thú vị và tâm sự về những ngày qua",
+      ],
+    },
+
+    {
+      id: "hard-43",
+      prompt: "Nếu người kia trông có vẻ không vui, bạn sẽ làm gì?",
+      options: [
+        "Nhẹ nhàng hỏi xem người ấy đang buồn chuyện gì và lắng nghe thật sự",
+        "Ôm hoặc nắm tay để trấn an, cho họ cảm giác an toàn",
+        "Làm điều gì dễ thương để đổi mood: pha nước, mang snack, bật bài nhạc họ thích",
+        "Ngồi cạnh im lặng, để họ biết bạn luôn ở đó khi họ muốn chia sẻ",
+      ],
+    },
+
+    {
+      id: "hard-44",
+      prompt:
+        "Hai bạn chuẩn bị cho buổi hẹn đầu tiên, điều gì bạn muốn chuẩn bị cho bản thân?",
+      options: [
+        "Trang phục chỉn chu và gây thiện cảm để cảm thấy tự tin nhất khi gặp nhau",
+        "Một món quà nhỏ tinh tế để tạo bất ngờ dễ thương trong lần gặp đầu",
+        "Nghĩ sẵn vài câu chuyện thú vị để cuộc trò chuyện tự nhiên và vui hơn",
+        "Chuẩn bị tâm lý thoải mái và tích cực để tận hưởng buổi hẹn một cách nhẹ nhàng",
+      ],
+    },
+
+    {
+      id: "hard-45",
+      prompt:
+        "Trong buổi hẹn đầu tiên, bạn muốn thể hiện điều gì nhất ở bản thân?",
+      options: [
+        "Sự chân thành và nghiêm túc trong cách bạn quan tâm",
+        "Tính cách dễ thương, vui vẻ khiến đối phương thoải mái",
+        "Sự tự tin nhưng nhẹ nhàng, không cố gắng gây ấn tượng quá mức",
+        "Sự lắng nghe và tôn trọng cảm xúc, pace của người kia",
+      ],
     },
   ],
+};
+
+const QUESTIONS_PER_GAME = 10;
+
+const hashSeed = (value = "") => {
+  const input = value.toString();
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = Math.imul(31, hash) + input.charCodeAt(i);
+    hash |= 0; // force 32-bit
+  }
+  return hash >>> 0;
+};
+
+const mulberry32 = (seed = 0) => {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let result = Math.imul(t ^ (t >>> 15), 1 | t);
+    result ^= result + Math.imul(result ^ (result >>> 7), 61 | result);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+const generateQuestionSet = (difficulty = "easy", seed) => {
+  const pool = QUESTION_BANK[difficulty] || QUESTION_BANK.easy;
+  if (!pool?.length) return [];
+
+  const working = [...pool];
+  const random =
+    seed !== undefined && seed !== null
+      ? mulberry32(hashSeed(`${difficulty}|${seed}`))
+      : () => Math.random();
+
+  for (let i = working.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [working[i], working[j]] = [working[j], working[i]];
+  }
+
+  return working.slice(0, Math.min(QUESTIONS_PER_GAME, working.length));
 };
 
 const defaultState = {
@@ -121,6 +709,7 @@ const defaultState = {
   roundIndex: 0,
   currentAnswers: { yours: null, friend: null },
   history: [],
+  questions: generateQuestionSet("easy"),
 };
 
 const safeParse = (value) => {
@@ -146,6 +735,11 @@ const getInitialState = () => {
     saved.stage === "inviting" && inviteRemaining <= 0
       ? "expired"
       : saved.stage || defaultState.stage;
+  const savedDifficulty = saved.difficulty || defaultState.difficulty;
+  const savedQuestions =
+    Array.isArray(saved.questions) && saved.questions.length
+      ? saved.questions
+      : generateQuestionSet(savedDifficulty);
 
   return {
     ...defaultState,
@@ -153,7 +747,11 @@ const getInitialState = () => {
     stage,
     inviteExpiresAt,
     inviteRemaining,
-    history: Array.isArray(saved.history) ? saved.history : defaultState.history,
+    difficulty: savedDifficulty,
+    questions: savedQuestions,
+    history: Array.isArray(saved.history)
+      ? saved.history
+      : defaultState.history,
     currentAnswers: saved.currentAnswers || defaultState.currentAnswers,
   };
 };
@@ -162,22 +760,31 @@ export const useMatchMindGame = () => {
   const initialState = useRef(getInitialState()).current;
   const [stage, setStage] = useState(initialState.stage); // lobby | inviting | accepted | declined | expired | playing | results
   const [difficulty, setDifficulty] = useState(initialState.difficulty);
-  const [selectedFriend, setSelectedFriend] = useState(initialState.selectedFriend);
-  const [inviteRemaining, setInviteRemaining] = useState(initialState.inviteRemaining);
-  const [inviteExpiresAt, setInviteExpiresAt] = useState(initialState.inviteExpiresAt);
+  const [selectedFriend, setSelectedFriend] = useState(
+    initialState.selectedFriend
+  );
+  const [inviteRemaining, setInviteRemaining] = useState(
+    initialState.inviteRemaining
+  );
+  const [inviteExpiresAt, setInviteExpiresAt] = useState(
+    initialState.inviteExpiresAt
+  );
   const [inviteId, setInviteId] = useState(initialState.inviteId);
   const [sessionId, setSessionId] = useState(initialState.sessionId);
   const [roundIndex, setRoundIndex] = useState(initialState.roundIndex);
-  const [currentAnswers, setCurrentAnswers] = useState(initialState.currentAnswers);
+  const [currentAnswers, setCurrentAnswers] = useState(
+    initialState.currentAnswers
+  );
   const [history, setHistory] = useState(initialState.history);
+  const [questions, setQuestions] = useState(
+    initialState.questions?.length
+      ? initialState.questions
+      : generateQuestionSet(initialState.difficulty)
+  );
 
   const resolvingRef = useRef(false);
   const previousRoundRef = useRef(initialState.roundIndex);
 
-  const questions = useMemo(
-    () => QUESTION_BANK[difficulty] || QUESTION_BANK.easy,
-    [difficulty]
-  );
   const currentQuestion = questions[roundIndex] || null;
 
   const resetToLobby = useCallback(() => {
@@ -190,6 +797,7 @@ export const useMatchMindGame = () => {
     setRoundIndex(0);
     setCurrentAnswers({ yours: null, friend: null });
     setHistory([]);
+    setQuestions(generateQuestionSet("easy"));
     previousRoundRef.current = 0;
     resolvingRef.current = false;
     if (typeof window !== "undefined") {
@@ -205,10 +813,13 @@ export const useMatchMindGame = () => {
         typeof expiresAt === "number"
           ? expiresAt
           : expiresAt instanceof Date
-            ? expiresAt.getTime()
-            : Date.now() + INVITE_DURATION * 1000;
+          ? expiresAt.getTime()
+          : Date.now() + INVITE_DURATION * 1000;
       setInviteExpiresAt(expiresMs);
-      const secondsLeft = Math.max(0, Math.ceil((expiresMs - Date.now()) / 1000));
+      const secondsLeft = Math.max(
+        0,
+        Math.ceil((expiresMs - Date.now()) / 1000)
+      );
       setInviteRemaining(secondsLeft || INVITE_DURATION);
       setInviteId(providedInviteId || null);
       setHistory([]);
@@ -251,29 +862,34 @@ export const useMatchMindGame = () => {
       const nextMode = QUESTION_BANK[mode] ? mode : "easy";
       setDifficulty(nextMode);
       setStage("playing");
-      setSessionId((prev) => prev || inviteId || null);
+      const sessionKey = inviteId || sessionId || `local-${Date.now()}`;
+      setSessionId((prev) => prev || sessionKey);
+      setQuestions(generateQuestionSet(nextMode, sessionKey));
       setRoundIndex(0);
       setCurrentAnswers({ yours: null, friend: null });
       setHistory([]);
       previousRoundRef.current = 0;
       resolvingRef.current = false;
     },
-    [inviteId]
+    [inviteId, sessionId]
   );
 
   const startGameFromRemote = useCallback(
     (session, mode = "easy") => {
       const nextMode = QUESTION_BANK[mode] ? mode : "easy";
       setDifficulty(nextMode);
-      if (session) setSessionId(session);
+      const sessionKey =
+        session || inviteId || sessionId || `remote-${Date.now()}`;
+      if (sessionKey) setSessionId(sessionKey);
       setStage("playing");
+      setQuestions(generateQuestionSet(nextMode, sessionKey));
       setRoundIndex(0);
       setCurrentAnswers({ yours: null, friend: null });
       setHistory([]);
       previousRoundRef.current = 0;
       resolvingRef.current = false;
     },
-    []
+    [inviteId, sessionId]
   );
 
   const exitGame = useCallback(() => {
@@ -283,7 +899,9 @@ export const useMatchMindGame = () => {
   const chooseAnswer = useCallback(
     (option) => {
       if (stage !== "playing") return;
-      setCurrentAnswers((prev) => (prev.yours ? prev : { ...prev, yours: option }));
+      setCurrentAnswers((prev) =>
+        prev.yours ? prev : { ...prev, yours: option }
+      );
     },
     [stage]
   );
@@ -291,7 +909,9 @@ export const useMatchMindGame = () => {
   const setFriendAnswer = useCallback(
     (option) => {
       if (stage !== "playing") return;
-      setCurrentAnswers((prev) => (prev.friend ? prev : { ...prev, friend: option }));
+      setCurrentAnswers((prev) =>
+        prev.friend ? prev : { ...prev, friend: option }
+      );
     },
     [stage]
   );
@@ -314,7 +934,9 @@ export const useMatchMindGame = () => {
           question: question.prompt,
           yourAnswer,
           friendAnswer,
-          matched: Boolean(yourAnswer && friendAnswer && yourAnswer === friendAnswer),
+          matched: Boolean(
+            yourAnswer && friendAnswer && yourAnswer === friendAnswer
+          ),
           reason,
         },
       ]);
@@ -334,6 +956,7 @@ export const useMatchMindGame = () => {
     const payload = {
       stage,
       difficulty,
+      questions,
       selectedFriend,
       inviteRemaining,
       inviteExpiresAt,
@@ -347,6 +970,7 @@ export const useMatchMindGame = () => {
   }, [
     stage,
     difficulty,
+    questions,
     selectedFriend,
     inviteRemaining,
     inviteExpiresAt,
@@ -361,7 +985,10 @@ export const useMatchMindGame = () => {
     if (stage !== "inviting" || !inviteExpiresAt) return;
 
     const intervalId = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((inviteExpiresAt - Date.now()) / 1000));
+      const remaining = Math.max(
+        0,
+        Math.ceil((inviteExpiresAt - Date.now()) / 1000)
+      );
       setInviteRemaining(remaining);
 
       if (remaining <= 0) {

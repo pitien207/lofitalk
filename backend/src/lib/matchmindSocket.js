@@ -276,6 +276,45 @@ export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
     }
   );
 
+  socket.on(
+    "matchmind:share-answers",
+    ({ inviteId, history } = {}, callback = () => {}) => {
+      try {
+        const invite = inviteId ? matchMindInvites.get(inviteId) : null;
+        if (!invite) return callback({ error: "Invite not found" });
+        if (!["started", "accepted"].includes(invite.status)) {
+          return callback({ error: "Game not started for this invite" });
+        }
+        const isHost = invite.hostId === userId;
+        const partnerId = isHost ? invite.guestId : invite.hostId;
+        if (!partnerId) return callback({ error: "Partner not found" });
+
+        const sanitizedHistory = Array.isArray(history)
+          ? history.slice(0, 50).map((item = {}) => ({
+              id: item.id || item.questionId || null,
+              question: item.question || "",
+              yourAnswer: item.yourAnswer || item.answer || "",
+            }))
+          : [];
+
+        io.to(toUserRoom(partnerId)).emit("matchmind:share-answers", {
+          inviteId,
+          history: sanitizedHistory,
+          fromUser: {
+            id: userId,
+            fullName: user.fullName,
+            profilePic: user.profilePic,
+          },
+        });
+
+        return callback({ ok: true });
+      } catch (error) {
+        console.error("Error in matchmind:share-answers", error);
+        return callback({ error: "Unable to share answers" });
+      }
+    }
+  );
+
   socket.on("matchmind:exit", ({ inviteId } = {}, callback = () => {}) => {
     try {
       const invite = inviteId ? matchMindInvites.get(inviteId) : null;
