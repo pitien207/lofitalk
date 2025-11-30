@@ -1,10 +1,10 @@
 import { Link } from "react-router";
-import { MapPinIcon } from "lucide-react";
+import { MapPinIcon, MoreVerticalIcon, BanIcon } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 import { useTranslation } from "../languages/useTranslation";
 import { formatRelativeTimeFromNow } from "../utils/time";
 
-const FriendCard = ({ friend }) => {
+const FriendCard = ({ friend, onBlock, isBlocking = false }) => {
   const { t, language } = useTranslation();
   const locationText =
     [friend.city, friend.country].filter(Boolean).join(", ") ||
@@ -27,22 +27,55 @@ const FriendCard = ({ friend }) => {
   return (
     <div className="card bg-base-200 hover:shadow-md transition-shadow">
       <div className="card-body p-4">
-        {/* USER INFO */}
-        <Link
-          to={`/profile/${friend._id}`}
-          className="flex items-center gap-3 mb-3 hover:text-primary transition-colors"
-        >
-          <div className="relative avatar size-12">
-            <img src={friend.profilePic} alt={friend.fullName} />
-            <span
-              className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-200 ${presenceDotClass}`}
-            />
-          </div>
-          <div className="flex flex-col">
-            <h3 className="font-semibold truncate">{friend.fullName}</h3>
-            <p className="text-xs text-base-content/70">{presenceLabel}</p>
-          </div>
-        </Link>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <Link
+            to={`/profile/${friend._id}`}
+            className="flex items-center gap-3 hover:text-primary transition-colors flex-1"
+          >
+            <div className="relative avatar size-12">
+              <img src={friend.profilePic} alt={friend.fullName} />
+              <span
+                className={`absolute bottom-0 right-0 block size-3 rounded-full border-2 border-base-200 ${presenceDotClass}`}
+              />
+            </div>
+            <div className="flex flex-col">
+              <h3 className="font-semibold truncate">{friend.fullName}</h3>
+              <p className="text-xs text-base-content/70">{presenceLabel}</p>
+            </div>
+          </Link>
+          {onBlock ? (
+            <div className="dropdown dropdown-end">
+              <button
+                type="button"
+                aria-label={t("friends.blockMenuLabel")}
+                tabIndex={0}
+                className="btn btn-ghost btn-xs btn-square"
+              >
+                <MoreVerticalIcon className="size-4" />
+              </button>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 shadow bg-base-100 rounded-lg border border-base-300 w-44"
+              >
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onBlock(friend._id)}
+                    disabled={isBlocking}
+                    className="flex items-center gap-2 text-error"
+                  >
+                    {isBlocking ? (
+                      <span className="loading loading-spinner loading-xs" />
+                    ) : (
+                      <BanIcon className="size-4" />
+                    )}
+                    {t("friends.blockAction")}
+                  </button>
+                </li>
+              </ul>
+            </div>
+          ) : null}
+        </div>
 
         {locationText && (
           <div className="flex items-center gap-2 text-xs text-base-content/70 mb-3">
@@ -62,7 +95,7 @@ const FriendCard = ({ friend }) => {
         )}
 
         <Link to={`/chat/${friend._id}`} className="btn btn-outline w-full">
-          Message
+          {t("profile.message")}
         </Link>
       </div>
     </div>

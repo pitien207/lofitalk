@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import { hasBlockedUser } from "../lib/blockService.js";
 
 const toObjectId = (value) =>
   value instanceof mongoose.Types.ObjectId
@@ -240,7 +241,7 @@ export async function getRecommendedUsers(req, res) {
   try {
     const viewerId = req.user._id || req.user.id;
     const viewer = await User.findById(viewerId).select(
-      "friends energy"
+      "friends energy blockedUsers"
     );
 
     if (!viewer) {
@@ -250,7 +251,10 @@ export async function getRecommendedUsers(req, res) {
     const currentEnergy = Math.max(0, viewer.energy ?? 0);
 
     const friendIds = (viewer.friends || []).map((friendId) => toObjectId(friendId));
-    const excludedIds = [toObjectId(viewerId), ...friendIds];
+    const blockedIds = (viewer.blockedUsers || []).map((userId) =>
+      toObjectId(userId)
+    );
+    const excludedIds = [toObjectId(viewerId), ...friendIds, ...blockedIds];
 
     const { gender, country, city, education, heightMin } = req.query;
     const requestedHobby = req.query.hobbies || req.query.hobby;
@@ -259,6 +263,7 @@ export async function getRecommendedUsers(req, res) {
     const matchStage = {
       _id: { $nin: excludedIds },
       isOnboarded: true,
+      blockedUsers: { $ne: toObjectId(viewerId) },
     };
 
     if (gender) matchStage.gender = gender;
@@ -482,9 +487,29 @@ export async function sendFriendRequest(req, res) {
         .json({ message: "You can't send friend request to yourself" });
     }
 
-    const recipient = await User.findById(recipientId);
+    const [sender, recipient] = await Promise.all([
+      User.findById(myId).select("blockedUsers friends"),
+      User.findById(recipientId).select("blockedUsers friends"),
+    ]);
+
+    if (!sender) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     if (!recipient) {
       return res.status(404).json({ message: "Recipient not found" });
+    }
+
+    if (hasBlockedUser(sender, recipientId)) {
+      return res.status(403).json({
+        message: "You have blocked this user",
+      });
+    }
+
+    if (hasBlockedUser(recipient, myId)) {
+      return res.status(403).json({
+        message: "You cannot send a request to this user",
+      });
     }
 
     // check if user is already friends
@@ -564,6 +589,20 @@ export async function acceptFriendRequest(req, res) {
       return res
         .status(403)
         .json({ message: "You are not authorized to accept this request" });
+    }
+
+    const [recipientUser, senderUser] = await Promise.all([
+      User.findById(friendRequest.recipient).select("blockedUsers"),
+      User.findById(friendRequest.sender).select("blockedUsers"),
+    ]);
+
+    if (
+      hasBlockedUser(recipientUser, friendRequest.sender) ||
+      hasBlockedUser(senderUser, friendRequest.recipient)
+    ) {
+      return res.status(403).json({
+        message: "This request cannot be accepted because a block is active",
+      });
     }
 
     friendRequest.status = "accepted";
@@ -685,6 +724,115 @@ export async function getCurrentUser(req, res) {
     res.status(200).json(normalized);
   } catch (error) {
     console.error("Error in getCurrentUser controller", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function getBlockedUsers(req, res) {
+  try {
+    const viewerId = req.user.id;
+    const viewer = await User.findById(viewerId).select("blockedUsers");
+
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const fields = normalizeFieldSet(
+      req.query.fields,
+      FRIEND_ALLOWED_FIELDS,
+      FRIEND_DEFAULT_FIELDS
+    ).join(" ");
+
+    const blockedIds = viewer.blockedUsers || [];
+    if (!blockedIds.length) {
+      return res.status(200).json({ blocked: [] });
+    }
+
+    const blockedUsers = await User.find({ _id: { $in: blockedIds } })
+      .select(fields)
+      .sort({ fullName: 1 });
+
+    res.status(200).json({
+      blocked: blockedUsers.map((user) => withPresence(user)),
+    });
+  } catch (error) {
+    console.error("Error fetching blocked users", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function blockUser(req, res) {
+  try {
+    const viewerId = req.user.id;
+    const { id: targetId } = req.params;
+
+    if (viewerId === targetId) {
+      return res.status(400).json({ message: "Cannot block yourself" });
+    }
+
+    const [viewer, target] = await Promise.all([
+      User.findById(viewerId).select("blockedUsers friends"),
+      User.findById(targetId).select("_id friends"),
+    ]);
+
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!target) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (hasBlockedUser(viewer, targetId)) {
+      return res
+        .status(200)
+        .json({ success: true, message: "User already blocked" });
+    }
+
+    await Promise.all([
+      User.findByIdAndUpdate(viewerId, {
+        $addToSet: { blockedUsers: targetId },
+        $pull: { friends: targetId },
+      }),
+      User.findByIdAndUpdate(targetId, { $pull: { friends: viewerId } }),
+      FriendRequest.deleteMany({
+        $or: [
+          { sender: viewerId, recipient: targetId },
+          { sender: targetId, recipient: viewerId },
+        ],
+      }),
+    ]);
+
+    res.status(200).json({ success: true, message: "User blocked" });
+  } catch (error) {
+    console.error("Error blocking user", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function unblockUser(req, res) {
+  try {
+    const viewerId = req.user.id;
+    const { id: targetId } = req.params;
+
+    const viewer = await User.findById(viewerId).select("blockedUsers");
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!hasBlockedUser(viewer, targetId)) {
+      return res
+        .status(200)
+        .json({ success: true, message: "User already unblocked" });
+    }
+
+    await User.findByIdAndUpdate(viewerId, {
+      $pull: { blockedUsers: targetId },
+    });
+
+    res.status(200).json({ success: true, message: "User unblocked" });
+  } catch (error) {
+    console.error("Error unblocking user", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

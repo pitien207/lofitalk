@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { MoreVerticalIcon, SendIcon, Trash2Icon } from "lucide-react";
@@ -43,6 +43,7 @@ const ChatPage = () => {
     isLoading,
     isFetching,
     isError,
+    error,
   } = useQuery({
     queryKey: ["chatThread", targetUserId],
     queryFn: () => getChatThreadWithUser(targetUserId),
@@ -342,7 +343,32 @@ const ChatPage = () => {
 
   const isLoadingThread = (isLoading || isFetching) && !threadData;
 
+  const blockedError = error?.response?.status === 403;
+  const blockedMessage =
+    error?.response?.data?.message || t("chatPage.blockedDescription");
+
   if (isLoadingThread) return <ChatLoader />;
+
+  if (blockedError) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-6 text-center">
+        <div className="rounded-3xl border border-base-300 bg-base-100/80 px-6 py-8 shadow max-w-lg space-y-3">
+          <h2 className="text-2xl font-semibold text-base-content">
+            {t("chatPage.blockedTitle")}
+          </h2>
+          <p className="text-base-content/70">
+            {t("chatPage.blockedDescription")}
+          </p>
+          {blockedMessage ? (
+            <p className="text-sm text-base-content/60">{blockedMessage}</p>
+          ) : null}
+          <Link to="/chats" className="btn btn-primary mt-2">
+            {t("chatPage.backToList")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (isError || !threadId) {
     return (

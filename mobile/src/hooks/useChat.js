@@ -188,26 +188,31 @@ const useChat = () => {
       setSelectingThread(true);
       setChatError(null);
 
-      try {
-        const data = await fetchThreadWithUser(resolvedUserId, { limit: 20 });
-        const thread = data?.thread;
-        setMessages(data?.messages ?? []);
-        setHasMoreMessages((data?.messages?.length || 0) >= 20);
-        if (thread) {
-          setActiveThread(thread);
-          upsertThread(thread);
-          if (thread.id) {
-            joinThreadRoom(thread.id);
-          }
+    try {
+      const data = await fetchThreadWithUser(resolvedUserId, { limit: 20 });
+      const thread = data?.thread;
+      setMessages(data?.messages ?? []);
+      setHasMoreMessages((data?.messages?.length || 0) >= 20);
+      if (thread) {
+        setActiveThread(thread);
+        upsertThread(thread);
+        if (thread.id) {
+          joinThreadRoom(thread.id);
         }
-      } catch (error) {
-        const message =
-          error?.response?.data?.message || "Unable to open chat right now";
-        setChatError(message);
-      } finally {
-        setSelectingThread(false);
       }
-    },
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || "Unable to open chat right now";
+      setChatError(message);
+      activeThreadIdRef.current = null;
+      setActiveThread(null);
+      setMessages([]);
+      setHasMoreMessages(true);
+      setLoadingMoreMessages(false);
+    } finally {
+      setSelectingThread(false);
+    }
+  },
     [joinThreadRoom, threads, upsertThread]
   );
 

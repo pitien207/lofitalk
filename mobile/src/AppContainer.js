@@ -48,6 +48,11 @@ const AppContainer = () => {
     recommendedLoading,
     recommendedError,
     requestingId,
+    blockedUsers,
+    blockedLoading,
+    blockingUserId,
+    unblockingUserId,
+    loadBlockedUsers,
     refreshFriends,
     loadFriends,
     loadMoreFriends,
@@ -61,6 +66,9 @@ const AppContainer = () => {
     sendRequest,
     cancelRequest,
     hasPendingRequest,
+    blockUserById,
+    unblockUserById,
+    isBlockedUser,
   } = useFriends();
   const {
     threads,
@@ -103,7 +111,7 @@ const AppContainer = () => {
 
     if (data.token) {
       try {
-        await loadFriends();
+        await Promise.all([loadFriends(), loadBlockedUsers()]);
       } catch (_error) {
         // Swallow error and keep local fallback friends
       }
@@ -135,6 +143,9 @@ const AppContainer = () => {
     setActivePage("chat");
   };
 
+  const handleRefreshFriends = () =>
+    Promise.all([refreshFriends(), loadBlockedUsers()]).catch(() => null);
+
   useEffect(() => {
     const animation = Animated.timing(introOpacity, {
       toValue: 0,
@@ -162,7 +173,7 @@ const AppContainer = () => {
 
   useEffect(() => {
     if (activePage === "friends" && user) {
-      loadFriends().catch(() => null);
+      Promise.all([loadFriends(), loadBlockedUsers()]).catch(() => null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePage, user]);
@@ -171,8 +182,11 @@ const AppContainer = () => {
     if (user && friends.length === 0) {
       loadFriends().catch(() => null);
     }
+    if (user && blockedUsers.length === 0) {
+      loadBlockedUsers().catch(() => null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, friends.length]);
+  }, [user, friends.length, blockedUsers.length]);
 
   if (isHydrating || versionStatus === "checking") {
     return (
@@ -293,6 +307,10 @@ const AppContainer = () => {
             friendsLoading={friendsLoading}
             loadingMoreFriends={loadingMoreFriends}
             hasMoreFriends={hasMoreFriends}
+            blockedUsers={blockedUsers}
+            blockedLoading={blockedLoading}
+            blockingUserId={blockingUserId}
+            unblockingUserId={unblockingUserId}
             selectedFriend={selectedFriend}
             friendProfile={friendProfile}
             profileLoading={profileLoading}
@@ -301,8 +319,12 @@ const AppContainer = () => {
             onResetFriendSelection={resetSelection}
             onNavigateHome={() => handleNavChange("home")}
             onStartChat={handleStartChatWith}
-            onRefreshFriends={refreshFriends}
+            onRefreshFriends={handleRefreshFriends}
+            onRefreshBlocked={loadBlockedUsers}
             onLoadMoreFriends={loadMoreFriends}
+            onBlockUser={blockUserById}
+            onUnblockUser={unblockUserById}
+            isBlockedUser={isBlockedUser}
           />
         )}
         {activePage === "discover" && (

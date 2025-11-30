@@ -17,6 +17,9 @@ import {
   removeFriend,
   sendFriendRequest,
   getCurrentUser,
+  blockUser,
+  unblockUser,
+  getBlockedUsers,
 } from "../controllers/user.controller.js";
 import {
   deleteAdminNotificationForUser,
@@ -32,11 +35,14 @@ router.get("/", getRecommendedUsers);
 router.get("/friend-filter-status", getFriendFilterStatus);
 router.get("/online-count", getOnlineUsersCount);
 router.get("/friends", getMyFriends);
+router.get("/blocked", getBlockedUsers);
 router.get("/me", getCurrentUser);
 router.get("/profile/:id", getUserProfile);
 router.get("/fortune-cookie", getFortuneCookie);
 router.post("/fortune-cookie", openFortuneCookie);
 router.delete("/friends/:id", removeFriend);
+router.post("/block/:id", blockUser);
+router.delete("/block/:id", unblockUser);
 router.delete("/friend-request/:id/cancel", cancelFriendRequest);
 router.delete("/friend-request/:id", deleteFriendRequest);
 

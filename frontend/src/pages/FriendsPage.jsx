@@ -8,6 +8,9 @@ import {
   getUserFriends,
   cancelFriendRequest,
   sendFriendRequest,
+  getBlockedUsers,
+  blockUser,
+  unblockUser,
 } from "../lib/api";
 import {
   LoaderIcon,
@@ -15,6 +18,8 @@ import {
   XCircleIcon,
   UserPlusIcon,
   UsersIcon,
+  BanIcon,
+  UnlockIcon,
 } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 import FriendCard from "../components/FriendCard";
@@ -58,6 +63,8 @@ const FriendsPage = () => {
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false);
   const [filterAttempt, setFilterAttempt] = useState(0);
   const [friendsPage, setFriendsPage] = useState(1);
+  const [blockingId, setBlockingId] = useState(null);
+  const [unblockingId, setUnblockingId] = useState(null);
 
   const genderOptions = useMemo(
     () => [
@@ -186,6 +193,19 @@ const FriendsPage = () => {
     refetchOnReconnect: true,
   });
 
+  const {
+    data: blockedData = { blocked: [] },
+    isLoading: loadingBlocked,
+  } = useQuery({
+    queryKey: ["blockedUsers"],
+    queryFn: getBlockedUsers,
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || t("friends.blockError"));
+    },
+  });
+
+  const blockedUsers = blockedData?.blocked || [];
+
   useEffect(() => {
     setFriendsPage(1);
   }, [friends.length]);
@@ -248,6 +268,33 @@ const FriendsPage = () => {
         queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
     });
 
+  const { mutate: blockUserMutation } = useMutation({
+    mutationFn: blockUser,
+    onSuccess: () => {
+      toast.success(t("friends.blockSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || t("friends.blockError"));
+    },
+    onSettled: () => setBlockingId(null),
+  });
+
+  const { mutate: unblockUserMutation } = useMutation({
+    mutationFn: unblockUser,
+    onSuccess: () => {
+      toast.success(t("friends.unblockSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || t("friends.unblockError"));
+    },
+    onSettled: () => setUnblockingId(null),
+  });
+
   useEffect(() => {
     const outgoingIds = new Set();
     if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
@@ -282,6 +329,20 @@ const FriendsPage = () => {
     setFilterAttempt(0);
   };
 
+  const handleBlockUser = (userId) => {
+    if (!userId) return;
+    const confirmed = window.confirm(t("friends.blockConfirm"));
+    if (!confirmed) return;
+    setBlockingId(userId);
+    blockUserMutation(userId);
+  };
+
+  const handleUnblockUser = (userId) => {
+    if (!userId) return;
+    setUnblockingId(userId);
+    unblockUserMutation(userId);
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="container mx-auto space-y-10">
@@ -305,7 +366,12 @@ const FriendsPage = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginatedFriends.map((friend) => (
-                <FriendCard key={friend._id} friend={friend} />
+                <FriendCard
+                  key={friend._id}
+                  friend={friend}
+                  onBlock={handleBlockUser}
+                  isBlocking={blockingId === friend._id}
+                />
               ))}
             </div>
             {friends.length > FRIENDS_PER_PAGE && (
@@ -335,6 +401,91 @@ const FriendsPage = () => {
             )}
           </div>
         )}
+
+        <section className="card bg-base-200 border border-white/5 shadow-sm">
+          <div className="card-body p-5 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <BanIcon className="size-5 text-error" />
+                <h3 className="text-lg sm:text-xl font-semibold">
+                  {t("friends.blockedTitle")}
+                </h3>
+              </div>
+              {loadingBlocked ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : null}
+            </div>
+            <p className="text-sm text-base-content/70">
+              {t("friends.blockedSubtitle")}
+            </p>
+
+            {blockedUsers.length === 0 ? (
+              <p className="text-sm opacity-70">{t("friends.blockedEmpty")}</p>
+            ) : (
+              <div className="space-y-3">
+                {blockedUsers.map((user) => {
+                  const locationText =
+                    [user.city, user.country].filter(Boolean).join(", ") ||
+                    user.location ||
+                    "";
+                  const flagSrc = getCountryFlag(
+                    user.country,
+                    user.city,
+                    user.location
+                  );
+                  const isUnblocking = unblockingId === user._id;
+
+                  return (
+                    <div
+                      key={user._id}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-base-300/40 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="avatar size-12 rounded-full ring ring-base-300">
+                          <img src={user.profilePic} alt={user.fullName} />
+                        </div>
+                        <div>
+                          <p className="font-semibold leading-tight">
+                            {user.fullName}
+                          </p>
+                          {locationText ? (
+                            <div className="flex items-center gap-1 text-xs opacity-70">
+                              {flagSrc ? (
+                                <div className="w-5 h-3 overflow-hidden rounded-[4px] border border-base-300 shadow-sm">
+                                  <img
+                                    src={flagSrc}
+                                    alt={user.country}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <MapPinIcon className="size-3" />
+                              )}
+                              <span>{locationText}</span>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        onClick={() => handleUnblockUser(user._id)}
+                        disabled={isUnblocking}
+                      >
+                        {isUnblocking ? (
+                          <span className="loading loading-spinner loading-xs mr-2" />
+                        ) : (
+                          <UnlockIcon className="size-4 mr-2" />
+                        )}
+                        {t("friends.unblockAction")}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
 
         <section>
           <div className="mb-6 sm:mb-8">

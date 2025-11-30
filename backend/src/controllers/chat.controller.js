@@ -10,6 +10,7 @@ import {
   markConversationRead,
   saveChatMessage,
 } from "../lib/chatService.js";
+import { loadBlockStatus } from "../lib/blockService.js";
 import { getChatConversationModel } from "../models/ChatConversation.js";
 
 const normalizeLimit = (value, fallback = 20) => {
@@ -105,19 +106,63 @@ export async function getChatThreads(req, res) {
 
     const threadsResult = await query.limit(limit + 1).lean();
 
-    const hasMore = threadsResult.length > limit;
-    const threads = hasMore ? threadsResult.slice(0, limit) : threadsResult;
+    const viewer = await User.findById(viewerId).select("blockedUsers").lean();
+    if (!viewer) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    const participantIds = threads.flatMap((thread) => thread.participants || []);
+    const viewerBlockedSet = new Set(
+      (viewer.blockedUsers || []).map((id) => id.toString())
+    );
+
+    const viewerIdStr = viewerId.toString();
+    const potentialPartnerIds = Array.from(
+      new Set(
+        threadsResult
+          .map((thread) =>
+            (thread.participants || [])
+              .map((participant) => participant?.toString?.())
+              .find((participantId) => participantId && participantId !== viewerIdStr)
+          )
+          .filter(Boolean)
+      )
+    );
+
+    let blockedByPartner = new Set();
+    if (potentialPartnerIds.length) {
+      const partnerDocs = await User.find({
+        _id: { $in: potentialPartnerIds },
+        blockedUsers: viewerId,
+      })
+        .select("_id")
+        .lean();
+      blockedByPartner = new Set(
+        partnerDocs.map((doc) => doc._id?.toString?.()).filter(Boolean)
+      );
+    }
+
+    const hasMore = threadsResult.length > limit;
+    const filteredThreads = (hasMore ? threadsResult.slice(0, limit) : threadsResult)
+      .filter((thread) => {
+        const partnerId = (thread.participants || [])
+          .map((participant) => participant?.toString?.())
+          .find((participantId) => participantId && participantId !== viewerIdStr);
+        if (!partnerId) return false;
+        if (viewerBlockedSet.has(partnerId)) return false;
+        if (blockedByPartner.has(partnerId)) return false;
+        return true;
+      });
+
+    const participantIds = filteredThreads.flatMap((thread) => thread.participants || []);
     const userMap = await loadUserMap(participantIds);
 
-    const payload = threads.map((thread) =>
+    const payload = filteredThreads.map((thread) =>
       buildThreadSummary(thread, viewerId, userMap)
     );
 
-    const lastItem = threads[threads.length - 1];
+    const lastItem = filteredThreads[filteredThreads.length - 1];
     const nextCursor =
-      hasMore && (lastItem?.lastMessageAt || lastItem?.updatedAt)
+      hasMore && lastItem && (lastItem?.lastMessageAt || lastItem?.updatedAt)
         ? (lastItem.lastMessageAt || lastItem.updatedAt).toISOString?.() ||
           lastItem.lastMessageAt ||
           lastItem.updatedAt
@@ -146,15 +191,33 @@ export async function getThreadWithUser(req, res) {
       return res.status(400).json({ message: "Target user is required" });
     }
 
-    const targetUser = await User.findById(userId)
-      .select("fullName profilePic isOnline lastActiveAt")
-      .lean();
+    const blockStatus = await loadBlockStatus(viewerId, userId, {
+      viewerSelect: "blockedUsers",
+      targetSelect: "fullName profilePic isOnline lastActiveAt blockedUsers",
+    });
 
-    if (!targetUser) {
+    if (!blockStatus.targetExists) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const conversation = await ensureConversation(viewerId, userId);
+    if (blockStatus.userBlockedTarget) {
+      return res.status(403).json({ message: "You have blocked this user" });
+    }
+
+    if (blockStatus.targetBlockedUser) {
+      return res
+        .status(403)
+        .json({ message: "This chat is unavailable at the moment" });
+    }
+
+    const Conversation = getChatConversationModel();
+    let conversation = await Conversation.findOne({
+      participants: { $all: [viewerId, userId] },
+    });
+
+    if (!conversation) {
+      conversation = await ensureConversation(viewerId, userId);
+    }
     const clearedAt = getUserClearedAt(conversation, viewerId);
     const messages = await fetchRecentMessages(conversation._id, {
       limit,
@@ -276,6 +339,23 @@ export async function sendMessage(req, res) {
 
     if (!recipientId) {
       return res.status(400).json({ message: "Recipient not found" });
+    }
+
+    const blockStatus = await loadBlockStatus(senderId, recipientId);
+    if (!blockStatus.targetExists) {
+      return res.status(404).json({ message: "Recipient not found" });
+    }
+
+    if (blockStatus.userBlockedTarget) {
+      return res
+        .status(403)
+        .json({ message: "You have blocked this user" });
+    }
+
+    if (blockStatus.targetBlockedUser) {
+      return res
+        .status(403)
+        .json({ message: "You cannot message this user" });
     }
 
     const message = await saveChatMessage({

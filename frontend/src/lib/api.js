@@ -50,6 +50,11 @@ export async function getUserFriends() {
   return data?.friends ?? data ?? [];
 }
 
+export async function getBlockedUsers() {
+  const response = await axiosInstance.get("/users/blocked");
+  return response.data;
+}
+
 export async function getRecommendedUsers(filters = {}) {
   const response = await axiosInstance.get("/users", { params: filters });
   return response.data;
@@ -188,6 +193,16 @@ export async function updatePassword(payload) {
 
 export async function removeFriend(userId) {
   const response = await axiosInstance.delete(`/users/friends/${userId}`);
+  return response.data;
+}
+
+export async function blockUser(userId) {
+  const response = await axiosInstance.post(`/users/block/${userId}`);
+  return response.data;
+}
+
+export async function unblockUser(userId) {
+  const response = await axiosInstance.delete(`/users/block/${userId}`);
   return response.data;
 }
 

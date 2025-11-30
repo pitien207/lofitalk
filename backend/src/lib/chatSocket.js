@@ -13,6 +13,7 @@ import {
   markConversationRead,
   saveChatMessage,
 } from "./chatService.js";
+import { loadBlockStatus } from "./blockService.js";
 import { attachMatchMindHandlers } from "./matchmindSocket.js";
 import { attachTruthOrLieHandlers } from "./truthOrLieSocket.js";
 
@@ -143,6 +144,24 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
 
         if (!recipientId) {
           return callback({ error: "Recipient not found" });
+        }
+
+        const blockStatus = await loadBlockStatus(userId, recipientId, {
+          viewerSelect: "blockedUsers",
+          targetSelect: "blockedUsers",
+          lean: true,
+        });
+
+        if (!blockStatus.targetExists) {
+          return callback({ error: "Recipient not found" });
+        }
+
+        if (blockStatus.userBlockedTarget) {
+          return callback({ error: "You have blocked this user" });
+        }
+
+        if (blockStatus.targetBlockedUser) {
+          return callback({ error: "You cannot message this user" });
         }
 
         const message = await saveChatMessage({

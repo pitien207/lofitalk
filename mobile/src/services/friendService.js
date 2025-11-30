@@ -95,3 +95,24 @@ export const fetchOutgoingFriendRequests = async () => {
   const { data } = await api.get("/users/outgoing-friend-requests");
   return data;
 };
+
+export const fetchBlockedUsers = async () => {
+  const { data } = await api.get("/users/blocked");
+  return data;
+};
+
+export const blockUser = async (userId) => {
+  if (!userId) {
+    throw new Error("userId is required to block");
+  }
+  const { data } = await api.post(`/users/block/${userId}`);
+  return data;
+};
+
+export const unblockUser = async (userId) => {
+  if (!userId) {
+    throw new Error("userId is required to unblock");
+  }
+  const { data } = await api.delete(`/users/block/${userId}`);
+  return data;
+};

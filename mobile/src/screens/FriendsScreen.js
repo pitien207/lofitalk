@@ -1,4 +1,6 @@
+import { useState } from "react";
 import {
+  Alert,
   ActivityIndicator,
   FlatList,
   Image,
@@ -30,6 +32,10 @@ const FriendsScreen = ({
   friendsLoading,
   loadingMoreFriends,
   hasMoreFriends,
+  blockedUsers = [],
+  blockedLoading,
+  blockingUserId,
+  unblockingUserId,
   selectedFriend,
   friendProfile,
   profileLoading,
@@ -40,7 +46,45 @@ const FriendsScreen = ({
   onStartChat,
   onRefreshFriends,
   onLoadMoreFriends,
+  onRefreshBlocked,
+  onBlockUser,
+  onUnblockUser,
+  isBlockedUser,
 }) => {
+  const [openMenuUserId, setOpenMenuUserId] = useState(null);
+
+  const closeMenu = () => setOpenMenuUserId(null);
+
+  const handleFriendPress = (friend) => {
+    closeMenu();
+    onFriendSelect(friend);
+  };
+
+  const handleToggleMenu = (userId) => {
+    setOpenMenuUserId((prev) => (prev === userId ? null : userId));
+  };
+
+  const confirmBlockUser = (friend) => {
+    if (!friend?._id || !onBlockUser) return;
+    Alert.alert(
+      "Block friend",
+      `Block ${friend.fullName || "this friend"}? They won't be able to chat with you.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: () => onBlockUser(friend._id),
+        },
+      ]
+    );
+  };
+
+  const handleUnblockPress = (userId) => {
+    if (!userId || !onUnblockUser) return;
+    onUnblockUser(userId);
+  };
+
   const showProfile = Boolean(selectedFriend);
   const Header = (
     <View style={styles.friendsHeader}>
@@ -68,42 +112,131 @@ const FriendsScreen = ({
     </View>
   );
 
-  const renderFriendItem = ({ item }) => (
-    <TouchableOpacity
-      key={item._id}
-      style={styles.friendCard}
-      activeOpacity={0.85}
-      onPress={() => onFriendSelect(item)}
-    >
-      <View style={styles.friendAvatarWrapper}>
-        <Image
-          source={resolveImageSource(item.profilePic)}
-          style={styles.friendAvatar}
-        />
-        {item.isOnline && <View style={styles.onlineDot} />}
+  const renderFriendItem = ({ item }) => {
+    const isMenuOpen = openMenuUserId === item._id;
+    const alreadyBlocked = isBlockedUser?.(item._id);
+    const isProcessingBlock = blockingUserId === item._id;
+    const locationLabel = item.location || "Let's keep in touch";
+
+    return (
+      <TouchableOpacity
+        key={item._id}
+        style={styles.friendCard}
+        activeOpacity={0.85}
+        onPress={() => handleFriendPress(item)}
+      >
+        <View style={styles.friendAvatarWrapper}>
+          <Image
+            source={resolveImageSource(item.profilePic)}
+            style={styles.friendAvatar}
+          />
+          {item.isOnline && <View style={styles.onlineDot} />}
+        </View>
+        <View style={styles.friendMeta}>
+          <Text style={styles.friendName}>{item.fullName}</Text>
+          <Text style={styles.friendLocation}>{locationLabel}</Text>
+          <Text style={styles.friendMessage} numberOfLines={1}>
+            {item.lastMessage}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.friendMenuButton}
+          onPress={() => handleToggleMenu(item._id)}
+        >
+          <Text style={styles.friendMenuButtonText}>...</Text>
+        </TouchableOpacity>
+        {isMenuOpen && (
+          <View style={styles.friendMenu}>
+            <TouchableOpacity
+              style={[
+                styles.friendMenuAction,
+                alreadyBlocked && styles.friendMenuActionDisabled,
+              ]}
+              disabled={alreadyBlocked || isProcessingBlock}
+              onPress={() => {
+                closeMenu();
+                confirmBlockUser(item);
+              }}
+            >
+              <Text style={styles.friendMenuActionText}>
+                {isProcessingBlock
+                  ? "Blocking..."
+                  : alreadyBlocked
+                  ? "Blocked"
+                  : "Block user"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderBlockedSection = () => (
+    <View style={styles.blockedSection}>
+      <View style={styles.blockedHeader}>
+        <Text style={styles.blockedTitle}>Blocked friends</Text>
+        <TouchableOpacity
+          onPress={() => onRefreshBlocked?.().catch?.(() => null)}
+          disabled={blockedLoading}
+        >
+          <Text style={styles.blockedRefresh}>
+            {blockedLoading ? "Refreshing..." : "Refresh"}
+          </Text>
+        </TouchableOpacity>
       </View>
-      <View style={styles.friendMeta}>
-        <Text style={styles.friendName}>{item.fullName}</Text>
-        <Text style={styles.friendLocation}>
-          {item.location || "Let's keep in touch"}
+      {blockedUsers.length === 0 ? (
+        <Text style={styles.blockedEmpty}>
+          You haven't blocked anyone yet.
         </Text>
-        <Text style={styles.friendMessage} numberOfLines={1}>
-          {item.lastMessage}
-        </Text>
-      </View>
-      <View style={styles.friendTimeBadge}>
-        <Text style={styles.friendTimeText}>Now</Text>
-      </View>
-    </TouchableOpacity>
+      ) : (
+        <View style={styles.blockedList}>
+          {blockedUsers.map((user) => {
+            const isProcessing = unblockingUserId === user._id;
+            return (
+              <View key={user._id} style={styles.blockedCard}>
+                <View style={styles.blockedInfo}>
+                  <Image
+                    source={resolveImageSource(user.profilePic)}
+                    style={styles.blockedAvatar}
+                  />
+                  <View>
+                    <Text style={styles.blockedName}>
+                      {user.fullName || "Friend"}
+                    </Text>
+                    <Text style={styles.blockedLocation}>
+                      {formatLocation(user) || user.location || "Unknown"}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.blockedAction}
+                  onPress={() => handleUnblockPress(user._id)}
+                  disabled={isProcessing}
+                >
+                  <Text style={styles.blockedActionText}>
+                    {isProcessing ? "Unblocking..." : "Unblock"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
   );
 
-  const renderFooter = () =>
-    loadingMoreFriends ? (
-      <View style={styles.loaderRow}>
-        <ActivityIndicator color="#fff" />
-        <Text style={styles.loaderText}>Loading more friends...</Text>
-      </View>
-    ) : null;
+  const renderFooter = () => (
+    <View>
+      {loadingMoreFriends ? (
+        <View style={styles.loaderRow}>
+          <ActivityIndicator color="#fff" />
+          <Text style={styles.loaderText}>Loading more friends...</Text>
+        </View>
+      ) : null}
+      {renderBlockedSection()}
+    </View>
+  );
 
   return (
     <>
@@ -153,6 +286,7 @@ const FriendsScreen = ({
                 onLoadMoreFriends?.().catch?.(() => null);
               }
             }}
+            onScrollBeginDrag={closeMenu}
             refreshing={friendsLoading}
             onRefresh={() => onRefreshFriends?.().catch?.(() => null)}
             ItemSeparatorComponent={() => <View style={styles.friendSeparator} />}
@@ -335,6 +469,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.05)",
+    position: "relative",
+    overflow: "visible",
   },
   friendAvatarWrapper: {
     marginRight: 12,
@@ -343,6 +479,42 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 20,
+  },
+  friendMenuButton: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  friendMenuButtonText: {
+    color: BRAND_COLORS.muted,
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  friendMenu: {
+    position: "absolute",
+    top: 48,
+    right: 12,
+    backgroundColor: "rgba(16,15,26,0.95)",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    zIndex: 10,
+  },
+  friendMenuAction: {
+    paddingVertical: 2,
+  },
+  friendMenuActionDisabled: {
+    opacity: 0.5,
+  },
+  friendMenuActionText: {
+    color: "#ff8c8c",
+    fontWeight: "700",
   },
   onlineDot: {
     position: "absolute",
@@ -371,19 +543,6 @@ const styles = StyleSheet.create({
   friendMessage: {
     color: BRAND_COLORS.muted,
     marginTop: 6,
-  },
-  friendTimeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
-    marginLeft: 12,
-  },
-  friendTimeText: {
-    color: BRAND_COLORS.muted,
-    fontWeight: "600",
-    fontSize: 12,
   },
   loaderRow: {
     flexDirection: "row",
@@ -455,6 +614,74 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginTop: 20,
     marginHorizontal: -6,
+  },
+  blockedSection: {
+    marginTop: 24,
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  blockedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  blockedTitle: {
+    color: BRAND_COLORS.text,
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  blockedRefresh: {
+    color: BRAND_COLORS.secondary,
+    fontWeight: "600",
+  },
+  blockedList: {
+    marginTop: 8,
+  },
+  blockedCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  blockedInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  blockedAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+  },
+  blockedName: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  blockedLocation: {
+    color: BRAND_COLORS.muted,
+    fontSize: 12,
+  },
+  blockedEmpty: {
+    color: BRAND_COLORS.muted,
+    fontStyle: "italic",
+    marginTop: 12,
+  },
+  blockedAction: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  blockedActionText: {
+    color: BRAND_COLORS.secondary,
+    fontWeight: "600",
   },
 });
 

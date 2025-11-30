@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   acceptFriendRequest,
@@ -6,6 +7,7 @@ import {
   deleteFriendRequest,
   getAdminNotifications,
   getFriendRequests,
+  blockUser,
 } from "../lib/api";
 import {
   BellIcon,
@@ -26,6 +28,7 @@ const ADMIN_EXPIRE_DAYS = 3;
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const [blockingUserId, setBlockingUserId] = useState(null);
 
   const { data: friendRequests, isLoading } = useQuery({
     queryKey: ["friendRequests"],
@@ -75,6 +78,22 @@ const NotificationsPage = () => {
       onError: (error) => {
         toast.error(error.response?.data?.message || t("notifications.error"));
       },
+    });
+
+  const { mutate: blockSenderMutation, isPending: isBlockingSender } =
+    useMutation({
+      mutationFn: blockUser,
+      onMutate: (userId) => setBlockingUserId(userId),
+      onSuccess: () => {
+        toast.success(t("friends.blockSuccess"));
+        queryClient.invalidateQueries({ queryKey: ["friendRequests"] });
+        queryClient.invalidateQueries({ queryKey: ["friends"] });
+        queryClient.invalidateQueries({ queryKey: ["blockedUsers"] });
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || t("friends.blockError"));
+      },
+      onSettled: () => setBlockingUserId(null),
     });
 
   const { mutate: deleteNotificationMutation, isPending: isRemoving } =
@@ -264,6 +283,22 @@ const NotificationsPage = () => {
 
                           {request.status === "pending" && (
                             <div className="flex gap-2 items-center">
+                              <button
+                                className="btn btn-error btn-sm"
+                                onClick={() =>
+                                  blockSenderMutation(request.sender._id)
+                                }
+                                disabled={
+                                  isBlockingSender &&
+                                  blockingUserId === request.sender._id
+                                }
+                              >
+                                {isBlockingSender &&
+                                blockingUserId === request.sender._id ? (
+                                  <span className="loading loading-spinner loading-xs"></span>
+                                ) : null}
+                                {t("friends.blockAction")}
+                              </button>
                               <button
                                 className="btn btn-outline btn-sm"
                                 onClick={() =>

@@ -6,6 +6,9 @@ import {
   sendFriendRequest,
   cancelFriendRequest,
   fetchOutgoingFriendRequests,
+  fetchBlockedUsers,
+  blockUser,
+  unblockUser,
 } from "../services/friendService";
 import { ensureFriendsData } from "../utils/profile";
 
@@ -53,6 +56,10 @@ const useFriends = () => {
   const [loadingMoreFriends, setLoadingMoreFriends] = useState(false);
   const [hasMoreFriends, setHasMoreFriends] = useState(true);
   const [friendsCursor, setFriendsCursor] = useState(null);
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [blockingUserId, setBlockingUserId] = useState(null);
+  const [unblockingUserId, setUnblockingUserId] = useState(null);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [friendProfile, setFriendProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -110,6 +117,20 @@ const useFriends = () => {
 
   const refreshFriends = async () => loadFriends({ fullReload: false });
 
+  const loadBlockedUsers = async () => {
+    setBlockedLoading(true);
+    try {
+      const response = await fetchBlockedUsers();
+      const blocked = response?.blocked ?? response ?? [];
+      setBlockedUsers(blocked);
+      return blocked;
+    } catch (error) {
+      throw error;
+    } finally {
+      setBlockedLoading(false);
+    }
+  };
+
   const loadMoreFriends = async () => {
     if (loadingMoreFriends || !hasMoreFriends || !friendsCursor) return [];
 
@@ -136,6 +157,35 @@ const useFriends = () => {
       throw error;
     } finally {
       setLoadingMoreFriends(false);
+    }
+  };
+
+  const blockUserById = async (userId) => {
+    if (!userId) return false;
+    setBlockingUserId(userId);
+    try {
+      await blockUser(userId);
+      setFriends((prev) => prev.filter((friend) => friend._id !== userId));
+      await loadBlockedUsers().catch(() => null);
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setBlockingUserId(null);
+    }
+  };
+
+  const unblockUserById = async (userId) => {
+    if (!userId) return false;
+    setUnblockingUserId(userId);
+    try {
+      await unblockUser(userId);
+      await loadBlockedUsers().catch(() => null);
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setUnblockingUserId(null);
     }
   };
 
@@ -174,6 +224,10 @@ const useFriends = () => {
     setLoadingMoreFriends(false);
     setHasMoreFriends(true);
     setFriendsCursor(null);
+    setBlockedUsers([]);
+    setBlockedLoading(false);
+    setBlockingUserId(null);
+    setUnblockingUserId(null);
     resetSelection();
     setFilters(createEmptyFilters());
     setRecommended([]);
@@ -299,12 +353,18 @@ const useFriends = () => {
   };
 
   const hasPendingRequest = (userId) => hasSentRequest.has(userId);
+  const isBlockedUser = (userId) =>
+    blockedUsers.some((user) => user?._id === userId);
 
   return {
     friends,
     friendsLoading,
     loadingMoreFriends,
     hasMoreFriends,
+    blockedUsers,
+    blockedLoading,
+    blockingUserId,
+    unblockingUserId,
     selectedFriend,
     friendProfile,
     profileLoading,
@@ -315,9 +375,11 @@ const useFriends = () => {
     recommendedError,
     requestingId,
     hasPendingRequest,
+    isBlockedUser,
     loadFriends,
     refreshFriends,
     loadMoreFriends,
+    loadBlockedUsers,
     setInitialFriends,
     selectFriend,
     resetSelection,
@@ -327,6 +389,8 @@ const useFriends = () => {
     applyFilters,
     sendRequest,
     cancelRequest,
+    blockUserById,
+    unblockUserById,
   };
 };
 
