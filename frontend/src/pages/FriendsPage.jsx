@@ -111,6 +111,13 @@ const FriendsPage = () => {
           { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
           { value: "Nuremberg", label: t("onboarding.cityOptions.germany.nurnberg") },
           { value: "Stuttgart", label: t("onboarding.cityOptions.germany.stuttgart") },
+          { value: "Essen", label: t("onboarding.cityOptions.germany.essen") },
+          { value: "Dortmund", label: t("onboarding.cityOptions.germany.dortmund") },
+          { value: "Bochum", label: t("onboarding.cityOptions.germany.bochum") },
+          { value: "Karlsruhe", label: t("onboarding.cityOptions.germany.karlsruhe") },
+          { value: "Aachen", label: t("onboarding.cityOptions.germany.aachen") },
+          { value: "Freiburg", label: t("onboarding.cityOptions.germany.freiburg") },
+          { value: "Regensburg", label: t("onboarding.cityOptions.germany.regensburg") },
         ]),
       },
       {
