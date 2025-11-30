@@ -30,11 +30,19 @@ const adminNotificationSchema = new mongoose.Schema(
     expireAt: {
       type: Date,
       required: true,
-      index: { expires: 0 },
     },
+    dismissedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: false }
 );
+
+adminNotificationSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
+adminNotificationSchema.path("dismissedBy").default(() => []);
 
 export const AdminNotification =
   mongoose.models.AdminNotification ||

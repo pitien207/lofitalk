@@ -295,6 +295,38 @@ const QUESTION_BANK = {
         "Ai cũng được",
       ],
     },
+    {
+      id: "easy-41",
+      prompt: "Phong cách thời trang bạn yêu thích nhất là gì?",
+      options: [
+        "Trẻ trung, năng động, tươi mới và tràn đầy năng lượng",
+        "Đường phố, cá tính, một chút bụi bặm và phóng khoáng",
+        "Trưởng thành, lịch lãm, chỉn chu và chững chạc",
+        "Tối giản, tinh tế, nhẹ nhàng nhưng vẫn thời thượng",
+      ],
+    },
+
+    {
+      id: "easy-42",
+      prompt: "Vào những dịp đặc biệt, bạn muốn nhận món quà như thế nào?",
+      options: [
+        "Đồ handmade, đơn giản nhưng chứa đầy tâm ý",
+        "Đồ thời trang (quần áo, giày dép…), được đẹp hơn là vui rồi",
+        "Một món quà thiết thực, dùng được ngay, không để tủ",
+        "Một trải nghiệm đáng nhớ, buổi hẹn, chuyến đi hoặc điều gì đó thật khác biệt",
+      ],
+    },
+
+    {
+      id: "easy-43",
+      prompt: "Bạn thường thể hiện sự quan tâm với người ấy theo cách nào?",
+      options: [
+        "Duy trì kết nối mỗi ngày, nhắn tin, gọi video đều đặn",
+        "Gửi cảm xúc bằng âm nhạc, hát, thu âm hoặc quay video gửi người ấy",
+        "Những món quà nhỏ đầy ý nghĩa, mua đồ ăn, tặng vật dụng xinh xinh",
+        "Luôn có mặt khi cần, không ngại đường xa để đưa đón hoặc ở bên cạnh",
+      ],
+    },
   ],
   hard: [
     {
@@ -304,7 +336,7 @@ const QUESTION_BANK = {
         "Khi hai người nói chuyện rất tự nhiên, không hề gượng gạo",
         "Khi họ tạo cho bạn cảm giác an toàn và được là chính mình",
         "Khi bạn có thể chia sẻ cảm xúc sâu mà không sợ bị đánh giá",
-        "Khi bạn cảm nhận rõ hai người có cùng tần số – hợp vibe lạ kỳ",
+        "Khi bạn cảm nhận rõ hai người có cùng tần số, hợp vibe lạ kỳ",
       ],
     },
     {
@@ -653,6 +685,52 @@ const QUESTION_BANK = {
         "Tính cách dễ thương, vui vẻ khiến đối phương thoải mái",
         "Sự tự tin nhưng nhẹ nhàng, không cố gắng gây ấn tượng quá mức",
         "Sự lắng nghe và tôn trọng cảm xúc, pace của người kia",
+      ],
+    },
+    {
+      id: "hard-46",
+      prompt:
+        "Bạn và người ấy đang tranh luận về một chủ đề nào đó, và bạn biết chắc mình đúng. Bạn sẽ làm gì?",
+      options: [
+        "Trình bày lý lẽ một cách thông minh, rõ ràng và thuyết phục nhất có thể",
+        "Chấp nhận quan điểm của người ấy để giữ hòa khí, dù bạn không thật sự đồng tình",
+        "Bỏ qua chủ đề và ngầm thỏa thuận rằng hai người sẽ không nhắc lại chuyện này nữa",
+        "Giải thích quan điểm của mình bằng thái độ nhẹ nhàng, rồi cùng nhìn vấn đề theo nhiều góc độ",
+      ],
+    },
+
+    {
+      id: "hard-47",
+      prompt:
+        "Tối nay thời tiết xấu và người ấy đi làm về muộn hơn mọi ngày. Bạn sẽ làm gì?",
+      options: [
+        "Chuẩn bị một bữa tối ấm áp do bạn tự nấu để họ về là có ngay đồ ăn ngon",
+        "Đội mưa đến đón người ấy và cùng nhau mua món ăn nhẹ hoặc về nhà nấu gì đó giản dị",
+        "Đặt bàn ở một nhà hàng xịn rồi gọi taxi đến công ty đón người ấy để có một buổi tối sang – chill",
+        "Nhắn tin ngọt ngào dặn dò họ cẩn thận, rồi âm thầm chuẩn bị không gian thật ấm để họ về là được bao bọc bởi sự quan tâm của bạn",
+      ],
+    },
+    {
+      id: "hard-48",
+      prompt:
+        "Hai bạn có một ngày ở nhà bên nhau nhưng người ấy lại mải mê làm việc họ thích, còn bạn thì không hứng thú. Bạn sẽ làm gì?",
+      options: [
+        "Ngồi cạnh và chia sẻ thời gian với người ấy như một cách tôn trọng sở thích của họ",
+        "Khẽ thể hiện một chút để người ấy hiểu bạn muốn cả hai làm điều gì đó cùng nhau",
+        "Dành thời gian cho sở thích riêng của mình để cả hai đều thoải mái",
+        "Rời khỏi không gian đó để làm điều bạn thích rồi quay lại khi cả hai sẵn sàng dành thời gian cho nhau",
+      ],
+    },
+
+    {
+      id: "hard-49",
+      prompt:
+        "Người ấy thích một món đồ nhưng giá vượt quá khả năng của họ và cũng cao hơn mức chi tiêu thường ngày của bạn. Bạn sẽ làm gì?",
+      options: [
+        "Âm thầm để dành tiền và tặng họ vào một dịp thật đặc biệt",
+        "Tự học cách làm hoặc tạo ra một phiên bản tương tự mang dấu ấn riêng của bạn",
+        "Mua ngay món đó cho người ấy và chấp nhận tiết kiệm trong vài tuần tới",
+        "Chọn một món quà tinh tế, ý nghĩa, nhưng vừa túi tiền để vẫn thể hiện sự quan tâm",
       ],
     },
   ],

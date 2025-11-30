@@ -71,6 +71,7 @@ export const listAdminNotificationsForUser = async (req, res) => {
 
     const notifications = await AdminNotification.find({
       expireAt: { $gt: now },
+      dismissedBy: { $nin: [userId] },
       $or: [{ targetType: "all" }, { targetType: "single", targetUser: userId }],
     })
       .sort({ createdAt: -1 })
@@ -104,18 +105,34 @@ export const deleteAdminNotificationForUser = async (req, res) => {
       return res.status(404).json({ message: "Notification not found" });
     }
 
-    const isTargeted =
-      notification.targetType === "single" &&
-      notification.targetUser?.toString() === req.user._id.toString();
+    const requesterId = req.user._id.toString();
 
-    const isForAll = notification.targetType === "all";
-
-    if (!isTargeted && !isForAll) {
-      return res.status(403).json({ message: "You cannot remove this notification" });
+    if (notification.targetType === "single") {
+      const isTargetedUser = notification.targetUser?.toString() === requesterId;
+      if (!isTargetedUser) {
+        return res.status(403).json({ message: "You cannot remove this notification" });
+      }
+      await notification.deleteOne();
+      return res.status(200).json({ success: true, dismissed: true });
     }
 
-    await notification.deleteOne();
-    res.status(200).json({ success: true });
+    if (notification.targetType === "all") {
+      const alreadyDismissed = notification.dismissedBy?.some(
+        (userId) => userId?.toString() === requesterId
+      );
+
+      if (alreadyDismissed) {
+        return res.status(200).json({ success: true, dismissed: true });
+      }
+
+      await AdminNotification.updateOne(
+        { _id: notification._id },
+        { $addToSet: { dismissedBy: req.user._id } }
+      );
+      return res.status(200).json({ success: true, dismissed: true });
+    }
+
+    return res.status(403).json({ message: "You cannot remove this notification" });
   } catch (error) {
     console.error("Error deleting admin notification", error.message);
     res.status(500).json({ message: "Failed to delete notification" });

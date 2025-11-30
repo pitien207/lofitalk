@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "../languages/useTranslation";
+import useFortuneCookie from "../hooks/useFortuneCookie";
 import { getFortuneCookie, openFortuneCookie } from "../lib/api";
 
 const COOKIE_HALF_BASE =
@@ -20,8 +21,7 @@ const CONFETTI_COLORS = ["#FDBA74", "#F87171", "#FDE68A", "#34D399", "#A78BFA", 
 const FortuneCookie = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const fortunesRaw = t("sidebar.fortune.messages");
-  const fortunes = Array.isArray(fortunesRaw) ? fortunesRaw : [];
+  const fortunes = useFortuneCookie();
   const fallbackFortune = t("sidebar.fortune.fallback");
 
   const [phase, setPhase] = useState("idle"); // idle, cracking, open
