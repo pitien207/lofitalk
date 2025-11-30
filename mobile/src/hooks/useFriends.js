@@ -9,6 +9,7 @@ import {
   fetchBlockedUsers,
   blockUser,
   unblockUser,
+  reportUser,
 } from "../services/friendService";
 import { ensureFriendsData } from "../utils/profile";
 
@@ -60,6 +61,7 @@ const useFriends = () => {
   const [blockedLoading, setBlockedLoading] = useState(false);
   const [blockingUserId, setBlockingUserId] = useState(null);
   const [unblockingUserId, setUnblockingUserId] = useState(null);
+  const [reportingUserId, setReportingUserId] = useState(null);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [friendProfile, setFriendProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -189,6 +191,19 @@ const useFriends = () => {
     }
   };
 
+  const reportUserById = async (userId, message) => {
+    if (!userId || !message?.trim()) return false;
+    setReportingUserId(userId);
+    try {
+      await reportUser(userId, { message: message.trim() });
+      return true;
+    } catch (_error) {
+      return false;
+    } finally {
+      setReportingUserId(null);
+    }
+  };
+
   const resetSelection = () => {
     setSelectedFriend(null);
     setFriendProfile(null);
@@ -228,6 +243,7 @@ const useFriends = () => {
     setBlockedLoading(false);
     setBlockingUserId(null);
     setUnblockingUserId(null);
+    setReportingUserId(null);
     resetSelection();
     setFilters(createEmptyFilters());
     setRecommended([]);
@@ -365,6 +381,7 @@ const useFriends = () => {
     blockedLoading,
     blockingUserId,
     unblockingUserId,
+    reportingUserId,
     selectedFriend,
     friendProfile,
     profileLoading,
@@ -391,6 +408,7 @@ const useFriends = () => {
     cancelRequest,
     blockUserById,
     unblockUserById,
+    reportUserById,
   };
 };
 

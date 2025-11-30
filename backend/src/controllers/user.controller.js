@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import UserReport from "../models/UserReport.js";
 import { hasBlockedUser } from "../lib/blockService.js";
 
 const toObjectId = (value) =>
@@ -75,6 +76,7 @@ const isSameUTCDay = (left, right) => {
 };
 
 const MAX_RECOMMENDATIONS = 3;
+const REPORT_WORD_LIMIT = 120;
 
 const resetFortuneCookieForUser = async (userId) => {
   await User.findByIdAndUpdate(userId, {
@@ -833,6 +835,50 @@ export async function unblockUser(req, res) {
     res.status(200).json({ success: true, message: "User unblocked" });
   } catch (error) {
     console.error("Error unblocking user", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function reportUser(req, res) {
+  try {
+    const reporterId = req.user.id;
+    const { id: targetId } = req.params;
+    const rawMessage = req.body?.message;
+    const message = rawMessage?.toString().trim();
+
+    if (!targetId) {
+      return res.status(400).json({ message: "Target user is required" });
+    }
+
+    if (reporterId === targetId) {
+      return res.status(400).json({ message: "Cannot report yourself" });
+    }
+
+    if (!message) {
+      return res.status(400).json({ message: "Report message is required" });
+    }
+
+    const wordCount = message.split(/\s+/).filter(Boolean).length;
+    if (wordCount > REPORT_WORD_LIMIT) {
+      return res.status(400).json({
+        message: `Report is too long. Please keep it under ${REPORT_WORD_LIMIT} words`,
+      });
+    }
+
+    const targetUser = await User.findById(targetId).select("_id");
+    if (!targetUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await UserReport.create({
+      reporter: reporterId,
+      target: targetId,
+      message,
+    });
+
+    res.status(201).json({ success: true, message: "Report submitted" });
+  } catch (error) {
+    console.error("Error reporting user", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 }

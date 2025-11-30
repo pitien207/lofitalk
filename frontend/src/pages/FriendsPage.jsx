@@ -11,6 +11,7 @@ import {
   getBlockedUsers,
   blockUser,
   unblockUser,
+  reportUser,
 } from "../lib/api";
 import {
   LoaderIcon,
@@ -26,6 +27,7 @@ import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 import { useTranslation } from "../languages/useTranslation";
 import toast from "react-hot-toast";
+import ReportUserModal from "../components/ReportUserModal";
 
 const createEmptyFilters = () => ({
   gender: "",
@@ -65,6 +67,9 @@ const FriendsPage = () => {
   const [friendsPage, setFriendsPage] = useState(1);
   const [blockingId, setBlockingId] = useState(null);
   const [unblockingId, setUnblockingId] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const REPORT_WORD_LIMIT = 120;
 
   const genderOptions = useMemo(
     () => [
@@ -295,6 +300,18 @@ const FriendsPage = () => {
     onSettled: () => setUnblockingId(null),
   });
 
+  const { mutate: reportUserMutation, isPending: isSubmittingReport } = useMutation({
+    mutationFn: ({ userId, message }) => reportUser(userId, { message }),
+    onSuccess: () => {
+      toast.success(t("friends.reportSuccess"));
+      setIsReportModalOpen(false);
+      setReportTarget(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || t("friends.reportError"));
+    },
+  });
+
   useEffect(() => {
     const outgoingIds = new Set();
     if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
@@ -343,9 +360,26 @@ const FriendsPage = () => {
     unblockUserMutation(userId);
   };
 
+  const handleOpenReport = (user) => {
+    if (!user) return;
+    setReportTarget(user);
+    setIsReportModalOpen(true);
+  };
+
+  const handleCloseReport = () => {
+    setReportTarget(null);
+    setIsReportModalOpen(false);
+  };
+
+  const handleSubmitReport = (message) => {
+    if (!reportTarget || !message?.trim()) return;
+    reportUserMutation({ userId: reportTarget._id, message: message.trim() });
+  };
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="container mx-auto space-y-10">
+    <>
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="container mx-auto space-y-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
             {t("home.yourFriends")}
@@ -370,6 +404,7 @@ const FriendsPage = () => {
                   key={friend._id}
                   friend={friend}
                   onBlock={handleBlockUser}
+                  onReport={handleOpenReport}
                   isBlocking={blockingId === friend._id}
                 />
               ))}
@@ -785,6 +820,15 @@ const FriendsPage = () => {
         </section>
       </div>
     </div>
+      <ReportUserModal
+        isOpen={isReportModalOpen}
+        targetUser={reportTarget}
+        onClose={handleCloseReport}
+        onSubmit={handleSubmitReport}
+        isSubmitting={isSubmittingReport}
+        wordLimit={REPORT_WORD_LIMIT}
+      />
+    </>
   );
 };
 

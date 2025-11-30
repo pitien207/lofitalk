@@ -1,10 +1,10 @@
 import { Link } from "react-router";
-import { MapPinIcon, MoreVerticalIcon, BanIcon } from "lucide-react";
+import { MapPinIcon, MoreVerticalIcon, BanIcon, FlagIcon } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 import { useTranslation } from "../languages/useTranslation";
 import { formatRelativeTimeFromNow } from "../utils/time";
 
-const FriendCard = ({ friend, onBlock, isBlocking = false }) => {
+const FriendCard = ({ friend, onBlock, onReport, isBlocking = false }) => {
   const { t, language } = useTranslation();
   const locationText =
     [friend.city, friend.country].filter(Boolean).join(", ") ||
@@ -43,7 +43,7 @@ const FriendCard = ({ friend, onBlock, isBlocking = false }) => {
               <p className="text-xs text-base-content/70">{presenceLabel}</p>
             </div>
           </Link>
-          {onBlock ? (
+          {onBlock || onReport ? (
             <div className="dropdown dropdown-end">
               <button
                 type="button"
@@ -57,21 +57,35 @@ const FriendCard = ({ friend, onBlock, isBlocking = false }) => {
                 tabIndex={0}
                 className="dropdown-content menu p-2 shadow bg-base-100 rounded-lg border border-base-300 w-44"
               >
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => onBlock(friend._id)}
-                    disabled={isBlocking}
-                    className="flex items-center gap-2 text-error"
-                  >
-                    {isBlocking ? (
-                      <span className="loading loading-spinner loading-xs" />
-                    ) : (
-                      <BanIcon className="size-4" />
-                    )}
-                    {t("friends.blockAction")}
-                  </button>
-                </li>
+                {onReport ? (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => onReport(friend)}
+                      className="flex items-center gap-2 text-warning"
+                    >
+                      <FlagIcon className="size-4" />
+                      {t("friends.reportAction")}
+                    </button>
+                  </li>
+                ) : null}
+                {onBlock ? (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => onBlock(friend._id)}
+                      disabled={isBlocking}
+                      className="flex items-center gap-2 text-error"
+                    >
+                      {isBlocking ? (
+                        <span className="loading loading-spinner loading-xs" />
+                      ) : (
+                        <BanIcon className="size-4" />
+                      )}
+                      {t("friends.blockAction")}
+                    </button>
+                  </li>
+                ) : null}
               </ul>
             </div>
           ) : null}

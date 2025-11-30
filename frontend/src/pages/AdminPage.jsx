@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { getAdminUsers, sendAdminNotification, updateUserAccountType } from "../lib/api";
+import {
+  getAdminUsers,
+  sendAdminNotification,
+  updateUserAccountType,
+  getUserReports,
+  resolveUserReport,
+  deleteUserReport,
+} from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
 
@@ -21,6 +28,8 @@ const AdminPage = () => {
   const notificationExpireDays = 3;
   const [pendingAccountTypes, setPendingAccountTypes] = useState({});
   const [savingAccounts, setSavingAccounts] = useState(false);
+  const [resolvingReportId, setResolvingReportId] = useState(null);
+  const [deletingReportId, setDeletingReportId] = useState(null);
 
   const {
     data,
@@ -29,6 +38,11 @@ const AdminPage = () => {
   } = useQuery({
     queryKey: ["adminUsers"],
     queryFn: getAdminUsers,
+  });
+
+  const { data: reportData, isLoading: loadingReports } = useQuery({
+    queryKey: ["adminReports"],
+    queryFn: getUserReports,
   });
 
   const { mutateAsync, isPending } = useMutation({
@@ -76,6 +90,18 @@ const AdminPage = () => {
     }
   };
 
+  const handleResolveReport = (reportId) => {
+    if (!reportId) return;
+    setResolvingReportId(reportId);
+    resolveReportMutation.mutate(reportId);
+  };
+
+  const handleDeleteReport = (reportId) => {
+    if (!reportId) return;
+    setDeletingReportId(reportId);
+    deleteReportMutation.mutate(reportId);
+  };
+
   const { mutateAsync: sendNotification, isPending: sendingNotification } = useMutation({
     mutationFn: sendAdminNotification,
     onSuccess: () => {
@@ -89,6 +115,42 @@ const AdminPage = () => {
       toast.error(message);
     },
   });
+
+  const resolveReportMutation = useMutation({
+    mutationFn: (reportId) => resolveUserReport(reportId),
+    onSuccess: () => {
+      toast.success(t("admin.reports.resolveSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["adminReports"] });
+      queryClient.invalidateQueries({ queryKey: ["adminPendingReports"] });
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || t("admin.reports.resolveError");
+      toast.error(message);
+    },
+    onSettled: () => setResolvingReportId(null),
+  });
+
+  const deleteReportMutation = useMutation({
+    mutationFn: (reportId) => deleteUserReport(reportId),
+    onSuccess: () => {
+      toast.success(t("admin.reports.deleteSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["adminReports"] });
+      queryClient.invalidateQueries({ queryKey: ["adminPendingReports"] });
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || t("admin.reports.deleteError");
+      toast.error(message);
+    },
+    onSettled: () => setDeletingReportId(null),
+  });
+
+  const reports = reportData?.reports ?? [];
+
+  const formatDateTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
+  };
 
   const users = data?.users ?? [];
 
@@ -400,6 +462,82 @@ const AdminPage = () => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="card-title">{t("admin.reports.heading")}</h2>
+            {loadingReports && <span className="loading loading-spinner loading-sm" />}
+          </div>
+          <p className="text-sm text-base-content/70">{t("admin.reports.description")}</p>
+
+          {reports.length === 0 ? (
+            <p className="text-sm text-base-content/70">{t("admin.reports.empty")}</p>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((report) => {
+                const targetName = report.target?.fullName || t("admin.reports.unknownUser");
+                const reporterName = report.reporter?.fullName || t("admin.reports.unknownUser");
+                const isResolving = resolvingReportId === report.id;
+                const isDeleting = deletingReportId === report.id;
+                const statusLabel = t(`admin.reports.status.${report.status}`);
+
+                return (
+                  <div key={report.id} className="rounded-2xl border border-base-300 p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{targetName}</p>
+                        <p className="text-xs text-base-content/70">
+                          {t("admin.reports.reportedBy", { name: reporterName })}
+                        </p>
+                      </div>
+                      <span
+                        className={`badge ${
+                          report.status === "pending" ? "badge-warning" : "badge-success"
+                        }`}
+                      >
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap text-base-content/80">{report.message}</p>
+                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-base-content/70">
+                      <span>{t("admin.reports.createdAt", { date: formatDateTime(report.createdAt) })}</span>
+                      {report.status === "resolved" ? (
+                        <div className="flex items-center gap-3">
+                          <span>
+                            {report.resolvedAt
+                              ? t("admin.reports.resolvedAt", { date: formatDateTime(report.resolvedAt) })
+                              : statusLabel}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-error"
+                            onClick={() => handleDeleteReport(report.id)}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting && <span className="loading loading-spinner loading-xs mr-1" />}
+                            {t("admin.reports.deleteAction")}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => handleResolveReport(report.id)}
+                          disabled={isResolving}
+                        >
+                          {isResolving && <span className="loading loading-spinner loading-xs mr-1" />}
+                          {t("admin.reports.resolveAction")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

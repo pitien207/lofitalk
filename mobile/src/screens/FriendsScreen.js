@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -36,6 +37,7 @@ const FriendsScreen = ({
   blockedLoading,
   blockingUserId,
   unblockingUserId,
+  reportingUserId,
   selectedFriend,
   friendProfile,
   profileLoading,
@@ -49,9 +51,14 @@ const FriendsScreen = ({
   onRefreshBlocked,
   onBlockUser,
   onUnblockUser,
+  onReportUser,
   isBlockedUser,
 }) => {
   const [openMenuUserId, setOpenMenuUserId] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
+  const REPORT_WORD_LIMIT = 120;
 
   const closeMenu = () => setOpenMenuUserId(null);
 
@@ -62,6 +69,20 @@ const FriendsScreen = ({
 
   const handleToggleMenu = (userId) => {
     setOpenMenuUserId((prev) => (prev === userId ? null : userId));
+  };
+
+  const openReportModal = (friend) => {
+    if (!friend) return;
+    closeMenu();
+    setReportTarget(friend);
+    setReportMessage("");
+    setReportModalVisible(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+    setReportTarget(null);
+    setReportMessage("");
   };
 
   const confirmBlockUser = (friend) => {
@@ -84,6 +105,26 @@ const FriendsScreen = ({
     if (!userId || !onUnblockUser) return;
     onUnblockUser(userId);
   };
+
+  const handleReportSubmit = async () => {
+    if (!reportTarget || !reportMessage.trim() || !onReportUser) return;
+    const success = await onReportUser(reportTarget._id, reportMessage.trim());
+    if (success) {
+      Alert.alert("Đã gửi báo cáo", "Cảm ơn bạn đã phản hồi.");
+      closeReportModal();
+    } else {
+      Alert.alert("Có lỗi xảy ra", "Không thể gửi báo cáo. Vui lòng thử lại.");
+    }
+  };
+
+  const reportWordCount = reportMessage.trim()
+    ? reportMessage.trim().split(/\s+/).length
+    : 0;
+  const isReportTooLong = reportWordCount > REPORT_WORD_LIMIT;
+  const isSubmittingReport =
+    reportTarget && reportingUserId === reportTarget._id;
+  const canSubmitReport =
+    reportMessage.trim().length > 0 && !isReportTooLong && !isSubmittingReport;
 
   const showProfile = Boolean(selectedFriend);
   const Header = (
@@ -116,6 +157,7 @@ const FriendsScreen = ({
     const isMenuOpen = openMenuUserId === item._id;
     const alreadyBlocked = isBlockedUser?.(item._id);
     const isProcessingBlock = blockingUserId === item._id;
+    const isProcessingReport = reportingUserId === item._id;
     const locationLabel = item.location || "Let's keep in touch";
 
     return (
@@ -147,6 +189,15 @@ const FriendsScreen = ({
         </TouchableOpacity>
         {isMenuOpen && (
           <View style={styles.friendMenu}>
+            <TouchableOpacity
+              style={styles.friendMenuAction}
+              onPress={() => openReportModal(item)}
+              disabled={isProcessingReport}
+            >
+              <Text style={styles.friendMenuActionText}>
+                {isProcessingReport ? "Sending..." : "Report user"}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.friendMenuAction,
@@ -293,6 +344,57 @@ const FriendsScreen = ({
             ListFooterComponent={renderFooter}
             showsVerticalScrollIndicator={false}
           />
+        </View>
+      )}
+      {reportModalVisible && (
+        <View style={styles.reportOverlay}>
+          <View style={styles.reportModal}>
+            <Text style={styles.reportTitle}>Báo cáo người dùng</Text>
+            <Text style={styles.reportSubtitle}>
+              Hãy mô tả ngắn gọn (tối đa {REPORT_WORD_LIMIT} từ)
+            </Text>
+            <Text style={styles.reportTarget}>
+              {reportTarget?.fullName || "Người dùng"}
+            </Text>
+            <TextInput
+              style={styles.reportInput}
+              multiline
+              placeholder="Ví dụ: Gửi tin nhắn không phù hợp..."
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              value={reportMessage}
+              onChangeText={setReportMessage}
+            />
+            <Text
+              style={[
+                styles.reportCounter,
+                isReportTooLong && styles.reportCounterError,
+              ]}
+            >
+              {reportWordCount}/{REPORT_WORD_LIMIT}
+            </Text>
+            <View style={styles.reportActions}>
+              <TouchableOpacity
+                style={[styles.reportButton, styles.reportCancel]}
+                onPress={closeReportModal}
+                disabled={isSubmittingReport}
+              >
+                <Text style={styles.reportCancelText}>Đóng</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.reportButton,
+                  canSubmitReport ? styles.reportSubmit : styles.reportSubmitDisabled,
+                ]}
+                onPress={handleReportSubmit}
+                disabled={!canSubmitReport}
+              >
+                {isSubmittingReport && (
+                  <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
+                )}
+                <Text style={styles.reportSubmitText}>Gửi báo cáo</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       )}
     </>
@@ -682,6 +784,86 @@ const styles = StyleSheet.create({
   blockedActionText: {
     color: BRAND_COLORS.secondary,
     fontWeight: "600",
+  },
+  reportOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  reportModal: {
+    width: "100%",
+    borderRadius: 28,
+    backgroundColor: BRAND_COLORS.background,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    padding: 20,
+  },
+  reportTitle: {
+    color: BRAND_COLORS.text,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  reportSubtitle: {
+    color: BRAND_COLORS.muted,
+    marginTop: 6,
+    fontSize: 13,
+  },
+  reportTarget: {
+    color: BRAND_COLORS.secondary,
+    fontWeight: "600",
+    marginTop: 8,
+  },
+  reportInput: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+    borderRadius: 18,
+    padding: 12,
+    color: BRAND_COLORS.text,
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+  reportCounter: {
+    marginTop: 8,
+    textAlign: "right",
+    color: BRAND_COLORS.muted,
+    fontSize: 12,
+  },
+  reportCounterError: {
+    color: "#ff8c8c",
+  },
+  reportActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 16,
+  },
+  reportButton: {
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  reportCancel: {
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  reportCancelText: {
+    color: BRAND_COLORS.text,
+    fontWeight: "600",
+  },
+  reportSubmit: {
+    backgroundColor: BRAND_COLORS.secondary,
+  },
+  reportSubmitDisabled: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  reportSubmitText: {
+    color: "#1f1f1f",
+    fontWeight: "700",
   },
 });
 

@@ -116,3 +116,11 @@ export const unblockUser = async (userId) => {
   const { data } = await api.delete(`/users/block/${userId}`);
   return data;
 };
+
+export const reportUser = async (userId, payload) => {
+  if (!userId) {
+    throw new Error("userId is required to report");
+  }
+  const { data } = await api.post(`/users/report/${userId}`, payload);
+  return data;
+};

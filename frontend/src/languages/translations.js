@@ -10,6 +10,7 @@ const english = {
     next: "Next",
     send: "Send",
     messagePlaceholder: "Type a message...",
+    cancel: "Cancel",
     presence: {
       online: "Online now",
       offline: "Last seen {timeAgo}",
@@ -125,6 +126,17 @@ const english = {
       "Friends you block show up here and can no longer contact you.",
     blockedEmpty: "You haven't blocked anyone yet.",
     blockMenuLabel: "More actions",
+    reportAction: "Report",
+    reportTitle: "Report user",
+    reportTargetLabel: "Reporting {name}",
+    reportDescription:
+      "Share a short note about this report. Keep it under {limit} words.",
+    reportPlaceholder: "Describe what happened...",
+    reportWordCounter: "{count}/{limit} words",
+    reportTooLong: "Too many words",
+    reportSubmit: "Send report",
+    reportSuccess: "Report submitted. Thank you for the feedback.",
+    reportError: "Unable to submit report.",
   },
 
   nav: {
@@ -675,6 +687,25 @@ const english = {
         emailRequired: "Email is required for a single user",
       },
     },
+    reports: {
+      heading: "User reports",
+      description: "Reports submitted from the friends page appear here.",
+      empty: "No reports yet.",
+      resolveAction: "Mark resolved",
+      resolveSuccess: "Report marked as resolved.",
+      resolveError: "Unable to resolve report.",
+      deleteAction: "Delete report",
+      deleteSuccess: "Report deleted.",
+      deleteError: "Unable to delete report.",
+      reportedBy: "Reported by {name}",
+      createdAt: "Filed {date}",
+      resolvedAt: "Resolved {date}",
+      status: {
+        pending: "Pending",
+        resolved: "Resolved",
+      },
+      unknownUser: "Unknown user",
+    },
   },
 };
 
@@ -685,6 +716,7 @@ const vietnamese = {
     next: "Trang sau",
     send: "Gửi",
     messagePlaceholder: "Nhập tin nhắn...",
+    cancel: "Hủy",
     presence: {
       online: "Đang trực tuyến",
       offline: "Hoạt động {timeAgo}",
@@ -796,6 +828,17 @@ const vietnamese = {
       "Những người bạn chặn sẽ hiển thị tại đây và không thể liên lạc với bạn nữa.",
     blockedEmpty: "Bạn chưa chặn ai.",
     blockMenuLabel: "Tùy chọn khác",
+    reportAction: "Báo cáo",
+    reportTitle: "Báo cáo người dùng",
+    reportTargetLabel: "Báo cáo {name}",
+    reportDescription:
+      "Hãy viết ngắn gọn lý do báo cáo (tối đa {limit} từ).",
+    reportPlaceholder: "Ví dụ: Người này gửi tin nhắn không phù hợp...",
+    reportWordCounter: "{count}/{limit} từ",
+    reportTooLong: "Vượt quá giới hạn từ",
+    reportSubmit: "Gửi báo cáo",
+    reportSuccess: "Đã gửi báo cáo. Cảm ơn bạn đã phản hồi.",
+    reportError: "Không thể gửi báo cáo.",
   },
 
   nav: {
@@ -1353,6 +1396,25 @@ const vietnamese = {
         messageRequired: "Cần nhập nội dung.",
         emailRequired: "Cần email khi gửi cho một người dùng.",
       },
+    },
+    reports: {
+      heading: "Báo cáo từ người dùng",
+      description: "Những báo cáo gửi từ trang Bạn bè sẽ hiển thị tại đây.",
+      empty: "Chưa có báo cáo nào.",
+      resolveAction: "Đánh dấu đã xử lý",
+      resolveSuccess: "Đã đánh dấu báo cáo.",
+      resolveError: "Không thể cập nhật báo cáo.",
+      deleteAction: "Xóa báo cáo",
+      deleteSuccess: "Đã xóa báo cáo.",
+      deleteError: "Không thể xóa báo cáo.",
+      reportedBy: "Người báo cáo: {name}",
+      createdAt: "Gửi lúc {date}",
+      resolvedAt: "Đã xử lý lúc {date}",
+      status: {
+        pending: "Đang chờ",
+        resolved: "Đã xử lý",
+      },
+      unknownUser: "Người dùng không xác định",
     },
   },
 };

@@ -52,6 +52,7 @@ const AppContainer = () => {
     blockedLoading,
     blockingUserId,
     unblockingUserId,
+    reportingUserId,
     loadBlockedUsers,
     refreshFriends,
     loadFriends,
@@ -68,6 +69,7 @@ const AppContainer = () => {
     hasPendingRequest,
     blockUserById,
     unblockUserById,
+    reportUserById,
     isBlockedUser,
   } = useFriends();
   const {
@@ -311,6 +313,7 @@ const AppContainer = () => {
             blockedLoading={blockedLoading}
             blockingUserId={blockingUserId}
             unblockingUserId={unblockingUserId}
+            reportingUserId={reportingUserId}
             selectedFriend={selectedFriend}
             friendProfile={friendProfile}
             profileLoading={profileLoading}
@@ -324,6 +327,7 @@ const AppContainer = () => {
             onLoadMoreFriends={loadMoreFriends}
             onBlockUser={blockUserById}
             onUnblockUser={unblockUserById}
+            onReportUser={reportUserById}
             isBlockedUser={isBlockedUser}
           />
         )}

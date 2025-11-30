@@ -22,6 +22,7 @@ import logo from "../pictures/others/LofiTalk_logo.png";
 import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
 import useUnreadChats from "../hooks/useUnreadChats";
+import usePendingReports from "../hooks/usePendingReports";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
@@ -30,6 +31,7 @@ const Sidebar = () => {
   const { t } = useTranslation();
   const { hasPending } = usePendingNotifications();
   const { hasUnread } = useUnreadChats();
+  const { pendingReportCount } = usePendingReports();
   const isChatRoute =
     currentPath === "/chats" || currentPath.startsWith("/chat/");
   const isPlusOrAdmin =
@@ -218,7 +220,12 @@ const Sidebar = () => {
               currentPath === "/admin" ? "btn-active" : ""
             }`}
           >
-            <ShieldIcon className="size-5 text-base-content opacity-70" />
+            <span className="relative">
+              <ShieldIcon className="size-5 text-base-content opacity-70" />
+              {pendingReportCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+              )}
+            </span>
             <span>{t("sidebar.admin")}</span>
           </Link>
         )}

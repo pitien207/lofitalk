@@ -206,6 +206,11 @@ export async function unblockUser(userId) {
   return response.data;
 }
 
+export async function reportUser(userId, payload) {
+  const response = await axiosInstance.post(`/users/report/${userId}`, payload);
+  return response.data;
+}
+
 export async function deleteFriendRequest(requestId) {
   const response = await axiosInstance.delete(`/users/friend-request/${requestId}`);
   return response.data;
@@ -235,6 +240,26 @@ export async function getOnlineUsersCount() {
 
 export async function sendAdminNotification(payload) {
   const response = await axiosInstance.post("/admin/notifications", payload);
+  return response.data;
+}
+
+export async function getUserReports() {
+  const response = await axiosInstance.get("/admin/reports");
+  return response.data;
+}
+
+export async function getPendingReportCount() {
+  const response = await axiosInstance.get("/admin/reports/pending-count");
+  return response.data;
+}
+
+export async function resolveUserReport(reportId) {
+  const response = await axiosInstance.post(`/admin/reports/${reportId}/resolve`);
+  return response.data;
+}
+
+export async function deleteUserReport(reportId) {
+  const response = await axiosInstance.delete(`/admin/reports/${reportId}`);
   return response.data;
 }
 

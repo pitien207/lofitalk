@@ -20,6 +20,7 @@ import {
   blockUser,
   unblockUser,
   getBlockedUsers,
+  reportUser,
 } from "../controllers/user.controller.js";
 import {
   deleteAdminNotificationForUser,
@@ -43,6 +44,7 @@ router.post("/fortune-cookie", openFortuneCookie);
 router.delete("/friends/:id", removeFriend);
 router.post("/block/:id", blockUser);
 router.delete("/block/:id", unblockUser);
+router.post("/report/:id", reportUser);
 router.delete("/friend-request/:id/cancel", cancelFriendRequest);
 router.delete("/friend-request/:id", deleteFriendRequest);
 
