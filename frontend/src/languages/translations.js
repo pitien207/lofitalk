@@ -249,6 +249,7 @@ const english = {
     inviteTitle: "Invite a friend",
     inviteDescription:
       "Send a 30-second invite. Your friend sees a notification to accept or decline.",
+    friendOnly: "You can only invite friends from your list.",
     friendListLabel: "Choose someone to invite",
     selectFriendPlaceholder: "Select a friend",
     loadingFriends: "Loading your friends...",
@@ -289,11 +290,15 @@ const english = {
     playAgain: "Exit game",
     gameEnded: "Game ended by the other player.",
     resultRemark: {
-      perfect: "You two read each other like poetry—celebrate that flawless mind-sync!",
-      excellent: "That rhythm is undeniable. Keep the banter flowing; sparks are imminent.",
-      solid: "Plenty of overlap already; a few more chats and you’ll be unstoppable.",
+      perfect:
+        "You two read each other like poetry—celebrate that flawless mind-sync!",
+      excellent:
+        "That rhythm is undeniable. Keep the banter flowing; sparks are imminent.",
+      solid:
+        "Plenty of overlap already; a few more chats and you’ll be unstoppable.",
       warmup: "The vibe is forming. Swap a playlist or two and try again soon.",
-      retry: "Every duo starts somewhere. Treat this as a blooper reel and dive back in.",
+      retry:
+        "Every duo starts somewhere. Treat this as a blooper reel and dive back in.",
     },
     shareAnswers: "Share answers",
     shareAnswersSending: "Sharing...",
@@ -324,6 +329,7 @@ const english = {
     inviteTitle: "Invite a friend",
     inviteDescription:
       "Send a 30-second invite. After they accept, share your custom deck instantly.",
+    friendOnly: "Invites only work with people in your friends list.",
     friendListLabel: "Choose a friend",
     selectFriendPlaceholder: "Select a friend",
     loadingFriends: "Loading friends...",
@@ -684,7 +690,8 @@ const english = {
     },
     usage: {
       heading: "Feature usage",
-      description: "Live counters for how often each feature has been completed.",
+      description:
+        "Live counters for how often each feature has been completed.",
       tarot: "Tarot readings",
       fortune: "Fortune cookies opened",
       matchmind: "MatchMind sessions",
@@ -837,7 +844,7 @@ const vietnamese = {
       heightPlaceholder: "vd: 160",
       educationLabel: "Học vấn",
       hobbyLabel: "Sở thích",
-      petLabel: "Thú cưng",
+      petLabel: "Thú cung",
       anyOption: "Bất kỳ",
       energyError: "Không đủ năng lượng. Hãy nạp thêm trong Tarot.",
     },
@@ -915,7 +922,7 @@ const vietnamese = {
       title: "Nghi thức bánh quy may mắn",
       subtitle: "Bấm mở bánh để nhận một lời nhắn dễ thương.",
       pageDescription:
-        "Mỗi lần bấm là một lời nhắc nhỏ được viết riêng cho nhịp sống chậm rãi của bạn. Hít sâu, mỉm cười và để lời nhắn dẫn lối.",
+        "Mỗi lần bấm là một lời nhắc nhở được viết riêng cho nhịp sống chậm rãi của bạn. Hít sâu, mỉm cười và để lời nhắn dẫn lối.",
       hint: "Chạm để bẻ đôi",
       openedHint:
         "Bạn đã mở bánh hôm nay rồi. Hãy quay lại vào ngày mai để nhận lời nhắn mới nhé.",
@@ -937,7 +944,7 @@ const vietnamese = {
     heroBadge: "Ứng dụng di động",
     heroTitle: "LofiTalk luôn bên bạn",
     heroSubtitle:
-      "Mang theo những cuộc trò chuyện ấm áp, năng lượng tarot và lời nhắc nhẹ nhàng dù bạn ở đâu.",
+      "Mang theo những cuộc trò chuyện ấm áp, năng lượng tarot và lời nhắc nhở nhẹ nhàng dù bạn ở đâu.",
     downloadButton: "Mở ứng dụng di động",
     downloadUnavailable: "Link tải sẽ có sớm",
     downloadHint:
@@ -977,6 +984,7 @@ const vietnamese = {
     inviteTitle: "Mời bạn bè",
     inviteDescription:
       "Gửi lời mời trong 30 giây. Bạn của bạn sẽ nhận thông báo để chấp nhận hoặc từ chối.",
+    friendOnly: "Chỉ mời được người trong danh sách bạn bè.",
     friendListLabel: "Chọn người để mời",
     selectFriendPlaceholder: "Chọn một người bạn",
     loadingFriends: "Đang tải danh sách bạn bè...",
@@ -1020,18 +1028,24 @@ const vietnamese = {
     gameEnded: "Đối phương đã kết thúc trận.",
     resultRemark: {
       perfect: "Hai bạn hiểu nhau như thơ, đúng kiểu tâm giao luôn đó!",
-      excellent: "Nhịp trò chuyện hợp quá trời, nói thêm chút nữa là sparks nổ tung.",
-      solid: "Đã có kha khá điểm chung rồi, trò chuyện thêm xíu là vào nhịp ngay.",
-      warmup: "Vibe đang hình thành. Đổi playlist với nhau rồi làm lại vòng khác nhé.",
-      retry: "Đôi nào cũng có màn mở đầu lóng ngóng. Xem đây như hậu trường vui và thử lại thôi.",
+      excellent:
+        "Nhịp trò chuyện hợp quá trời, nói thêm chút nữa là sparks nổ tung.",
+      solid:
+        "Đã có kha khá điểm chung rồi, trò chuyện thêm xíu là vào nhịp ngay.",
+      warmup:
+        "Vibe đang hình thành. Đổi playlist với nhau rồi làm lại vòng khác nhé.",
+      retry:
+        "Đôi nào cũng có màn mở đầu lóng ngóng. Xem đây như hậu trường vui và thử lại thôi.",
     },
     shareAnswers: "Chia sẻ đáp án",
     shareAnswersSending: "Đang chia sẻ...",
     shareAnswersShared: "Đã chia sẻ",
-    shareAnswersStatus: "Bạn đã chia sẻ đáp án, chúng tôi sẽ báo cho đối phương.",
+    shareAnswersStatus:
+      "Bạn đã chia sẻ đáp án, chúng tôi sẽ báo cho đối phương.",
     shareAnswersToast: "Đã chia sẻ đáp án của bạn cho {name}.",
     shareAnswersReceivedTitle: "{name} vừa chia sẻ đáp án",
-    shareAnswersReceivedSubtitle: "Đây là những lựa chọn họ đã khóa ở từng câu.",
+    shareAnswersReceivedSubtitle:
+      "Đây là những lựa chọn họ đã khóa ở từng câu.",
     shareAnswersReceivedToast: "{name} vừa chia sẻ đáp án.",
     shareAnswersEmpty: "Chưa có đáp án nào được chia sẻ.",
     shareAnswersError: "Bạn cần trận đấu đang mở để chia sẻ đáp án.",
@@ -1054,6 +1068,7 @@ const vietnamese = {
     inviteTitle: "Mời bạn bè",
     inviteDescription:
       "Gửi lời mời trong 30 giây. Khi họ chấp nhận, bạn chia sẻ bộ câu hỏi ngay lập tức.",
+    friendOnly: "Chỉ gửi được người trong danh sách bạn bè.",
     friendListLabel: "Chọn bạn",
     selectFriendPlaceholder: "Chọn một người bạn",
     loadingFriends: "Đang tải danh sách bạn bè...",
@@ -1123,7 +1138,7 @@ const vietnamese = {
     birthPlace: "Nơi sinh",
     education: "Học vấn",
     hobbies: "Sở thích",
-    pets: "Thú cưng",
+    pets: "Thú cung",
     height: "Chiều cao",
     connections: "{count} kết nối",
     connectionHint: "Xây vòng kết nối để mở thêm cơ hội gặp gỡ.",
@@ -1175,7 +1190,7 @@ const vietnamese = {
     birthDate: "Ngày sinh",
     country: "Quốc gia đang sống",
     countryPlaceholder: "Bạn đang sống ở đâu?",
-    city: " Thành phố đang sống",
+    city: "Thành phố đang sống",
     cityPlaceholder: "Thành phố bạn đang sống",
     cityDisabledPlaceholder: "Hãy chọn quốc gia trước",
     birthCountryLabel: "Quốc gia nơi sinh",
@@ -1310,7 +1325,7 @@ const vietnamese = {
       movies: "Phim & series",
       outdoors: "Leo núi & hoạt động ngoài trời",
     },
-    pets: "Thú cưng",
+    pets: "Thú cung",
     petsPlaceholder: "Bạn có nuôi thú cưng không?",
     petOptions: {
       dog: "Chó",

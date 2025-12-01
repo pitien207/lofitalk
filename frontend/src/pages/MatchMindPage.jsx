@@ -19,7 +19,7 @@ import { getUserFriends } from "../lib/api";
 import { useMatchMindGame } from "../hooks/useMatchMindGame";
 import useAuthUser from "../hooks/useAuthUser";
 import useChatSocket from "../hooks/useChatSocket";
-import useNotificationSound from "../hooks/useNotificationSound";
+import { useGameInvitesStore } from "../store/useGameInvitesStore";
 
 const Badge = ({ icon: Icon, label }) => (
   <span className="inline-flex items-center gap-2 rounded-full bg-base-200 px-3 py-1 text-sm text-base-content/80">
@@ -58,15 +58,15 @@ const MatchMindPage = () => {
     markDeclinedByFriend,
     markInviteExpired,
   } = useMatchMindGame();
-  const [incomingInvites, setIncomingInvites] = useState(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = localStorage.getItem("matchmind-incoming");
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      return [];
-    }
-  });
+  const incomingInvites = useGameInvitesStore(
+    (state) => state.invites.matchmind
+  );
+  const removeMatchMindInvite = useGameInvitesStore(
+    (state) => state.removeInvite
+  );
+  const clearMatchMindInvites = useGameInvitesStore(
+    (state) => state.clearInvites
+  );
   const [isHostSession, setIsHostSession] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("matchmind-is-host") === "true";
@@ -75,7 +75,6 @@ const MatchMindPage = () => {
   const [hasSharedAnswers, setHasSharedAnswers] = useState(false);
   const [sharedAnswers, setSharedAnswers] = useState(null);
   const socket = useChatSocket(true);
-  const playNotificationSound = useNotificationSound();
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
@@ -86,11 +85,10 @@ const MatchMindPage = () => {
     () => [...friends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
     [friends]
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("matchmind-incoming", JSON.stringify(incomingInvites));
-  }, [incomingInvites]);
+  const friendIds = useMemo(
+    () => new Set(friends.map((friend) => friend?._id).filter(Boolean)),
+    [friends]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -138,23 +136,6 @@ const MatchMindPage = () => {
 
   useEffect(() => {
     if (!socket) return;
-
-    const handleInvite = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId) return;
-      setIncomingInvites((prev) => {
-        const without = prev.filter(
-          (item) => item.inviteId !== payload.inviteId
-        );
-        return [...without, payload];
-      });
-      toast.success(
-        t("matchMind.incomingInvite", {
-          name: payload.fromUser?.fullName || "Friend",
-        })
-      );
-      playNotificationSound();
-    };
 
     const handleResponse = (payload = {}) => {
       if (!isMatchMindPayload(payload)) return;
@@ -234,9 +215,7 @@ const MatchMindPage = () => {
     const handleCancelled = (payload = {}) => {
       if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => invite.inviteId !== payload.inviteId)
-      );
+      removeMatchMindInvite("matchmind", payload.inviteId);
       if (payload.inviteId === inviteId) {
         cancelInvite();
         setIsHostSession(false);
@@ -257,9 +236,7 @@ const MatchMindPage = () => {
     const handleExpired = (payload = {}) => {
       if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => invite.inviteId !== payload.inviteId)
-      );
+      removeMatchMindInvite("matchmind", payload.inviteId);
       if (payload.inviteId === inviteId) {
         markInviteExpired();
         setIsHostSession(false);
@@ -271,11 +248,10 @@ const MatchMindPage = () => {
       exitGame();
       setIsHostSession(false);
       setInviteId(null);
-      setIncomingInvites([]);
+      clearMatchMindInvites("matchmind");
       toast.error(t("matchMind.gameEnded"));
     };
 
-    socket.on("matchmind:invite", handleInvite);
     socket.on("matchmind:response", handleResponse);
     socket.on("matchmind:start", handleStart);
     socket.on("matchmind:answer", handleAnswer);
@@ -285,7 +261,6 @@ const MatchMindPage = () => {
     socket.on("matchmind:exit", handleExitBoth);
 
     return () => {
-      socket.off("matchmind:invite", handleInvite);
       socket.off("matchmind:response", handleResponse);
       socket.off("matchmind:start", handleStart);
       socket.off("matchmind:answer", handleAnswer);
@@ -311,16 +286,9 @@ const MatchMindPage = () => {
     setInviteId,
     t,
     exitGame,
+    removeMatchMindInvite,
+    clearMatchMindInvites,
   ]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => (invite.expiresAt || 0) > Date.now())
-      );
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     if (stage === "expired" || stage === "lobby" || stage === "declined") {
@@ -348,14 +316,10 @@ const MatchMindPage = () => {
       (response = {}) => {
         if (response.error) {
           toast.error(response.error);
-          setIncomingInvites((prev) =>
-            prev.filter((item) => item.inviteId !== invite.inviteId)
-          );
+          removeMatchMindInvite("matchmind", invite.inviteId);
           return;
         }
-        setIncomingInvites((prev) =>
-          prev.filter((item) => item.inviteId !== invite.inviteId)
-        );
+        removeMatchMindInvite("matchmind", invite.inviteId);
         setInviteId(invite.inviteId);
         setSelectedFriend(invite.fromUser);
 
@@ -375,6 +339,10 @@ const MatchMindPage = () => {
   const handleSendInvite = () => {
     if (!selectedFriend) {
       toast.error("Pick a friend to send the invite.");
+      return;
+    }
+    if (!friendIds.has(selectedFriend._id)) {
+      toast.error(t("matchMind.friendOnly"));
       return;
     }
     if (!socket) {
@@ -479,7 +447,7 @@ const MatchMindPage = () => {
     }
     exitGame();
     setIsHostSession(false);
-    setIncomingInvites([]);
+    clearMatchMindInvites("matchmind");
     setInviteId(null);
     setSharedAnswers(null);
     setHasSharedAnswers(false);

@@ -18,8 +18,8 @@ import { useTranslation } from "../languages/useTranslation";
 import { getUserFriends } from "../lib/api";
 import useAuthUser from "../hooks/useAuthUser";
 import useChatSocket from "../hooks/useChatSocket";
-import useNotificationSound from "../hooks/useNotificationSound";
 import { useTruthOrLieGame } from "../hooks/useTruthOrLieGame";
+import { useGameInvitesStore } from "../store/useGameInvitesStore";
 
 const Badge = ({ icon: Icon, label }) => (
   <span className="inline-flex items-center gap-2 rounded-full bg-base-200 px-3 py-1 text-sm text-base-content/80">
@@ -107,7 +107,6 @@ const TruthOrLiePage = () => {
   const { t } = useTranslation();
   const { authUser } = useAuthUser();
   const socket = useChatSocket(true);
-  const playNotificationSound = useNotificationSound();
 
   const {
     stage,
@@ -140,15 +139,15 @@ const TruthOrLiePage = () => {
     markInviteExpired,
   } = useTruthOrLieGame();
 
-  const [incomingInvites, setIncomingInvites] = useState(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const saved = localStorage.getItem("truthlie-incoming");
-      return saved ? JSON.parse(saved) : [];
-    } catch (error) {
-      return [];
-    }
-  });
+  const incomingInvites = useGameInvitesStore(
+    (state) => state.invites.truthlie
+  );
+  const removeTruthInvite = useGameInvitesStore(
+    (state) => state.removeInvite
+  );
+  const clearTruthInvites = useGameInvitesStore(
+    (state) => state.clearInvites
+  );
   const [isHostSession, setIsHostSession] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("truthlie-is-host") === "true";
@@ -173,11 +172,11 @@ const TruthOrLiePage = () => {
     () => [...eligibleFriends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
     [eligibleFriends]
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("truthlie-incoming", JSON.stringify(incomingInvites));
-  }, [incomingInvites]);
+  const eligibleFriendIds = useMemo(
+    () =>
+      new Set(eligibleFriends.map((friend) => friend?._id).filter(Boolean)),
+    [eligibleFriends]
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -213,21 +212,6 @@ const TruthOrLiePage = () => {
 
   useEffect(() => {
     if (!socket) return undefined;
-
-    const handleInvite = (payload = {}) => {
-      const incomingId = payload.inviteId || payload.id;
-      if (!incomingId) return;
-      setIncomingInvites((prev) => {
-        const without = prev.filter((item) => item.inviteId !== incomingId);
-        return [...without, { ...payload, inviteId: incomingId }];
-      });
-      toast.success(
-        t("truthOrLiar.incomingInvite", {
-          name: payload.fromUser?.fullName || t("truthOrLiar.friendFallback"),
-        })
-      );
-      playNotificationSound();
-    };
 
     const handleResponse = (payload = {}) => {
       const responseId = payload.inviteId || payload.id;
@@ -312,9 +296,7 @@ const TruthOrLiePage = () => {
     const handleCancelled = (payload = {}) => {
       const cancelId = payload.inviteId || payload.id;
       if (!cancelId) return;
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => invite.inviteId !== cancelId)
-      );
+      removeTruthInvite("truthlie", cancelId);
       if (cancelId === inviteId || isInSession) {
         exitGame();
         setIsHostSession(false);
@@ -326,9 +308,7 @@ const TruthOrLiePage = () => {
     const handleExpired = (payload = {}) => {
       const expireId = payload.inviteId || payload.id;
       if (!expireId) return;
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => invite.inviteId !== expireId)
-      );
+      removeTruthInvite("truthlie", expireId);
       if (expireId === inviteId) {
         markInviteExpired();
         setIsHostSession(false);
@@ -339,12 +319,11 @@ const TruthOrLiePage = () => {
       exitGame();
       setIsHostSession(false);
       setInviteId(null);
-      setIncomingInvites([]);
+      clearTruthInvites("truthlie");
       toast.error(t("truthOrLiar.gameEnded"));
     };
 
     const events = [
-      ["truthlie:invite", handleInvite],
       ["truthlie:response", handleResponse],
       ["truthlie:start", handleStart],
       ["truthlie:deck", handleDeck],
@@ -375,19 +354,11 @@ const TruthOrLiePage = () => {
     t,
     setFriendAnswer,
     setInviteId,
-    playNotificationSound,
     stage,
     exitGame,
+    removeTruthInvite,
+    clearTruthInvites,
   ]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setIncomingInvites((prev) =>
-        prev.filter((invite) => (invite.expiresAt || 0) > Date.now())
-      );
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
 
   useEffect(() => {
     if (stage === "lobby" || stage === "expired" || stage === "declined") {
@@ -406,22 +377,19 @@ const TruthOrLiePage = () => {
       toast.error("Connecting to game server. Try again in a moment.");
       return;
     }
-    const payload = { inviteId: invite.inviteId || invite.id, accepted };
+    const targetId = invite.inviteId || invite.id;
+    const payload = { inviteId: targetId, accepted };
     let handled = false;
     const onResponse = (response = {}) => {
       if (handled) return;
       handled = true;
       if (response.error) {
         toast.error(response.error);
-        setIncomingInvites((prev) =>
-          prev.filter((item) => (item.inviteId || item.id) !== (invite.inviteId || invite.id))
-        );
+        removeTruthInvite("truthlie", targetId);
         return;
       }
-      setIncomingInvites((prev) =>
-        prev.filter((item) => (item.inviteId || item.id) !== (invite.inviteId || invite.id))
-      );
-      setInviteId(invite.inviteId || invite.id);
+      removeTruthInvite("truthlie", targetId);
+      setInviteId(targetId);
       setSelectedFriend(invite.fromUser);
       setIsHostSession(false);
 
@@ -443,6 +411,10 @@ const TruthOrLiePage = () => {
     }
     if (!selectedFriend) {
       toast.error(t("truthOrLiar.needFriend"));
+      return;
+    }
+    if (!eligibleFriendIds.has(selectedFriend._id)) {
+      toast.error(t("truthOrLiar.friendOnly"));
       return;
     }
     if (!socket) {
@@ -541,7 +513,7 @@ const TruthOrLiePage = () => {
     }
     exitGame();
     setIsHostSession(false);
-    setIncomingInvites([]);
+    clearTruthInvites("truthlie");
   };
 
   const renderResultList = (isHostView) => {

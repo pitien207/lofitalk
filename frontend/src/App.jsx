@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
+import GameInviteListener from "./components/GameInviteListener.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
 
 const App = () => {
@@ -235,6 +236,8 @@ const App = () => {
           }
         />
       </Routes>
+
+      {isAuthenticated && isOnboarded && <GameInviteListener />}
 
       <Toaster />
     </div>

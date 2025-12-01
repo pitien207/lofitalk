@@ -23,6 +23,7 @@ import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
 import useUnreadChats from "../hooks/useUnreadChats";
 import usePendingReports from "../hooks/usePendingReports";
+import { useGameInvitesStore } from "../store/useGameInvitesStore";
 
 const Sidebar = () => {
   const { authUser } = useAuthUser();
@@ -32,6 +33,13 @@ const Sidebar = () => {
   const { hasPending } = usePendingNotifications();
   const { hasUnread } = useUnreadChats();
   const { pendingReportCount } = usePendingReports();
+  const hasMatchMindInvites = useGameInvitesStore(
+    (state) => state.invites.matchmind.length > 0
+  );
+  const hasTruthOrLieInvites = useGameInvitesStore(
+    (state) => state.invites.truthlie.length > 0
+  );
+  const hasAnyGameInvite = hasMatchMindInvites || hasTruthOrLieInvites;
   const isChatRoute =
     currentPath === "/chats" || currentPath.startsWith("/chat/");
   const isPlusOrAdmin =
@@ -179,7 +187,12 @@ const Sidebar = () => {
             aria-expanded={openGames}
           >
             <div className="flex items-center gap-3">
-              <Gamepad2Icon className="size-5 text-base-content opacity-70" />
+              <span className="relative">
+                <Gamepad2Icon className="size-5 text-base-content opacity-70" />
+                {hasAnyGameInvite && (
+                  <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+                )}
+              </span>
               <span>{t("sidebar.games")}</span>
             </div>
             <ChevronDownIcon
@@ -197,7 +210,12 @@ const Sidebar = () => {
                   currentPath === "/match-mind" ? "btn-active" : ""
                 }`}
               >
-                <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
+                <span className="relative">
+                  <HeartHandshakeIcon className="size-4 text-base-content opacity-70" />
+                  {hasMatchMindInvites && (
+                    <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+                  )}
+                </span>
                 <span>{t("sidebar.matchMind")}</span>
               </Link>
               <Link
@@ -206,7 +224,12 @@ const Sidebar = () => {
                   currentPath === "/truth-or-liar" ? "btn-active" : ""
                 }`}
               >
-                <DramaIcon className="size-4 text-base-content opacity-70" />
+                <span className="relative">
+                  <DramaIcon className="size-4 text-base-content opacity-70" />
+                  {hasTruthOrLieInvites && (
+                    <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+                  )}
+                </span>
                 <span>{t("sidebar.truthOrLiar")}</span>
               </Link>
             </div>
