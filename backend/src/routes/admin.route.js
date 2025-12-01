@@ -6,6 +6,7 @@ import {
   resolveUserReport,
   deleteUserReport,
   getPendingReportCount,
+  getUsageStatsSummary,
 } from "../controllers/admin.controller.js";
 import { sendAdminNotification } from "../controllers/adminNotification.controller.js";
 import { protectRoute, requireAdmin } from "../middleware/auth.middleware.js";
@@ -21,5 +22,6 @@ router.get("/reports", listUserReports);
 router.post("/reports/:id/resolve", resolveUserReport);
 router.delete("/reports/:id", deleteUserReport);
 router.get("/reports/pending-count", getPendingReportCount);
+router.get("/usage-stats", getUsageStatsSummary);
 
 export default router;

@@ -248,6 +248,11 @@ export async function getUserReports() {
   return response.data;
 }
 
+export async function getFeatureUsageStats() {
+  const response = await axiosInstance.get("/admin/usage-stats");
+  return response.data;
+}
+
 export async function getPendingReportCount() {
   const response = await axiosInstance.get("/admin/reports/pending-count");
   return response.data;

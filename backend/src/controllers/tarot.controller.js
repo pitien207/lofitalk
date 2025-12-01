@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { incrementUsageCounter } from "../services/usageStats.service.js";
 
 const ENERGY_COST = 7;
 
@@ -200,6 +201,12 @@ Message cho mỗi lá 2-5 câu, phân tích rõ vấn đề, dù tiêu cực hay
       createdAt: new Date(),
     };
     await req.user.save();
+
+    try {
+      await incrementUsageCounter("tarot");
+    } catch (statsError) {
+      console.error("Failed to track tarot usage", statsError);
+    }
 
     res.status(200).json({ success: true, result: parsed });
   } catch (error) {

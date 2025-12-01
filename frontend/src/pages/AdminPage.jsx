@@ -8,6 +8,7 @@ import {
   getUserReports,
   resolveUserReport,
   deleteUserReport,
+  getFeatureUsageStats,
 } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
@@ -43,6 +44,11 @@ const AdminPage = () => {
   const { data: reportData, isLoading: loadingReports } = useQuery({
     queryKey: ["adminReports"],
     queryFn: getUserReports,
+  });
+
+  const { data: usageData, isLoading: loadingUsageStats } = useQuery({
+    queryKey: ["adminUsageStats"],
+    queryFn: getFeatureUsageStats,
   });
 
   const { mutateAsync, isPending } = useMutation({
@@ -145,6 +151,19 @@ const AdminPage = () => {
   });
 
   const reports = reportData?.reports ?? [];
+  const usageStats = usageData?.stats ?? {
+    tarotReadings: 0,
+    fortuneCookieOpens: 0,
+    matchmindSessions: 0,
+    truthOrLieSessions: 0,
+  };
+
+  const featureUsageMetrics = [
+    { key: "tarot", label: t("admin.usage.tarot"), value: usageStats.tarotReadings },
+    { key: "fortune", label: t("admin.usage.fortune"), value: usageStats.fortuneCookieOpens },
+    { key: "matchmind", label: t("admin.usage.matchmind"), value: usageStats.matchmindSessions },
+    { key: "truthOrLie", label: t("admin.usage.truthOrLie"), value: usageStats.truthOrLieSessions },
+  ];
 
   const formatDateTime = (value) => {
     if (!value) return "";
@@ -387,6 +406,29 @@ const AdminPage = () => {
               </div>
             </div>
           )}
+      </div>
+    </div>
+
+      <div className="card bg-base-200 shadow-xl">
+        <div className="card-body space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="card-title">{t("admin.usage.heading")}</h2>
+            {loadingUsageStats && <span className="loading loading-spinner loading-sm" />}
+          </div>
+          <p className="text-sm text-base-content/70">{t("admin.usage.description")}</p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featureUsageMetrics.map(({ key, label, value }) => (
+              <div
+                key={key}
+                className="rounded-2xl border border-base-300 bg-base-100/80 p-4 shadow-sm space-y-1"
+              >
+                <p className="text-3xl font-bold text-base-content">
+                  {Number(value ?? 0).toLocaleString()}
+                </p>
+                <p className="text-sm text-base-content/70">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

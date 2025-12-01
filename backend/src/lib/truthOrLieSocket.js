@@ -1,3 +1,5 @@
+import { incrementUsageCounter } from "../services/usageStats.service.js";
+
 const TRUTH_INVITE_TTL_MS = parseInt(
   process.env.MATCHMIND_INVITE_TTL_MS || "30000",
   10
@@ -207,7 +209,7 @@ export const attachTruthOrLieHandlers = (io, socket, user, toUserRoom) => {
 
   socket.on(
     "truthlie:start",
-    ({ inviteId, mode, questions, deck, questionSet } = {}, callback = () => {}) => {
+    async ({ inviteId, mode, questions, deck, questionSet } = {}, callback = () => {}) => {
       try {
         const invite = inviteId ? truthInvites.get(inviteId) : null;
         if (!invite) return callback({ error: "Invite not found" });
@@ -223,6 +225,12 @@ export const attachTruthOrLieHandlers = (io, socket, user, toUserRoom) => {
         invite.mode = normalizedMode;
         invite.deck = payloadQuestions;
         truthInvites.set(inviteId, invite);
+
+        try {
+          await incrementUsageCounter("truthOrLie");
+        } catch (statsError) {
+          console.error("Failed to track truth or lie usage", statsError);
+        }
 
         const packet = {
           inviteId,

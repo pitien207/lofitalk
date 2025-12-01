@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .env
+tmp_usage_insert.py
+test_delete.txt

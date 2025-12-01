@@ -682,6 +682,14 @@ const english = {
       updated: "Account type updated.",
       updateFailed: "Unable to update account type.",
     },
+    usage: {
+      heading: "Feature usage",
+      description: "Live counters for how often each feature has been completed.",
+      tarot: "Tarot readings",
+      fortune: "Fortune cookies opened",
+      matchmind: "MatchMind sessions",
+      truthOrLie: "Truth or Lie sessions",
+    },
     notifications: {
       heading: "Send notifications",
       description:
@@ -1406,6 +1414,14 @@ const vietnamese = {
     messages: {
       updated: "Đã cập nhật loại tài khoản.",
       updateFailed: "Không thể cập nhật loại tài khoản.",
+    },
+    usage: {
+      heading: "Thống kê sử dụng",
+      description: "Số lần người dùng đã kích hoạt từng tính năng.",
+      tarot: "Lần xem Tarot",
+      fortune: "Bánh fortune cookie đã mở",
+      matchmind: "Ván MatchMind",
+      truthOrLie: "Ván Truth or Lie",
     },
     notifications: {
       heading: "Gửi thông báo",

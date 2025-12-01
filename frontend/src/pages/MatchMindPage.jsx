@@ -82,17 +82,9 @@ const MatchMindPage = () => {
     queryFn: getUserFriends,
   });
 
-  const eligibleFriends = useMemo(
-    () =>
-      friends.filter((friend) =>
-        ["plus", "admin"].includes(friend?.accountType)
-      ),
-    [friends]
-  );
-
   const sortedFriends = useMemo(
-    () => [...eligibleFriends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
-    [eligibleFriends]
+    () => [...friends].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    [friends]
   );
 
   useEffect(() => {
@@ -106,12 +98,11 @@ const MatchMindPage = () => {
   }, [isHostSession]);
 
   const currentQuestionId = currentQuestion?.id;
-  const friendLabel = selectedFriend?.fullName || t("matchMind.answerLabel.friendFallback");
+  const friendLabel =
+    selectedFriend?.fullName || t("matchMind.answerLabel.friendFallback");
   const isInGame = stage === "playing" || stage === "results";
   const isResults = stage === "results";
   const activeSession = sessionId || inviteId;
-  const isPlusOrAdmin =
-    authUser?.accountType === "plus" || authUser?.accountType === "admin";
   const isMatchMindPayload = (payload = {}) =>
     !payload.channel || payload.channel === "matchmind";
   const totalQuestions = questions.length || 1;
@@ -152,10 +143,16 @@ const MatchMindPage = () => {
       if (!isMatchMindPayload(payload)) return;
       if (!payload.inviteId) return;
       setIncomingInvites((prev) => {
-        const without = prev.filter((item) => item.inviteId !== payload.inviteId);
+        const without = prev.filter(
+          (item) => item.inviteId !== payload.inviteId
+        );
         return [...without, payload];
       });
-      toast.success(t("matchMind.incomingInvite", { name: payload.fromUser?.fullName || "Friend" }));
+      toast.success(
+        t("matchMind.incomingInvite", {
+          name: payload.fromUser?.fullName || "Friend",
+        })
+      );
       playNotificationSound();
     };
 
@@ -173,7 +170,9 @@ const MatchMindPage = () => {
         }
         markAcceptedByFriend();
         toast.success(
-          t("matchMind.inviteAccepted", { name: payload.guestName || friendLabel })
+          t("matchMind.inviteAccepted", {
+            name: payload.guestName || friendLabel,
+          })
         );
       } else {
         if (payload.reason === "expired") {
@@ -182,7 +181,9 @@ const MatchMindPage = () => {
         } else {
           markDeclinedByFriend();
           toast.error(
-            t("matchMind.inviteDeclined", { name: payload.guestName || friendLabel })
+            t("matchMind.inviteDeclined", {
+              name: payload.guestName || friendLabel,
+            })
           );
         }
         setIsHostSession(false);
@@ -334,9 +335,7 @@ const MatchMindPage = () => {
   };
 
   const difficultyLabel =
-    difficulty === "hard"
-      ? t("matchMind.hardMode")
-      : t("matchMind.easyMode");
+    difficulty === "hard" ? t("matchMind.hardMode") : t("matchMind.easyMode");
 
   const handleIncomingRespond = (invite, accepted) => {
     if (!socket) {
@@ -363,7 +362,9 @@ const MatchMindPage = () => {
         if (accepted) {
           setIsHostSession(false);
           markAcceptedByFriend();
-          toast.success(t("matchMind.incomingAccepted", { name: invite.fromUser.fullName }));
+          toast.success(
+            t("matchMind.incomingAccepted", { name: invite.fromUser.fullName })
+          );
         } else {
           markDeclinedByFriend();
         }
@@ -389,7 +390,10 @@ const MatchMindPage = () => {
           toast.error(response.error);
           return;
         }
-        sendInvite({ inviteId: response.inviteId, expiresAt: response.expiresAt });
+        sendInvite({
+          inviteId: response.inviteId,
+          expiresAt: response.expiresAt,
+        });
         setIsHostSession(true);
         toast.success(t("matchMind.inviteSent", { name: friendLabel }));
       }
@@ -494,7 +498,9 @@ const MatchMindPage = () => {
         else if (answered && !matched) color = "bg-warning";
         else if (isCurrent) color = "bg-primary/60 animate-pulse";
 
-        return <span key={question.id} className={`h-2 w-6 rounded-full ${color}`} />;
+        return (
+          <span key={question.id} className={`h-2 w-6 rounded-full ${color}`} />
+        );
       })}
     </div>
   );
@@ -504,9 +510,13 @@ const MatchMindPage = () => {
       <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">MatchMind</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+              MatchMind
+            </p>
             <h1 className="text-3xl font-bold text-base-content">
-              {isResults ? t("matchMind.resultsTitle") : t("matchMind.gameTitle")}
+              {isResults
+                ? t("matchMind.resultsTitle")
+                : t("matchMind.gameTitle")}
             </h1>
             {!isResults && (
               <p className="text-sm text-base-content/70">
@@ -520,7 +530,8 @@ const MatchMindPage = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge badge-outline">
-              {t("matchMind.sharedScore")}: {isResults ? matches : liveScore}/{questions.length}
+              {t("matchMind.sharedScore")}: {isResults ? matches : liveScore}/
+              {questions.length}
             </span>
             <span className="badge badge-ghost gap-1">
               <UsersIcon className="size-4" />
@@ -538,7 +549,9 @@ const MatchMindPage = () => {
               <h2 className="text-3xl font-bold text-base-content">
                 {t("matchMind.resultsDescription")}
               </h2>
-              <p className="text-base text-base-content/70">{t("matchMind.liveOnly")}</p>
+              <p className="text-base text-base-content/70">
+                {t("matchMind.liveOnly")}
+              </p>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-base-content/80">
@@ -574,7 +587,9 @@ const MatchMindPage = () => {
               <p className="text-base text-base-content/80">{resultRemark}</p>
             )}
             {hasSharedAnswers && (
-              <p className="text-sm text-success/80">{t("matchMind.shareAnswersStatus")}</p>
+              <p className="text-sm text-success/80">
+                {t("matchMind.shareAnswersStatus")}
+              </p>
             )}
             {sharedAnswers && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-3">
@@ -611,11 +626,14 @@ const MatchMindPage = () => {
                           </p>
                           <p className="text-sm text-base-content/70">
                             {t("matchMind.answerLabel.friend", {
-                              name: sharedAnswers.fromUser?.fullName || friendLabel,
+                              name:
+                                sharedAnswers.fromUser?.fullName || friendLabel,
                             })}
                             :{" "}
                             <span className="font-semibold text-base-content">
-                              {item.yourAnswer || item.answer || t("matchMind.answerLabel.none")}
+                              {item.yourAnswer ||
+                                item.answer ||
+                                t("matchMind.answerLabel.none")}
                             </span>
                           </p>
                         </div>
@@ -712,23 +730,6 @@ const MatchMindPage = () => {
 
   const steps = Array.isArray(t("matchMind.steps")) ? t("matchMind.steps") : [];
 
-  if (!isPlusOrAdmin) {
-    return (
-      <div className="w-full">
-        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-10">
-          <section className="rounded-3xl border border-base-300 bg-base-100/80 p-8 shadow-xl text-center space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">
-              MatchMind
-            </p>
-            <h1 className="text-4xl font-bold text-base-content">
-              {t("matchMind.comingSoonTitle")}
-            </h1>
-          </section>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
       <div className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-8">
@@ -738,8 +739,12 @@ const MatchMindPage = () => {
               <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">
                 MatchMind
               </p>
-              <h1 className="text-4xl font-bold text-base-content">{t("matchMind.title")}</h1>
-              <p className="text-base text-base-content/70">{t("matchMind.subtitle")}</p>
+              <h1 className="text-4xl font-bold text-base-content">
+                {t("matchMind.title")}
+              </h1>
+              <p className="text-base text-base-content/70">
+                {t("matchMind.subtitle")}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge icon={Gamepad2Icon} label="10 questions" />
@@ -764,7 +769,9 @@ const MatchMindPage = () => {
 
             <label className="form-control w-full">
               <div className="label">
-                <span className="label-text text-sm">{t("matchMind.friendListLabel")}</span>
+                <span className="label-text text-sm">
+                  {t("matchMind.friendListLabel")}
+                </span>
               </div>
               <select
                 className="select select-bordered w-full"
@@ -814,12 +821,12 @@ const MatchMindPage = () => {
               <div className="rounded-2xl border border-warning/40 bg-warning/10 p-3 text-sm text-warning flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <TimerIcon className="size-4" />
-                <span>
-                  {t("matchMind.inviteCountdown", {
-                    seconds: inviteRemaining,
-                  })}
-                </span>
-              </div>
+                  <span>
+                    {t("matchMind.inviteCountdown", {
+                      seconds: inviteRemaining,
+                    })}
+                  </span>
+                </div>
                 <p className="text-warning/80">
                   {t("matchMind.waitingResponse")}
                 </p>
@@ -897,13 +904,16 @@ const MatchMindPage = () => {
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="font-semibold text-base-content">
-                            {invite.fromUser?.fullName || t("matchMind.answerLabel.friendFallback")}
+                            {invite.fromUser?.fullName ||
+                              t("matchMind.answerLabel.friendFallback")}
                           </p>
                           <p className="text-xs text-base-content/60">
                             {t("matchMind.incomingSubtitle")}
                           </p>
                         </div>
-                        <span className="badge badge-outline">{secondsLeft}s</span>
+                        <span className="badge badge-outline">
+                          {secondsLeft}s
+                        </span>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -930,8 +940,12 @@ const MatchMindPage = () => {
             <div className="flex items-center gap-2 text-base-content">
               <SparklesIcon className="size-5 text-primary" />
               <div>
-                <h2 className="text-xl font-semibold">{t("matchMind.howItWorksTitle")}</h2>
-                <p className="text-sm text-base-content/70">{t("matchMind.liveOnly")}</p>
+                <h2 className="text-xl font-semibold">
+                  {t("matchMind.howItWorksTitle")}
+                </h2>
+                <p className="text-sm text-base-content/70">
+                  {t("matchMind.liveOnly")}
+                </p>
               </div>
             </div>
             <div className="grid gap-3">

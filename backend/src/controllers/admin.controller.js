@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import UserReport from "../models/UserReport.js";
+import { loadUsageStats } from "../services/usageStats.service.js";
 
 const ALLOWED_ACCOUNT_TYPES = ["standard", "plus", "admin"];
 
@@ -158,5 +159,15 @@ export const deleteUserReport = async (req, res) => {
   } catch (error) {
     console.error("Error deleting report:", error.message);
     res.status(500).json({ message: "Failed to delete report" });
+  }
+};
+
+export const getUsageStatsSummary = async (_req, res) => {
+  try {
+    const stats = await loadUsageStats();
+    res.status(200).json({ stats });
+  } catch (error) {
+    console.error("Error fetching usage stats:", error.message);
+    res.status(500).json({ message: "Failed to load usage stats" });
   }
 };

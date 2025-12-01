@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import UserReport from "../models/UserReport.js";
 import { hasBlockedUser } from "../lib/blockService.js";
+import { incrementUsageCounter } from "../services/usageStats.service.js";
 
 const toObjectId = (value) =>
   value instanceof mongoose.Types.ObjectId
@@ -487,6 +488,12 @@ export async function openFortuneCookie(req, res) {
       },
       { new: true, projection: { fortuneCookie: 1 } }
     );
+
+    try {
+      await incrementUsageCounter("fortune");
+    } catch (statsError) {
+      console.error("Failed to track fortune usage", statsError);
+    }
 
     return res.status(200).json(buildFortuneResponse(updatedUser.fortuneCookie));
   } catch (error) {

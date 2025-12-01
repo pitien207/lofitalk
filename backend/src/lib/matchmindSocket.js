@@ -1,3 +1,5 @@
+import { incrementUsageCounter } from "../services/usageStats.service.js";
+
 const MATCHMIND_INVITE_TTL_MS = parseInt(
   process.env.MATCHMIND_INVITE_TTL_MS || "30000",
   10
@@ -55,13 +57,6 @@ export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
     try {
       if (!toUserId) return callback({ error: "toUserId is required" });
       if (toUserId === userId) return callback({ error: "Cannot invite yourself" });
-
-      const isPlusOrAdmin = ["plus", "admin"].includes(
-        (user.accountType || "").toString().toLowerCase()
-      );
-      if (!isPlusOrAdmin) {
-        return callback({ error: "MatchMind is available for Plus or Admin users only" });
-      }
 
       const inviteId = buildInviteId();
       const expiresAt = Date.now() + MATCHMIND_INVITE_TTL_MS;
@@ -209,7 +204,10 @@ export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
 
   socket.on(
     "matchmind:start",
-    ({ inviteId, difficulty, mode, questions, deck, questionSet } = {}, callback = () => {}) => {
+    async (
+      { inviteId, difficulty, mode, questions, deck, questionSet } = {},
+      callback = () => {}
+    ) => {
       try {
         const invite = inviteId ? matchMindInvites.get(inviteId) : null;
         if (!invite) return callback({ error: "Invite not found" });
@@ -225,6 +223,12 @@ export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
         invite.difficulty = normalizedDifficulty;
         invite.deck = payloadQuestions;
         matchMindInvites.set(inviteId, invite);
+
+        try {
+          await incrementUsageCounter("matchmind");
+        } catch (statsError) {
+          console.error("Failed to track matchmind usage", statsError);
+        }
 
         const packet = {
           inviteId,
