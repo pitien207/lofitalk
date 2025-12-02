@@ -6,7 +6,7 @@ import {
   sendPasswordResetEmail,
   // sendVerificationEmail,
 } from "../utils/email.js";
-import { getRandomAvatar } from "../utils/avatarPool.js";
+import { getRandomAvatar, resolveAvatarPath } from "../utils/avatarPool.js";
 
 const CODE_EXPIRATION_MINUTES = 15;
 
@@ -528,11 +528,16 @@ export async function onboard(req, res) {
       isOnboarded: true,
     };
 
-    // Only admins may set a custom profile picture; always ignore client-sent accountType
-    if (isAdmin && profilePic) {
+    const resolvedStaticAvatarPath = resolveAvatarPath(profilePic);
+
+    // Allow admins to upload custom avatars, but let everyone pick from the curated pool
+    if (profilePic && (isAdmin || resolvedStaticAvatarPath)) {
       const version = Date.now();
+      const avatarSource = resolvedStaticAvatarPath
+        ? buildAssetUrl(resolvedStaticAvatarPath)
+        : profilePic;
       updatePayload.avatarVersion = version;
-      updatePayload.profilePic = withAvatarVersion(profilePic, version);
+      updatePayload.profilePic = withAvatarVersion(avatarSource, version);
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updatePayload, {

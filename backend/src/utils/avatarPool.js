@@ -59,6 +59,32 @@ const createAvatarPool = (baseDir, prefix) => {
 const mobilePool = createAvatarPool(avatarRoot, MOBILE_PREFIX);
 const webPool = createAvatarPool(avatarRoot, WEB_PREFIX);
 
+const canonicalizeAvatarPath = (rawPath = "") => {
+  if (!rawPath) return "";
+  const [pathOnly] = rawPath.split(/[?#]/);
+  if (!pathOnly) return "";
+  const normalized = pathOnly.replace(/\\/g, "/").replace(/\/{2,}/g, "/").trim();
+  if (!normalized) return "";
+  return normalized.startsWith("/") ? normalized : `/${normalized}`;
+};
+
+const knownAvatarPaths = (() => {
+  const set = new Set();
+  const registerPaths = (paths = []) => {
+    paths.forEach((rawPath) => {
+      const canonical = canonicalizeAvatarPath(rawPath);
+      if (canonical) {
+        set.add(canonical);
+      }
+    });
+  };
+
+  registerPaths(mobilePool.all);
+  registerPaths(webPool.all);
+
+  return set;
+})();
+
 const normalizeGender = (gender = "") => gender.toLowerCase().trim();
 
 const pickFromPool = (pool, gender) => {
@@ -91,3 +117,24 @@ export const getRandomAvatar = (gender, source = "mobile") => {
 
 export const getRandomWebAvatar = (gender) => getRandomAvatar(gender, "web");
 export const getRandomMobileAvatar = (gender) => getRandomAvatar(gender, "mobile");
+
+const toCandidateAvatarPath = (value) => {
+  if (!value) return "";
+  const trimmed = value.toString().trim();
+  if (!trimmed || trimmed.startsWith("data:")) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    return canonicalizeAvatarPath(parsed.pathname);
+  } catch (_error) {
+    return canonicalizeAvatarPath(trimmed);
+  }
+};
+
+export const resolveAvatarPath = (value) => {
+  const candidate = toCandidateAvatarPath(value);
+  if (!candidate) return null;
+  return knownAvatarPaths.has(candidate) ? candidate : null;
+};
+
+export const isKnownAvatarPath = (value) => Boolean(resolveAvatarPath(value));
