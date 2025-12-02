@@ -5,10 +5,10 @@ export const signup = async (signupData) => {
   return response.data;
 };
 
-export const verifySignupCode = async (payload) => {
-  const response = await axiosInstance.post("/auth/verify-code", payload);
-  return response.data;
-};
+// export const verifySignupCode = async (payload) => {
+//   const response = await axiosInstance.post("/auth/verify-code", payload);
+//   return response.data;
+// };
 
 export const login = async (loginData) => {
   const response = await axiosInstance.post("/auth/login", loginData);

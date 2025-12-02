@@ -1,10 +1,10 @@
 import User from "../models/User.js";
-import PendingSignup from "../models/PendingSignup.js";
-import bcrypt from "bcryptjs";
+// import PendingSignup from "../models/PendingSignup.js";
+// import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
   sendPasswordResetEmail,
-  sendVerificationEmail,
+  // sendVerificationEmail,
 } from "../utils/email.js";
 import { getRandomAvatar } from "../utils/avatarPool.js";
 
@@ -133,10 +133,10 @@ export async function signup(req, res) {
       });
     }
 
-    const verificationCode = generateVerificationCode();
-    const verificationCodeExpiresAt = new Date(
-      Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
-    );
+    // const verificationCode = generateVerificationCode();
+    // const verificationCodeExpiresAt = new Date(
+    //   Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
+    // );
 
     const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
     const avatarSource = platformHeader === "web" ? "web" : "mobile";
@@ -145,8 +145,9 @@ export async function signup(req, res) {
       ? withAvatarVersion(buildAssetUrl(randomAvatarPath))
       : "";
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // const hashedPassword = await bcrypt.hash(password, 10);
 
+    /*
     await PendingSignup.findOneAndUpdate(
       { email },
       {
@@ -164,6 +165,29 @@ export async function signup(req, res) {
     res.status(201).json({
       success: true,
       message: "Verification code sent to your email address.",
+    });
+    */
+
+    const newUser = await User.create({
+      email,
+      fullName,
+      password,
+      profilePic: randomAvatar,
+      avatarVersion: Date.now(),
+      isEmailVerified: true,
+    });
+
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "7d",
+    });
+
+    setAuthCookie(res, token);
+
+    return res.status(201).json({
+      success: true,
+      message: "Account created successfully.",
+      token,
+      user: toPublicUser(newUser),
     });
   } catch (error) {
     console.log("Error in signup controller", error);
@@ -234,6 +258,7 @@ export async function logout(req, res) {
   }
 }
 
+/*
 export async function verifySignupCode(req, res) {
   const { email, code } = req.body;
 
@@ -308,6 +333,14 @@ export async function verifySignupCode(req, res) {
     console.log("Error verifying signup code:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
+}
+*/
+
+export async function verifySignupCode(_req, res) {
+  return res.status(410).json({
+    success: false,
+    message: "Verification step is currently disabled.",
+  });
 }
 
 export async function updatePassword(req, res) {
