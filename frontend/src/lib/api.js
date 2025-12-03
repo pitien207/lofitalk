@@ -44,10 +44,58 @@ export const completeOnboarding = async (userData) => {
   return response.data;
 };
 
-export async function getUserFriends() {
-  const response = await axiosInstance.get("/users/friends");
-  const data = response.data;
-  return data?.friends ?? data ?? [];
+export async function getUserFriends(options = {}) {
+  const opts =
+    typeof options === "number"
+      ? { limit: options }
+      : options && typeof options === "object"
+      ? options
+      : {};
+  const fetchAll = opts.fetchAll !== false;
+  const safeLimit = Math.min(Math.max(parseInt(opts.limit, 10) || 100, 1), 100);
+  const maxPages = Math.max(1, parseInt(opts.maxPages, 10) || 20);
+
+  const buildParams = (cursor) => {
+    const params = { limit: safeLimit };
+    if (cursor) params.cursor = cursor;
+    if (opts.updatedAfter) params.updatedAfter = opts.updatedAfter;
+    if (opts.fields) params.fields = opts.fields;
+    if (opts.params && typeof opts.params === "object") {
+      Object.assign(params, opts.params);
+    }
+    return params;
+  };
+
+  const fetchPage = async (cursor) => {
+    const response = await axiosInstance.get("/users/friends", {
+      params: buildParams(cursor),
+    });
+    return response.data;
+  };
+
+  if (!fetchAll) {
+    const page = await fetchPage(opts.cursor);
+    return page?.friends ?? page ?? [];
+  }
+
+  // Fetch until the API reports no more pages so large friend lists don't get truncated.
+  const aggregated = [];
+  let cursor = opts.cursor || null;
+  let hasMore = true;
+  let pagesFetched = 0;
+
+  while (hasMore && pagesFetched < maxPages) {
+    const page = await fetchPage(cursor);
+    const pageFriends = page?.friends ?? page ?? [];
+    aggregated.push(...pageFriends);
+
+    const nextCursor = page?.nextCursor || null;
+    hasMore = Boolean(page?.hasMore && nextCursor && nextCursor !== cursor);
+    cursor = nextCursor;
+    pagesFetched += 1;
+  }
+
+  return aggregated;
 }
 
 export async function getBlockedUsers() {

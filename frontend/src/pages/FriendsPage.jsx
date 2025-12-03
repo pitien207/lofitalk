@@ -439,8 +439,13 @@ const FriendsPage = () => {
       <div className="p-4 sm:p-6 lg:p-8">
         <div className="container mx-auto space-y-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {t("home.yourFriends")}
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-baseline gap-2">
+            <span>{t("home.yourFriends")}</span>
+            {friends.length > 0 && (
+              <span className="text-base text-base-content/70">
+                ({friends.length})
+              </span>
+            )}
           </h2>
           <Link to="/notifications" className="btn btn-outline btn-sm">
             <UsersIcon className="mr-2 size-4" />
