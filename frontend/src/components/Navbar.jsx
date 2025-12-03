@@ -1,50 +1,74 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import {
   BellIcon,
   CookieIcon,
+  DramaIcon,
+  Gamepad2Icon,
   HomeIcon,
+  MoonStarIcon,
   LogOutIcon,
   InfoIcon,
   LanguagesIcon,
   MessageSquareIcon,
+  ShieldIcon,
   PaletteIcon,
   Settings2Icon,
-  ShuffleIcon,
   UsersIcon,
+  Wand2Icon,
+  HeartHandshakeIcon,
 } from "lucide-react";
 import useLogout from "../hooks/useLogout";
 import ThemeSelector from "./ThemeSelector";
 import { AVAILABLE_LANGUAGES } from "../languages/translations";
 import { useTranslation } from "../languages/useTranslation";
 import usePendingNotifications from "../hooks/usePendingNotifications";
+import { useGameInvitesStore } from "../store/useGameInvitesStore";
 
 const Navbar = () => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const [activeSetting, setActiveSetting] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [openMobileGroup, setOpenMobileGroup] = useState(null);
+  const mobileNavRef = useRef(null);
   const { t, language, setLanguage } = useTranslation();
   const { hasPending } = usePendingNotifications();
-
+  const hasMatchMindInvites = useGameInvitesStore(
+    (state) => state.invites.matchmind.length > 0
+  );
+  const hasTruthOrLieInvites = useGameInvitesStore(
+    (state) => state.invites.truthlie.length > 0
+  );
+  const hasGameInvite = hasMatchMindInvites || hasTruthOrLieInvites;
   const { logoutMutation } = useLogout();
 
   const currentPath = location.pathname;
-  const mobileNavItems = useMemo(() => {
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!mobileNavRef.current) return;
+      if (!mobileNavRef.current.contains(event.target)) {
+        setOpenMobileGroup(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+  useEffect(() => {
+    setOpenMobileGroup(null);
+  }, [currentPath]);
+  const baseMobileNavItems = useMemo(() => {
     const items = [
       { path: "/", icon: HomeIcon, label: t("sidebar.home") },
       { path: "/friends", icon: UsersIcon, label: t("sidebar.friends") },
       { path: "/chats", icon: MessageSquareIcon, label: t("sidebar.chat") },
-      { path: "/notifications", icon: BellIcon, label: t("sidebar.notifications") },
-      { path: "/tarot", icon: ShuffleIcon, label: t("sidebar.tarot") },
-      { path: "/fortune", icon: CookieIcon, label: t("sidebar.fortune.linkLabel") },
     ];
 
     if (authUser?.accountType === "admin") {
       items.push({
         path: "/admin",
-        icon: UsersIcon,
+        icon: ShieldIcon,
         label: t("sidebar.admin"),
       });
     }
@@ -52,12 +76,122 @@ const Navbar = () => {
     return items;
   }, [authUser?.accountType, t]);
 
+  const mobileMysticItems = useMemo(
+    () => [
+      {
+        path: "/tarot",
+        icon: Wand2Icon,
+        label: t("sidebar.tarot"),
+      },
+      {
+        path: "/fortune",
+        icon: CookieIcon,
+        label: t("sidebar.fortune.linkLabel"),
+      },
+    ],
+    [t]
+  );
+
+  const mobileGameItems = useMemo(
+    () => [
+      {
+        path: "/match-mind",
+        icon: HeartHandshakeIcon,
+        label: t("sidebar.matchMind"),
+        activeMatch: "/match-mind",
+        hasBadge: hasMatchMindInvites,
+      },
+      {
+        path: "/truth-or-liar",
+        icon: DramaIcon,
+        label: t("sidebar.truthOrLiar"),
+        activeMatch: "/truth-or-liar",
+        hasBadge: hasTruthOrLieInvites,
+      },
+    ],
+    [t, hasMatchMindInvites, hasTruthOrLieInvites]
+  );
+
+  const handleGroupToggle = (groupKey) => {
+    setOpenMobileGroup((prev) => (prev === groupKey ? null : groupKey));
+  };
+
+  const renderMobileGroup = (
+    groupKey,
+    ParentIcon,
+    label,
+    items,
+    options = {}
+  ) => {
+    const { parentBadge = false } = options;
+    const isOpen = openMobileGroup === groupKey;
+    const hasActiveChild = items.some((item) =>
+      item.activeMatch
+        ? currentPath.startsWith(item.activeMatch)
+        : currentPath === item.path
+    );
+    const parentActive = isOpen || hasActiveChild;
+
+    return (
+      <div key={groupKey} className="relative">
+        <button
+          type="button"
+          aria-label={label}
+          className={`btn btn-ghost btn-circle ${
+            parentActive ? "btn-active" : ""
+          }`}
+          onClick={(event) => {
+            event.preventDefault();
+            handleGroupToggle(groupKey);
+          }}
+        >
+          <span className="relative inline-flex">
+            <ParentIcon className="size-5 text-base-content opacity-80" />
+            {parentBadge && (
+              <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+            )}
+          </span>
+        </button>
+        {isOpen && (
+          <div className="absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 rounded-2xl border border-base-300 bg-base-100/95 px-3 py-2 shadow-lg flex gap-2">
+            {items.map(({ path, icon: Icon, label: childLabel, activeMatch, hasBadge }) => {
+              const isActive = activeMatch
+                ? currentPath.startsWith(activeMatch)
+                : currentPath === path;
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  aria-label={childLabel}
+                  className={`btn btn-ghost btn-circle ${
+                    isActive ? "btn-active" : ""
+                  }`}
+                  onClick={() => setOpenMobileGroup(null)}
+                  >
+                    <span className="relative inline-flex">
+                      <Icon className="size-5 text-base-content opacity-80" />
+                    {hasBadge && (
+                      <span className="absolute -top-0.5 -right-0.5 block size-2 rounded-full bg-error" />
+                    )}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between w-full gap-4">
-          <div className="flex items-center gap-2 lg:hidden">
-            {mobileNavItems.map(({ path, icon: Icon, label }) => (
+          <div
+            className="flex items-center gap-2 lg:hidden"
+            ref={mobileNavRef}
+          >
+            {baseMobileNavItems.map(({ path, icon: Icon, label }) => (
               <Link
                 key={path}
                 to={path}
@@ -65,10 +199,24 @@ const Navbar = () => {
                 className={`btn btn-ghost btn-circle ${
                   currentPath === path ? "btn-active" : ""
                 }`}
+                onClick={() => setOpenMobileGroup(null)}
               >
                 <Icon className="size-5 text-base-content opacity-80" />
               </Link>
             ))}
+            {renderMobileGroup(
+              "mystic",
+              MoonStarIcon,
+              t("sidebar.mystic"),
+              mobileMysticItems
+            )}
+            {renderMobileGroup(
+              "games",
+              Gamepad2Icon,
+              t("sidebar.games"),
+              mobileGameItems,
+              { parentBadge: hasGameInvite }
+            )}
           </div>
 
           <div className="flex items-center gap-3 sm:gap-4 ml-auto">
