@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 const INVITE_DURATION = 30;
 const STORAGE_KEY = "matchmind-game-state";
+
+const MatchMindGameContext = createContext(null);
 
 const QUESTION_BANK = {
   easy: [
@@ -834,7 +843,7 @@ const getInitialState = () => {
   };
 };
 
-export const useMatchMindGame = () => {
+const useMatchMindGameInternal = () => {
   const initialState = useRef(getInitialState()).current;
   const [stage, setStage] = useState(initialState.stage); // lobby | inviting | accepted | declined | expired | playing | results
   const [difficulty, setDifficulty] = useState(initialState.difficulty);
@@ -859,11 +868,18 @@ export const useMatchMindGame = () => {
       ? initialState.questions
       : generateQuestionSet(initialState.difficulty)
   );
+  const [isHostSession, setIsHostSession] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("matchmind-is-host") === "true";
+  });
+  const [sharedAnswers, setSharedAnswers] = useState(null);
+  const [hasSharedAnswers, setHasSharedAnswers] = useState(false);
 
   const resolvingRef = useRef(false);
   const previousRoundRef = useRef(initialState.roundIndex);
 
   const currentQuestion = questions[roundIndex] || null;
+  const activeSession = sessionId || inviteId;
 
   const resetToLobby = useCallback(() => {
     setStage("lobby");
@@ -1104,6 +1120,31 @@ export const useMatchMindGame = () => {
     }
   }, [stage]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("matchmind-is-host", isHostSession ? "true" : "false");
+  }, [isHostSession]);
+
+  useEffect(() => {
+    if (stage === "playing" || stage === "lobby" || stage === "inviting") {
+      setSharedAnswers(null);
+      setHasSharedAnswers(false);
+    }
+  }, [stage]);
+
+  useEffect(() => {
+    if (!activeSession) {
+      setSharedAnswers(null);
+      setHasSharedAnswers(false);
+    }
+  }, [activeSession]);
+
+  useEffect(() => {
+    if (stage === "expired" || stage === "lobby" || stage === "declined") {
+      setIsHostSession(false);
+    }
+  }, [stage]);
+
   const matches = history.filter((item) => item.matched).length;
   const liveScore =
     matches +
@@ -1138,9 +1179,33 @@ export const useMatchMindGame = () => {
     matches,
     liveScore,
     sessionId,
+    activeSession,
     markAcceptedByFriend,
     markDeclinedByFriend,
     markInviteExpired,
     difficulty,
+    isHostSession,
+    setIsHostSession,
+    sharedAnswers,
+    setSharedAnswers,
+    hasSharedAnswers,
+    setHasSharedAnswers,
   };
+};
+
+export const MatchMindGameProvider = ({ children }) => {
+  const value = useMatchMindGameInternal();
+  return (
+    <MatchMindGameContext.Provider value={value}>
+      {children}
+    </MatchMindGameContext.Provider>
+  );
+};
+
+export const useMatchMindGame = () => {
+  const context = useContext(MatchMindGameContext);
+  if (!context) {
+    throw new Error("useMatchMindGame must be used within MatchMindGameProvider");
+  }
+  return context;
 };

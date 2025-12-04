@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 
 import { useTranslation } from "../languages/useTranslation";
 import { getUserFriends } from "../lib/api";
-import { useMatchMindGame } from "../hooks/useMatchMindGame";
+import { useMatchMindGame } from "../hooks/useMatchMindGame.jsx";
 import useAuthUser from "../hooks/useAuthUser";
 import useChatSocket from "../hooks/useChatSocket";
 import { useGameInvitesStore } from "../store/useGameInvitesStore";
@@ -40,7 +40,6 @@ const MatchMindPage = () => {
     inviteId,
     setInviteId,
     startGame,
-    startGameFromRemote,
     exitGame,
     cancelInvite,
     currentQuestion,
@@ -48,12 +47,17 @@ const MatchMindPage = () => {
     questions,
     currentAnswers,
     chooseAnswer,
-    setFriendAnswer,
     history,
     difficulty,
     matches,
     liveScore,
-    sessionId,
+    activeSession,
+    isHostSession,
+    setIsHostSession,
+    sharedAnswers,
+    setSharedAnswers,
+    hasSharedAnswers,
+    setHasSharedAnswers,
     markAcceptedByFriend,
     markDeclinedByFriend,
     markInviteExpired,
@@ -67,13 +71,7 @@ const MatchMindPage = () => {
   const clearMatchMindInvites = useGameInvitesStore(
     (state) => state.clearInvites
   );
-  const [isHostSession, setIsHostSession] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("matchmind-is-host") === "true";
-  });
   const [isSharingAnswers, setIsSharingAnswers] = useState(false);
-  const [hasSharedAnswers, setHasSharedAnswers] = useState(false);
-  const [sharedAnswers, setSharedAnswers] = useState(null);
   const socket = useChatSocket(true);
 
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
@@ -90,19 +88,11 @@ const MatchMindPage = () => {
     [friends]
   );
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("matchmind-is-host", isHostSession ? "true" : "false");
-  }, [isHostSession]);
-
   const currentQuestionId = currentQuestion?.id;
   const friendLabel =
     selectedFriend?.fullName || t("matchMind.answerLabel.friendFallback");
   const isInGame = stage === "playing" || stage === "results";
   const isResults = stage === "results";
-  const activeSession = sessionId || inviteId;
-  const isMatchMindPayload = (payload = {}) =>
-    !payload.channel || payload.channel === "matchmind";
   const totalQuestions = questions.length || 1;
   const resultRemarkKey = isResults
     ? (() => {
@@ -120,181 +110,17 @@ const MatchMindPage = () => {
 
   useEffect(() => {
     if (stage === "playing" || stage === "lobby" || stage === "inviting") {
-      setSharedAnswers(null);
-      setHasSharedAnswers(false);
       setIsSharingAnswers(false);
     }
   }, [stage]);
 
   useEffect(() => {
     if (!activeSession) {
-      setSharedAnswers(null);
-      setHasSharedAnswers(false);
       setIsSharingAnswers(false);
     }
   }, [activeSession]);
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleResponse = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId || payload.inviteId !== inviteId) return;
-
-      if (payload.accepted) {
-        if (!selectedFriend && payload.guestId) {
-          setSelectedFriend({
-            _id: payload.guestId,
-            fullName: payload.guestName,
-            profilePic: payload.guestPic,
-          });
-        }
-        markAcceptedByFriend();
-        toast.success(
-          t("matchMind.inviteAccepted", {
-            name: payload.guestName || friendLabel,
-          })
-        );
-      } else {
-        if (payload.reason === "expired") {
-          markInviteExpired();
-          toast.error(t("matchMind.inviteExpired"));
-        } else {
-          markDeclinedByFriend();
-          toast.error(
-            t("matchMind.inviteDeclined", {
-              name: payload.guestName || friendLabel,
-            })
-          );
-        }
-        setIsHostSession(false);
-      }
-    };
-
-    const handleStart = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId) return;
-      if (activeSession && payload.inviteId !== activeSession) return;
-
-      if (!selectedFriend?._id && payload.hostId) {
-        setSelectedFriend({
-          _id: payload.hostId,
-          fullName: payload.hostName || friendLabel,
-          profilePic: payload.hostPic,
-        });
-      }
-
-      if (stage === "playing" && activeSession === payload.inviteId) return;
-
-      setInviteId(payload.inviteId);
-      startGameFromRemote(payload.inviteId, payload.difficulty);
-      toast.success(t("matchMind.gameStarting"));
-    };
-
-    const handleAnswer = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId || payload.inviteId !== activeSession) return;
-      if (!payload.answer) return;
-      setFriendAnswer(payload.answer);
-    };
-
-    const handleShareAnswersEvent = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId || payload.inviteId !== activeSession) return;
-      setSharedAnswers({
-        fromUser: payload.fromUser,
-        history: Array.isArray(payload.history) ? payload.history : [],
-      });
-      toast.success(
-        t("matchMind.shareAnswersReceivedToast", {
-          name: payload.fromUser?.fullName || friendLabel,
-        })
-      );
-    };
-
-    const handleCancelled = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId) return;
-      removeMatchMindInvite("matchmind", payload.inviteId);
-      if (payload.inviteId === inviteId) {
-        cancelInvite();
-        setIsHostSession(false);
-        toast.error(
-          t("matchMind.inviteCanceled", {
-            name: payload.hostName || friendLabel,
-          })
-        );
-      } else {
-        toast.error(
-          t("matchMind.inviteCanceled", {
-            name: payload.hostName || friendLabel,
-          })
-        );
-      }
-    };
-
-    const handleExpired = (payload = {}) => {
-      if (!isMatchMindPayload(payload)) return;
-      if (!payload.inviteId) return;
-      removeMatchMindInvite("matchmind", payload.inviteId);
-      if (payload.inviteId === inviteId) {
-        markInviteExpired();
-        setIsHostSession(false);
-      }
-    };
-
-    const handleExitBoth = (payload = {}) => {
-      if (!payload.inviteId || payload.inviteId !== activeSession) return;
-      exitGame();
-      setIsHostSession(false);
-      setInviteId(null);
-      clearMatchMindInvites("matchmind");
-      toast.error(t("matchMind.gameEnded"));
-    };
-
-    socket.on("matchmind:response", handleResponse);
-    socket.on("matchmind:start", handleStart);
-    socket.on("matchmind:answer", handleAnswer);
-    socket.on("matchmind:share-answers", handleShareAnswersEvent);
-    socket.on("matchmind:expired", handleExpired);
-    socket.on("matchmind:cancelled", handleCancelled);
-    socket.on("matchmind:exit", handleExitBoth);
-
-    return () => {
-      socket.off("matchmind:response", handleResponse);
-      socket.off("matchmind:start", handleStart);
-      socket.off("matchmind:answer", handleAnswer);
-      socket.off("matchmind:share-answers", handleShareAnswersEvent);
-      socket.off("matchmind:expired", handleExpired);
-      socket.off("matchmind:cancelled", handleCancelled);
-      socket.off("matchmind:exit", handleExitBoth);
-    };
-  }, [
-    socket,
-    inviteId,
-    activeSession,
-    selectedFriend,
-    stage,
-    startGameFromRemote,
-    setFriendAnswer,
-    setSelectedFriend,
-    markAcceptedByFriend,
-    markDeclinedByFriend,
-    markInviteExpired,
-    cancelInvite,
-    friendLabel,
-    setInviteId,
-    t,
-    exitGame,
-    removeMatchMindInvite,
-    clearMatchMindInvites,
-  ]);
-
-  useEffect(() => {
-    if (stage === "expired" || stage === "lobby" || stage === "declined") {
-      setIsHostSession(false);
-    }
-  }, [stage]);
+  
 
   const handleSelectFriend = (event) => {
     const selectedId = event.target.value;
@@ -382,7 +208,7 @@ const MatchMindPage = () => {
   const handleChooseAnswer = useCallback(
     (option) => {
       chooseAnswer(option);
-      const session = sessionId || inviteId;
+      const session = activeSession;
       if (socket && session && currentQuestionId) {
         socket.emit("matchmind:answer", {
           inviteId: session,
@@ -391,7 +217,7 @@ const MatchMindPage = () => {
         });
       }
     },
-    [chooseAnswer, socket, sessionId, inviteId, currentQuestionId]
+    [chooseAnswer, socket, activeSession, currentQuestionId]
   );
 
   const handleCancelInvite = () => {

@@ -24,7 +24,9 @@ import PageLoader from "./components/PageLoader.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
 import GameInviteListener from "./components/GameInviteListener.jsx";
+import MatchMindSocketBridge from "./components/MatchMindSocketBridge.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
+import { MatchMindGameProvider } from "./hooks/useMatchMindGame.jsx";
 
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
@@ -43,8 +45,9 @@ const App = () => {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="min-h-screen bg-base-100" data-theme={theme}>
-      <Routes>
+    <MatchMindGameProvider>
+      <div className="min-h-screen bg-base-100" data-theme={theme}>
+        <Routes>
         <Route
           path="/"
           element={
@@ -237,10 +240,16 @@ const App = () => {
         />
       </Routes>
 
-      {isAuthenticated && isOnboarded && <GameInviteListener />}
+      {isAuthenticated && isOnboarded && (
+        <>
+          <GameInviteListener />
+          <MatchMindSocketBridge />
+        </>
+      )}
 
       <Toaster />
     </div>
+    </MatchMindGameProvider>
   );
 };
 export default App;
