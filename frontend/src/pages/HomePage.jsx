@@ -16,6 +16,7 @@ import {
   BookOpenIcon,
   QuoteIcon,
   PawPrintIcon,
+  SparklesIcon,
 } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 import { getRandomAvatar } from "../utils/avatarPool";
@@ -68,6 +69,7 @@ const HomePage = () => {
     education: "",
     hobbies: [],
     pets: [],
+    favoritePerfume: "",
     profilePic: "",
   });
   const [passwordForm, setPasswordForm] = useState({
@@ -97,6 +99,7 @@ const HomePage = () => {
       education: authUser.education || "",
       hobbies: parseListField(authUser.hobbies),
       pets: parseListField(authUser.pets),
+      favoritePerfume: authUser.favoritePerfume || "",
       profilePic: authUser.profilePic || "",
     });
   }, [authUser]);
@@ -802,6 +805,11 @@ const HomePage = () => {
               }
             />
             <InfoBadge
+              icon={SparklesIcon}
+              label={t("profile.favoritePerfume")}
+              value={formState.favoritePerfume}
+            />
+            <InfoBadge
               icon={HeartIcon}
               label={t("profile.height")}
               value={formState.height}
@@ -1205,18 +1213,38 @@ const HomePage = () => {
                         </label>
                       );
                     })}
-                  </div>
-                  {formState.pets.length > 0 && (
-                    <p className="text-xs opacity-70 mt-2">
-                      {t("onboarding.selectedLabel", {
-                        items: formState.pets.join(", "),
-                      })}
-                    </p>
-                  )}
                 </div>
+                {formState.pets.length > 0 && (
+                  <p className="text-xs opacity-70 mt-2">
+                    {t("onboarding.selectedLabel", {
+                      items: formState.pets.join(", "),
+                    })}
+                  </p>
+                )}
+              </div>
 
-                <button
-                  className="btn btn-primary w-full"
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">
+                    {t("onboarding.favoritePerfume")}{" "}
+                    <span className="text-xs opacity-60">
+                      ({t("onboarding.optional")})
+                    </span>
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  value={formState.favoritePerfume}
+                  onChange={(e) =>
+                    updateFormField("favoritePerfume", e.target.value)
+                  }
+                  className="input input-bordered w-full"
+                  placeholder={t("onboarding.favoritePerfumePlaceholder")}
+                />
+              </div>
+
+              <button
+                className="btn btn-primary w-full"
                   disabled={isPending}
                   type="submit"
                 >

@@ -56,6 +56,7 @@ const OnboardingPage = () => {
     education: authUser?.education || "",
     hobbies: initialHobbies,
     pets: initialPets,
+    favoritePerfume: authUser?.favoritePerfume || "",
     profilePic: authUser?.profilePic || "",
   });
 
@@ -852,6 +853,25 @@ const OnboardingPage = () => {
                   })}
                 </p>
               )}
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">
+                  {t("onboarding.favoritePerfume")}{" "}
+                  <span className="text-xs opacity-60">
+                    ({t("onboarding.optional")})
+                  </span>
+                </span>
+              </label>
+              <input
+                type="text"
+                name="favoritePerfume"
+                value={formState.favoritePerfume}
+                onChange={(e) => updateFormField("favoritePerfume", e.target.value)}
+                className="input input-bordered w-full"
+                placeholder={t("onboarding.favoritePerfumePlaceholder")}
+              />
             </div>
 
             {/* SUBMIT BUTTON */}

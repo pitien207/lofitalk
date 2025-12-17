@@ -62,6 +62,7 @@ const PUBLIC_USER_FIELDS = [
   "education",
   "hobbies",
   "pets",
+  "favoritePerfume",
   "profilePic",
   "avatarVersion",
   "isEmailVerified",
@@ -487,6 +488,7 @@ export async function onboard(req, res) {
       education,
       hobbies,
       pets,
+      favoritePerfume,
       profilePic,
       accountType: _ignoredAccountType,
     } = req.body;
@@ -524,6 +526,7 @@ export async function onboard(req, res) {
       education: education || "",
       hobbies: hobbies || "",
       pets: pets || "",
+      favoritePerfume: favoritePerfume || "",
       location: [city, country].filter(Boolean).join(", "),
       isOnboarded: true,
     };
@@ -553,7 +556,5 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-
-
 
 
