@@ -22,8 +22,11 @@ import { Link } from "react-router";
 import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
+import datingConfessionImage from "../../../backend/src/assets/logo/dating_confession.jpg";
 
 const ADMIN_EXPIRE_DAYS = 3;
+const DATING_CONFESSION_URL =
+  "https://www.facebook.com/groups/265427628066933/";
 
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
@@ -35,30 +38,28 @@ const NotificationsPage = () => {
     queryFn: getFriendRequests,
   });
 
-  const {
-    data: adminNotificationData,
-    isLoading: loadingAdminNotifications,
-  } = useQuery({
-    queryKey: ["adminNotifications"],
-    queryFn: async () => {
-      try {
-        return await getAdminNotifications();
-      } catch (error) {
-        if (error?.response?.status === 404) {
-          return { notifications: [] };
+  const { data: adminNotificationData, isLoading: loadingAdminNotifications } =
+    useQuery({
+      queryKey: ["adminNotifications"],
+      queryFn: async () => {
+        try {
+          return await getAdminNotifications();
+        } catch (error) {
+          if (error?.response?.status === 404) {
+            return { notifications: [] };
+          }
+          throw error;
         }
-        throw error;
-      }
-    },
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-    retry: 1,
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message || "Failed to load admin notifications"
-      );
-    },
-  });
+      },
+      staleTime: 30 * 1000,
+      refetchInterval: 60 * 1000,
+      retry: 1,
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.message || "Failed to load admin notifications"
+        );
+      },
+    });
 
   const { mutate: acceptRequestMutation, isPending } = useMutation({
     mutationFn: acceptFriendRequest,
@@ -116,9 +117,7 @@ const NotificationsPage = () => {
         queryClient.invalidateQueries({ queryKey: ["adminNotifications"] });
       },
       onError: (error) => {
-        toast.error(
-          error.response?.data?.message || t("notifications.error")
-        );
+        toast.error(error.response?.data?.message || t("notifications.error"));
       },
     });
 
@@ -140,6 +139,41 @@ const NotificationsPage = () => {
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-6">
           {t("notifications.title")}
         </h1>
+        <a
+          href={DATING_CONFESSION_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-3xl border border-base-300 bg-base-100/80 p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-200"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-4">
+              <div className="size-16 sm:size-20 rounded-2xl overflow-hidden shadow-xl shrink-0 border border-base-content/10">
+                <img
+                  src={datingConfessionImage}
+                  alt="Dating Confession"
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="badge badge-secondary badge-outline">
+                  {t("notifications.datingConfession.badge")}
+                </span>
+                <h2 className="text-xl font-semibold">
+                  {t("notifications.datingConfession.title")}
+                </h2>
+                <p className="text-sm text-base-content/70">
+                  {t("notifications.datingConfession.description")}
+                </p>
+              </div>
+            </div>
+            <div className="sm:ml-auto">
+              <span className="btn btn-primary btn-sm">
+                {t("notifications.datingConfession.cta")}
+              </span>
+            </div>
+          </div>
+        </a>
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -151,7 +185,9 @@ const NotificationsPage = () => {
               <section className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MegaphoneIcon className="h-5 w-5 text-warning" />
-                  <h2 className="text-xl font-semibold">{t("notifications.adminTitle")}</h2>
+                  <h2 className="text-xl font-semibold">
+                    {t("notifications.adminTitle")}
+                  </h2>
                   {loadingAdminNotifications && (
                     <span className="loading loading-spinner loading-xs"></span>
                   )}
@@ -164,7 +200,8 @@ const NotificationsPage = () => {
                 ) : (
                   <div className="space-y-3">
                     {adminNotifications.map((notification) => {
-                      const notificationId = notification._id || notification.id;
+                      const notificationId =
+                        notification._id || notification.id;
                       const createdAtDate = notification.createdAt
                         ? new Date(notification.createdAt)
                         : null;
@@ -173,9 +210,11 @@ const NotificationsPage = () => {
                           ? createdAtDate.toLocaleString()
                           : t("notifications.fromAdmin");
 
-                      const expireAtRaw = notification.expireAt || notification.expiresAt;
+                      const expireAtRaw =
+                        notification.expireAt || notification.expiresAt;
                       const expireDate =
-                        expireAtRaw && !Number.isNaN(new Date(expireAtRaw).getTime())
+                        expireAtRaw &&
+                        !Number.isNaN(new Date(expireAtRaw).getTime())
                           ? new Date(expireAtRaw)
                           : null;
 
@@ -195,27 +234,29 @@ const NotificationsPage = () => {
                                 <p className="text-sm text-base-content/60">
                                   {createdAt}
                                 </p>
-                              <p className="text-sm leading-relaxed">
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-base-content/60">
-                                {t("notifications.adminExpireHint", { days: ADMIN_EXPIRE_DAYS })}
-                                {expireDate
-                                  ? ` (${t("notifications.expiresOn", {
-                                      date: expireDate.toLocaleDateString(),
-                                    })})`
-                                  : ""}
-                              </p>
-                            </div>
-                            <button
-                              className="btn btn-ghost btn-sm"
+                                <p className="text-sm leading-relaxed">
+                                  {notification.message}
+                                </p>
+                                <p className="text-xs text-base-content/60">
+                                  {t("notifications.adminExpireHint", {
+                                    days: ADMIN_EXPIRE_DAYS,
+                                  })}
+                                  {expireDate
+                                    ? ` (${t("notifications.expiresOn", {
+                                        date: expireDate.toLocaleDateString(),
+                                      })})`
+                                    : ""}
+                                </p>
+                              </div>
+                              <button
+                                className="btn btn-ghost btn-sm"
                                 onClick={() =>
                                   notificationId &&
                                   dismissAdminNotification(notificationId)
-                              }
-                              disabled={isDismissingAdmin || !notificationId}
-                              title={t("notifications.delete")}
-                            >
+                                }
+                                disabled={isDismissingAdmin || !notificationId}
+                                title={t("notifications.delete")}
+                              >
                                 {isDismissingAdmin ? (
                                   <span className="loading loading-spinner loading-xs"></span>
                                 ) : (
@@ -262,8 +303,8 @@ const NotificationsPage = () => {
                             </Link>
                             <div>
                               <h3 className="font-semibold">
-                              {request.sender.fullName}
-                            </h3>
+                                {request.sender.fullName}
+                              </h3>
                               {([request.sender.city, request.sender.country]
                                 .filter(Boolean)
                                 .join(", ") ||
@@ -271,10 +312,12 @@ const NotificationsPage = () => {
                                 <div className="flex items-center gap-1 text-xs opacity-70 mt-1">
                                   <MapPinIcon className="h-3 w-3" />
                                   <span>
-                                    {[request.sender.city, request.sender.country]
+                                    {[
+                                      request.sender.city,
+                                      request.sender.country,
+                                    ]
                                       .filter(Boolean)
-                                      .join(", ") ||
-                                      request.sender.location}
+                                      .join(", ") || request.sender.location}
                                   </span>
                                 </div>
                               )}

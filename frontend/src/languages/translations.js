@@ -304,6 +304,14 @@ const english = {
     expiresOn: "expires {date}",
 
     fromAdmin: "From admin",
+
+    datingConfession: {
+      badge: "Facebook shoutout",
+      title: "Dating Confession",
+      description:
+        "Tap to follow Dating Confession on Facebook for cozy confessions and updates.",
+      cta: "Open fanpage",
+    },
   },
 
   sidebar: {
@@ -1625,6 +1633,14 @@ const vietnamese = {
     expiresOn: "Hết hạn {date}",
 
     fromAdmin: "Từ admin",
+
+    datingConfession: {
+      badge: "Fanpage Facebook",
+      title: "Dating Confession",
+      description:
+        "Ghé thăm fanpage Dating Confession để chia sẻ câu chuyện của các bạn nhé!",
+      cta: "Đến fanpage",
+    },
   },
 
   sidebar: {
