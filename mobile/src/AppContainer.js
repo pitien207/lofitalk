@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Image, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  AppState,
+  Image,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import AuthScreen from "./screens/AuthScreen";
 import HomeScreen from "./screens/HomeScreen";
@@ -13,6 +20,7 @@ import useAuth from "./hooks/useAuth";
 import useFriends from "./hooks/useFriends";
 import useChat from "./hooks/useChat";
 import useAppVersion from "./hooks/useAppVersion";
+import useNotifications from "./hooks/useNotifications";
 import { MENU_ITEMS } from "./constants";
 import { BRAND_COLORS } from "./theme/colors";
 import Logo from "../assets/LofiTalk_logo.png";
@@ -72,6 +80,60 @@ const AppContainer = () => {
     reportUserById,
     isBlockedUser,
   } = useFriends();
+  const [activePage, setActivePage] = useState("home");
+  const [showIntro, setShowIntro] = useState(true);
+  const introOpacity = useRef(new Animated.Value(1)).current;
+  const appStateRef = useRef(AppState.currentState);
+  const threadsRef = useRef([]);
+  const activeThreadRef = useRef(null);
+  const {
+    status: versionStatus,
+    requiresUpdate,
+    serverVersion,
+    currentVersion,
+    updateUrl,
+    refresh: refreshVersionCheck,
+  } = useAppVersion();
+  const { presentMessageNotification } = useNotifications();
+
+  const handleIncomingMessageNotification = useCallback(
+    (payload = {}) => {
+      const message = payload.message;
+      const threadId = payload.threadId;
+
+      if (!message || !threadId) return;
+      if (message.senderId === user?._id) return;
+
+      const isViewingThread =
+        activePage === "chat" &&
+        activeThreadRef.current?.id === threadId &&
+        appStateRef.current === "active";
+
+      if (isViewingThread) return;
+
+      const thread =
+        threadsRef.current.find((item) => item.id === threadId) || null;
+      const title =
+        thread?.partner?.fullName ||
+        thread?.partner?.name ||
+        "Tin nhắn mới";
+      const body =
+        message.text?.trim?.() ||
+        thread?.lastMessage ||
+        "Bạn có tin nhắn mới";
+
+      presentMessageNotification({
+        title,
+        body,
+        data: {
+          threadId,
+          senderId: message.senderId,
+        },
+      });
+    },
+    [activePage, presentMessageNotification, user?._id]
+  );
+
   const {
     threads,
     hasMoreThreads,
@@ -92,18 +154,7 @@ const AppContainer = () => {
     closeThread,
     sendMessage,
     loadOlderMessages,
-  } = useChat();
-  const {
-    status: versionStatus,
-    requiresUpdate,
-    serverVersion,
-    currentVersion,
-    updateUrl,
-    refresh: refreshVersionCheck,
-  } = useAppVersion();
-  const [activePage, setActivePage] = useState("home");
-  const [showIntro, setShowIntro] = useState(true);
-  const introOpacity = useRef(new Animated.Value(1)).current;
+  } = useChat({ onIncomingMessage: handleIncomingMessageNotification });
 
   const handleLogin = async () => {
     const data = await login();
@@ -147,6 +198,21 @@ const AppContainer = () => {
 
   const handleRefreshFriends = () =>
     Promise.all([refreshFriends(), loadBlockedUsers()]).catch(() => null);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      appStateRef.current = nextState;
+    });
+    return () => subscription?.remove?.();
+  }, []);
+
+  useEffect(() => {
+    threadsRef.current = threads;
+  }, [threads]);
+
+  useEffect(() => {
+    activeThreadRef.current = activeThread;
+  }, [activeThread]);
 
   useEffect(() => {
     const animation = Animated.timing(introOpacity, {

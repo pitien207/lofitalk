@@ -46,7 +46,7 @@ const mergeThreads = (current = [], incoming = []) => {
   return Array.from(map.values());
 };
 
-const useChat = () => {
+const useChat = (options = {}) => {
   const [threads, setThreads] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState(null);
@@ -64,6 +64,13 @@ const useChat = () => {
   const currentUserIdRef = useRef(null);
   const isConnectingRef = useRef(false);
   const lastThreadSyncRef = useRef(null);
+  const incomingMessageHandlerRef = useRef(
+    options.onIncomingMessage || null
+  );
+
+  useEffect(() => {
+    incomingMessageHandlerRef.current = options.onIncomingMessage || null;
+  }, [options.onIncomingMessage]);
 
   const resetChat = useCallback(() => {
     setThreads([]);
@@ -243,6 +250,17 @@ const useChat = () => {
         message?.conversationId ||
         payload.threadId ||
         payload.thread?.id;
+
+      const onIncomingMessage = incomingMessageHandlerRef.current;
+      const isFromSelf = message?.senderId === currentUserIdRef.current;
+
+      if (onIncomingMessage && threadId && !isFromSelf && message) {
+        try {
+          onIncomingMessage({ message, threadId, thread });
+        } catch (_error) {
+          // avoid breaking chat flow if notification hook fails
+        }
+      }
 
       if (!threadId || threadId !== activeThreadIdRef.current) return;
 
