@@ -22,9 +22,21 @@ const transporter =
       })
     : null;
 
+// Without SMTP settings: in development print the code so flows can be tested locally;
+// in production fail loudly instead of pretending an email was sent.
+const handleMissingTransporter = (purpose, recipient, code) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      `[dev] Email transporter not configured. ${purpose} code for ${recipient}: ${code}`
+    );
+    return;
+  }
+  throw new Error("Email transporter not configured (MAIL_* settings missing)");
+};
+
 export async function sendVerificationEmail(recipient, code) {
   if (!transporter) {
-    console.warn("Email transporter not configured. Skipping email send.");
+    handleMissingTransporter("Verification", recipient, code);
     return;
   }
 
@@ -52,7 +64,7 @@ export async function sendVerificationEmail(recipient, code) {
 
 export async function sendPasswordResetEmail(recipient, code) {
   if (!transporter) {
-    console.warn("Email transporter not configured. Skipping email send.");
+    handleMissingTransporter("Password reset", recipient, code);
     return;
   }
 

@@ -223,7 +223,7 @@ Trên Portal: **Settings → Secrets → Add**. Tên secret chỉ gồm chữ th
 | `mongo-uri` | Connection string DocumentDB ở mục 2.3 |
 | `jwt-secret-key` | Chuỗi ngẫu nhiên dài, tạo bằng `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `anthropic-api-key` | API key Anthropic |
-| `mail-pass` | Chỉ cần nếu dùng email quên mật khẩu |
+| `mail-pass` | **Bắt buộc**: mật khẩu SMTP (Gmail App Password hoặc SMTP key). Không có thì không đăng ký được và không đặt lại mật khẩu được. |
 
 Nên nhập `mongo-uri` trên **Portal**: chuỗi có ký tự `&`, dễ bị PowerShell và `az.cmd` cắt sai. Các secret còn lại có thể dùng CLI:
 
@@ -243,7 +243,7 @@ Trên Portal: **Application → Containers → Edit and deploy → Environment v
 | `ANTHROPIC_MODEL` | Manual | `claude-haiku-5-5` (không bắt buộc, đây là mặc định) |
 | `FRONTEND_URLS` | Manual | `https://lofitalk.nghiapham.org` |
 | `ASSET_BASE_URL` | Manual | `https://lofitalk.nghiapham.org` |
-| `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USER`, `MAIL_FROM` | Manual | Nếu dùng email |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USER`, `MAIL_FROM` | Manual | **Bắt buộc**: dùng để gửi mã xác nhận đăng ký và mã đặt lại mật khẩu. Gmail: `smtp.gmail.com`, `465`, `true`. |
 | `MAIL_PASS` | Reference a secret | `mail-pass` |
 
 `NODE_ENV=production` và `PORT=8080` đã có sẵn trong image, không cần đặt.

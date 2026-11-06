@@ -29,7 +29,7 @@ With `NODE_ENV=production` the backend also serves `frontend/dist` (SPA fallback
 - The ghcr.io package is public (repo is public); the image must never contain secrets.
 - `profilePic` stores absolute URLs built from `ASSET_BASE_URL`.
 - No file uploads or disk writes; avatars are read-only files in `backend/src/assets/avatars`. All persistent data is in MongoDB.
-- Signup email verification is currently disabled (code commented out in `auth.controller.js`), so signup logs in directly.
+- Signup requires email verification: `signup` stores a `PendingSignup` and emails a 6-digit code (15 min, max 5 wrong attempts, pending docs TTL 24h); `verify-code` creates the user and logs in. Submitting signup again re-sends a code. In production, missing `MAIL_*` makes signup return 502 and password reset 500 (never silent); in development the code is printed to the console.
 
 ## Local test environment
 MongoDB runs in Docker container `lofitalk-mongo` (`mongo:7`, volume `lofitalk-mongo-data`, port 27017); `backend/.env` points to `mongodb://localhost:27017/lofitalk`.

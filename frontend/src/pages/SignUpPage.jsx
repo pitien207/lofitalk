@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { ShipWheelIcon } from "lucide-react";
-// import { MailCheckIcon } from "lucide-react";
+import { ShipWheelIcon, MailCheckIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
 import useSignUp from "../hooks/useSignup.js";
-// import useVerifySignup from "../hooks/useVerifySignup.js";
+import useVerifySignup from "../hooks/useVerifySignup.js";
 import { useTranslation } from "../languages/useTranslation";
 import LanguageSelector from "../components/LanguageSelector";
 
@@ -15,44 +13,30 @@ const SignUpPage = () => {
     email: "",
     password: "",
   });
-  // const [step, setStep] = useState("form");
-  // const [pendingEmail, setPendingEmail] = useState("");
-  // const [verificationCode, setVerificationCode] = useState("");
-  // const [infoMessage, setInfoMessage] = useState("");
+  // "form" -> signup details, "verify" -> enter the 6-digit code sent by email
+  const [step, setStep] = useState("form");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
 
-  // This is how we did it at first, without using our custom hook
-  // const queryClient = useQueryClient();
-  // const {
-  //   mutate: signupMutation,
-  //   isPending,
-  //   error,
-  // } = useMutation({
-  //   mutationFn: signup,
-  //   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-  // });
-
-  const queryClient = useQueryClient();
-  // This is how we did it using our custom hook - optimized version
   const { isPending, error, signupMutation } = useSignUp();
-  // const { verifySignupMutation, isVerifying, verifyError } = useVerifySignup();
+  const { verifySignupMutation, isVerifying, verifyError } = useVerifySignup();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleSignup = (e) => {
     e.preventDefault();
-    // setInfoMessage("");
+    setInfoMessage("");
     signupMutation(signupData, {
-      onSuccess: (_data) => {
-        queryClient.invalidateQueries({ queryKey: ["authUser"] });
-        navigate("/onboarding");
-        // setPendingEmail(signupData.email);
-        // setStep("verify");
-        // setInfoMessage(_data?.message || t("auth.verificationEmailSent"));
+      onSuccess: () => {
+        setPendingEmail(signupData.email);
+        setVerificationCode("");
+        setStep("verify");
+        setInfoMessage(t("auth.verificationEmailSent"));
       },
     });
   };
 
-  /*
   const handleVerification = (e) => {
     e.preventDefault();
     if (!pendingEmail) return;
@@ -76,7 +60,6 @@ const SignUpPage = () => {
     setVerificationCode("");
     setInfoMessage("");
   };
-  */
 
   return (
     <div
@@ -96,6 +79,7 @@ const SignUpPage = () => {
           </div>
           <p className="text-sm opacity-70">{t("auth.signupLogoTagline")}</p>
 
+          {step === "form" ? (
           <>
             {error && (
               <div className="alert alert-error mb-4">
@@ -218,10 +202,8 @@ const SignUpPage = () => {
               </form>
             </div>
           </>
-
-          {/*
-          Original verification step UI:
-          <div className="space-y-4">
+          ) : (
+          <div className="space-y-4 mt-4">
             {infoMessage && (
               <div className="rounded-2xl border border-primary/30 bg-gradient-to-r from-[#FF5E5E]/10 to-[#FF9A9A]/10 px-3 py-2 flex items-center gap-2 text-xs sm:text-sm">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-primary">
@@ -291,7 +273,7 @@ const SignUpPage = () => {
               {t("auth.verificationResendHint")}
             </p>
           </div>
-          */}
+          )}
         </div>
 
         {/* SIGNUP FORM - RIGHT SIDE */}

@@ -1,14 +1,15 @@
 import User from "../models/User.js";
-// import PendingSignup from "../models/PendingSignup.js";
-// import bcrypt from "bcryptjs";
+import PendingSignup from "../models/PendingSignup.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
   sendPasswordResetEmail,
-  // sendVerificationEmail,
+  sendVerificationEmail,
 } from "../utils/email.js";
 import { getRandomAvatar, resolveAvatarPath } from "../utils/avatarPool.js";
 
 const CODE_EXPIRATION_MINUTES = 15;
+const MAX_VERIFICATION_ATTEMPTS = 5;
 
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -134,10 +135,10 @@ export async function signup(req, res) {
       });
     }
 
-    // const verificationCode = generateVerificationCode();
-    // const verificationCodeExpiresAt = new Date(
-    //   Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
-    // );
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpiresAt = new Date(
+      Date.now() + CODE_EXPIRATION_MINUTES * 60 * 1000
+    );
 
     const platformHeader = req.headers["x-client-platform"]?.toString().toLowerCase();
     const avatarSource = platformHeader === "web" ? "web" : "mobile";
@@ -146,9 +147,10 @@ export async function signup(req, res) {
       ? withAvatarVersion(buildAssetUrl(randomAvatarPath))
       : "";
 
-    // const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    /*
+    // The account is only created after the emailed code is confirmed (verifySignupCode).
+    // Submitting the form again for the same email issues a new code (acts as "resend").
     await PendingSignup.findOneAndUpdate(
       { email },
       {
@@ -157,38 +159,25 @@ export async function signup(req, res) {
         profilePic: randomAvatar,
         verificationCode,
         verificationCodeExpiresAt,
+        verificationAttempts: 0,
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    await sendVerificationEmail(email, verificationCode);
-
-    res.status(201).json({
-      success: true,
-      message: "Verification code sent to your email address.",
-    });
-    */
-
-    const newUser = await User.create({
-      email,
-      fullName,
-      password,
-      profilePic: randomAvatar,
-      avatarVersion: Date.now(),
-      isEmailVerified: true,
-    });
-
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
-
-    setAuthCookie(res, token);
+    try {
+      await sendVerificationEmail(email, verificationCode);
+    } catch (mailError) {
+      console.error("Failed to send verification email:", mailError?.message || mailError);
+      return res.status(502).json({
+        message:
+          "Could not send the verification email. Please try again in a few minutes.",
+      });
+    }
 
     return res.status(201).json({
       success: true,
-      message: "Account created successfully.",
-      token,
-      user: toPublicUser(newUser),
+      verificationRequired: true,
+      message: "Verification code sent to your email address.",
     });
   } catch (error) {
     console.log("Error in signup controller", error);
@@ -259,7 +248,6 @@ export async function logout(req, res) {
   }
 }
 
-/*
 export async function verifySignupCode(req, res) {
   const { email, code } = req.body;
 
@@ -280,11 +268,30 @@ export async function verifySignupCode(req, res) {
       }
 
       if (
-        !pendingSignup.verificationCode ||
-        pendingSignup.verificationCode !== normalizedCode ||
         !pendingSignup.verificationCodeExpiresAt ||
         pendingSignup.verificationCodeExpiresAt < new Date()
       ) {
+        return res.status(400).json({
+          message: "Verification code expired. Please sign up again to get a new code.",
+        });
+      }
+
+      if (
+        !pendingSignup.verificationCode ||
+        pendingSignup.verificationCode !== normalizedCode
+      ) {
+        // Limit guesses on the 6-digit code; afterwards a new signup (new code) is required.
+        const attempts = (pendingSignup.verificationAttempts || 0) + 1;
+        if (attempts >= MAX_VERIFICATION_ATTEMPTS) {
+          await PendingSignup.deleteOne({ _id: pendingSignup._id });
+          return res.status(400).json({
+            message: "Too many incorrect codes. Please sign up again to get a new code.",
+          });
+        }
+        await PendingSignup.updateOne(
+          { _id: pendingSignup._id },
+          { $set: { verificationAttempts: attempts } }
+        );
         return res
           .status(400)
           .json({ message: "Invalid or expired verification code" });
@@ -334,14 +341,6 @@ export async function verifySignupCode(req, res) {
     console.log("Error verifying signup code:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
-}
-*/
-
-export async function verifySignupCode(_req, res) {
-  return res.status(410).json({
-    success: false,
-    message: "Verification step is currently disabled.",
-  });
 }
 
 export async function updatePassword(req, res) {
