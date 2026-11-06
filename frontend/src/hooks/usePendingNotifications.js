@@ -1,12 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAdminNotifications, getFriendRequests } from "../lib/api";
+import { useRealtimeStore } from "../store/useRealtimeStore";
 
 const usePendingNotifications = () => {
+  // No polling while the user is idle (lets the server scale to zero).
+  const paused = useRealtimeStore((state) => state.paused);
+
   const { data } = useQuery({
     queryKey: ["friendRequests"],
     queryFn: getFriendRequests,
     staleTime: 30 * 1000,
-    refetchInterval: 15 * 1000,
+    refetchInterval: paused ? false : 15 * 1000,
     refetchIntervalInBackground: true,
   });
 
@@ -14,7 +18,7 @@ const usePendingNotifications = () => {
     queryKey: ["adminNotifications"],
     queryFn: getAdminNotifications,
     staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
+    refetchInterval: paused ? false : 60 * 1000,
     refetchIntervalInBackground: true,
     retry: 1,
   });

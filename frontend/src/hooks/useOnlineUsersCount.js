@@ -3,16 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import useAuthUser from "./useAuthUser";
 import { getOnlineUsersCount } from "../lib/api";
 import useChatSocket from "./useChatSocket";
+import { useRealtimeStore } from "../store/useRealtimeStore";
 
 const useOnlineUsersCount = () => {
   const { authUser } = useAuthUser();
   const socket = useChatSocket(Boolean(authUser));
+  const paused = useRealtimeStore((state) => state.paused);
 
   const { data, isFetching, refetch } = useQuery({
     queryKey: ["onlineUsersCount"],
     queryFn: getOnlineUsersCount,
     enabled: Boolean(authUser),
-    refetchInterval: 30_000,
+    refetchInterval: paused ? false : 30_000,
   });
 
   useEffect(() => {

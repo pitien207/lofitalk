@@ -227,6 +227,10 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
 
     socket.on("disconnect", async () => {
       try {
+        // Another tab of the same user may still be connected: stay online then.
+        const remainingSockets = await io.in(toUserRoom(userId)).fetchSockets();
+        if (remainingSockets.length > 0) return;
+
         await User.findByIdAndUpdate(userId, {
           $set: { isOnline: false, lastActiveAt: new Date() },
         });

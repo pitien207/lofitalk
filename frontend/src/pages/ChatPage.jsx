@@ -71,13 +71,23 @@ const ChatPage = () => {
   }, [messages, scrollToBottom]);
 
   useEffect(() => {
-    if (!threadId) return;
-    if (socket) {
+    if (!threadId) return undefined;
+    if (!socket) {
+      markChatThreadRead(threadId).catch(() => undefined);
+      return undefined;
+    }
+
+    const joinThread = () => {
       socket.emit("chat:join", { threadId });
       socket.emit("chat:mark-read", { threadId });
-    } else {
-      markChatThreadRead(threadId).catch(() => undefined);
-    }
+    };
+
+    joinThread();
+    // Rooms are per connection: join again after every reconnect (idle resume, network drop).
+    socket.on("connect", joinThread);
+    return () => {
+      socket.off("connect", joinThread);
+    };
   }, [socket, threadId]);
 
   const upsertMessage = useCallback((incoming) => {

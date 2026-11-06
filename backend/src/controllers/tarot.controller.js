@@ -1,7 +1,58 @@
 import "dotenv/config";
+import Anthropic from "@anthropic-ai/sdk";
 import { incrementUsageCounter } from "../services/usageStats.service.js";
 
 const ENERGY_COST = 7;
+
+const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-5-5";
+const TAROT_UNAVAILABLE_MESSAGE =
+  "Tính năng xem Tarot tạm thời không khả dụng. Vui lòng thử lại sau.";
+
+// Same shape the frontend already renders: 3 readings + an overall message.
+const TAROT_RESULT_SCHEMA = {
+  type: "object",
+  properties: {
+    readings: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          question: { type: "string" },
+          card: { type: "string" },
+          message: { type: "string" },
+          advice: { type: "string" },
+        },
+        required: ["question", "card", "message", "advice"],
+        additionalProperties: false,
+      },
+    },
+    overall_message: { type: "string" },
+  },
+  required: ["readings", "overall_message"],
+  additionalProperties: false,
+};
+
+let anthropicClient = null;
+
+// Created lazily so the server still boots (and other features work) without a key.
+const getAnthropicClient = () => {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return anthropicClient;
+};
+
+const logAnthropicError = (error) => {
+  if (error instanceof Anthropic.APIError) {
+    console.error(
+      `Anthropic API error ${error.status ?? "(no status)"}:`,
+      error.message
+    );
+  } else {
+    console.error("Anthropic request failed:", error);
+  }
+};
 
 export function getEnergyStatus(req, res) {
   res.status(200).json({
@@ -114,11 +165,10 @@ export async function getTarotReading(req, res) {
       });
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return res
-        .status(500)
-        .json({ message: "Missing OPENAI_API_KEY on server" });
+    const client = getAnthropicClient();
+    if (!client) {
+      console.error("Tarot reading requested but ANTHROPIC_API_KEY is not set");
+      return res.status(503).json({ message: TAROT_UNAVAILABLE_MESSAGE });
     }
 
     const trimmedSituation = currentSituation.trim();
@@ -160,36 +210,43 @@ Trả về JSON với cấu trúc:
 }
 Message cho mỗi lá 2-5 câu, phân tích rõ vấn đề, dù tiêu cực hay tích cực. Nếu lá bài đảo chiều (reversed) hãy diễn giải theo nghĩa đảo chiều.`;
 
-    const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      return res
-        .status(500)
-        .json({ message: "OpenAI request failed", detail: text });
+    let response;
+    try {
+      response = await client.messages.create({
+        model: process.env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL,
+        max_tokens: 16000,
+        system,
+        messages: [{ role: "user", content: userPrompt }],
+        output_config: {
+          format: { type: "json_schema", schema: TAROT_RESULT_SCHEMA },
+        },
+      });
+    } catch (error) {
+      logAnthropicError(error);
+      return res.status(502).json({ message: TAROT_UNAVAILABLE_MESSAGE });
     }
 
-    const data = await resp.json();
-    const content = data?.choices?.[0]?.message?.content?.trim();
+    if (response.stop_reason === "refusal") {
+      console.error(
+        "Anthropic declined the tarot request:",
+        response.stop_details?.category ?? "unknown category"
+      );
+      return res.status(502).json({ message: TAROT_UNAVAILABLE_MESSAGE });
+    }
+
+    const content = response.content
+      .filter((block) => block.type === "text")
+      .map((block) => block.text)
+      .join("")
+      .trim();
 
     let parsed;
     try {
       parsed = JSON.parse(content);
     } catch (e) {
+      console.error(
+        `Tarot response was not valid JSON (stop_reason: ${response.stop_reason})`
+      );
       parsed = { raw: content };
     }
 

@@ -25,6 +25,7 @@ import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
 import GameInviteListener from "./components/GameInviteListener.jsx";
 import MatchMindSocketBridge from "./components/MatchMindSocketBridge.jsx";
+import RealtimeIdleManager from "./components/RealtimeIdleManager.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
 import { MatchMindGameProvider } from "./hooks/useMatchMindGame.jsx";
 
@@ -239,6 +240,8 @@ const App = () => {
           }
         />
       </Routes>
+
+      {isAuthenticated && <RealtimeIdleManager />}
 
       {isAuthenticated && isOnboarded && (
         <>

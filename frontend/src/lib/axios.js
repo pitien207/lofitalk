@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const PRODUCTION_BASE_URL = "https://lofitalk.onrender.com/api";
+// Production: the backend serves this app, so the API lives on the same origin.
+const PRODUCTION_BASE_URL = "/api";
 const ENV_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const API_BASE_URL =

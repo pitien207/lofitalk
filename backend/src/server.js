@@ -9,6 +9,7 @@ import http from "http";
 import https from "https";
 import http2 from "http2";
 import { fileURLToPath } from "url";
+import mongoose from "mongoose";
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
@@ -20,9 +21,11 @@ import metaRoutes from "./routes/meta.route.js";
 import { connectDB } from "./lib/db.js";
 import { connectChatDB } from "./lib/chatDb.js";
 import { setupChatSocket } from "./lib/chatSocket.js";
+import { ensureIndexes } from "./lib/indexes.js";
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = Number.parseInt(process.env.PORT || "8080", 10);
+const HOST = process.env.HOST || "0.0.0.0";
 
 const ENABLE_HTTP2 = process.env.ENABLE_HTTP2 === "true";
 const ENABLE_HTTPS = process.env.ENABLE_HTTPS === "true";
@@ -85,7 +88,7 @@ const FRONTEND_STATIC_CACHE_SECONDS = parseInt(
 ); // 1 year for hashed assets
 
 const allowedOrigins = (
-  process.env.FRONTEND_URLS || "http://localhost:5173,https://lofitalk.onrender.com"
+  process.env.FRONTEND_URLS || "http://localhost:5173"
 )
   .split(",")
   .map((url) => url.trim())
@@ -164,14 +167,40 @@ const startServer = async () => {
     await connectDB();
     await connectChatDB();
 
-    server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`Server is running on ${HOST}:${PORT}`);
+    });
+
+    // Runs after listen so a cold start is not delayed; safe to repeat on every start.
+    ensureIndexes().catch((error) => {
+      console.error("Index creation failed:", error?.message || error);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);
   }
 };
+
+// Container platforms send SIGTERM before stopping a replica (e.g. scale to zero).
+let shuttingDown = false;
+const shutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} received, shutting down`);
+  const forceExit = setTimeout(() => process.exit(0), 10000);
+  forceExit.unref();
+  server.close(async () => {
+    try {
+      await mongoose.disconnect();
+    } catch (error) {
+      console.error("Error while closing MongoDB connections:", error);
+    }
+    process.exit(0);
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 startServer();
 

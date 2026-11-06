@@ -22,6 +22,7 @@ import { Link } from "react-router";
 import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
+import { useRealtimeStore } from "../store/useRealtimeStore";
 import datingConfessionImage from "../../../backend/src/assets/logo/dating_confession.jpg";
 
 const ADMIN_EXPIRE_DAYS = 3;
@@ -32,6 +33,7 @@ const NotificationsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const [blockingUserId, setBlockingUserId] = useState(null);
+  const realtimePaused = useRealtimeStore((state) => state.paused);
 
   const { data: friendRequests, isLoading } = useQuery({
     queryKey: ["friendRequests"],
@@ -52,7 +54,7 @@ const NotificationsPage = () => {
         }
       },
       staleTime: 30 * 1000,
-      refetchInterval: 60 * 1000,
+      refetchInterval: realtimePaused ? false : 60 * 1000,
       retry: 1,
       onError: (error) => {
         toast.error(

@@ -53,6 +53,25 @@ const extractQuestions = (payload = {}, fallback = []) =>
 export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
   const userId = user._id.toString();
 
+  // Re-deliver invites that are still pending, e.g. when the client reconnects after an idle pause.
+  matchMindInvites.forEach((invite) => {
+    if (
+      invite.guestId === userId &&
+      invite.status === "pending" &&
+      invite.expiresAt > Date.now()
+    ) {
+      socket.emit("matchmind:invite", {
+        inviteId: invite.inviteId,
+        expiresAt: invite.expiresAt,
+        fromUser: {
+          id: invite.hostId,
+          fullName: invite.hostName,
+          profilePic: invite.hostPic,
+        },
+      });
+    }
+  });
+
   socket.on("matchmind:invite", async ({ toUserId } = {}, callback = () => {}) => {
     try {
       if (!toUserId) return callback({ error: "toUserId is required" });

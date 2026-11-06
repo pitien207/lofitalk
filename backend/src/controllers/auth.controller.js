@@ -18,7 +18,7 @@ const buildAssetUrl = (relativePath) => {
 
   const defaultBase =
     process.env.NODE_ENV === "production"
-      ? "https://lofitalk.onrender.com"
+      ? "https://lofitalk.nghiapham.org"
       : `http://localhost:${process.env.PORT || 5001}`;
 
   const base =

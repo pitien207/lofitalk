@@ -51,6 +51,25 @@ const scheduleInviteExpiry = (io, inviteId, toUserRoom) => {
 export const attachTruthOrLieHandlers = (io, socket, user, toUserRoom) => {
   const userId = user._id.toString();
 
+  // Re-deliver invites that are still pending, e.g. when the client reconnects after an idle pause.
+  truthInvites.forEach((invite) => {
+    if (
+      invite.guestId === userId &&
+      invite.status === "pending" &&
+      invite.expiresAt > Date.now()
+    ) {
+      socket.emit("truthlie:invite", {
+        inviteId: invite.inviteId,
+        expiresAt: invite.expiresAt,
+        fromUser: {
+          id: invite.hostId,
+          fullName: invite.hostName,
+          profilePic: invite.hostPic,
+        },
+      });
+    }
+  });
+
   socket.on("truthlie:invite", async ({ toUserId } = {}, callback = () => {}) => {
     try {
       if (!toUserId) return callback({ error: "toUserId is required" });
