@@ -6,6 +6,7 @@ import "../models/Avatar.js";
 import "../models/Announcement.js";
 import "../models/FriendRequest.js";
 import "../models/PendingSignup.js";
+import "../models/PushSubscription.js";
 import "../models/UsageStats.js";
 import "../models/User.js";
 import "../models/UserReport.js";

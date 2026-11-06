@@ -4,6 +4,7 @@ import FriendRequest from "../models/FriendRequest.js";
 import UserReport from "../models/UserReport.js";
 import { hasBlockedUser } from "../lib/blockService.js";
 import { incrementUsageCounter } from "../services/usageStats.service.js";
+import { notifyAdmins, notifyUsers, NotifyTopic } from "../lib/chatSocket.js";
 
 const toObjectId = (value) =>
   value instanceof mongoose.Types.ObjectId
@@ -565,6 +566,7 @@ export async function sendFriendRequest(req, res) {
       sender: myId,
       recipient: recipientId,
     });
+    notifyUsers([myId, recipientId], NotifyTopic.FRIEND_REQUESTS);
 
     res.status(201).json(friendRequest);
   } catch (error) {
@@ -591,6 +593,7 @@ export async function cancelFriendRequest(req, res) {
     }
 
     await pendingRequest.deleteOne();
+    notifyUsers([senderId, recipientId], NotifyTopic.FRIEND_REQUESTS);
 
     res
       .status(200)
@@ -644,6 +647,7 @@ export async function acceptFriendRequest(req, res) {
     await User.findByIdAndUpdate(friendRequest.recipient, {
       $addToSet: { friends: friendRequest.sender },
     });
+    notifyUsers([friendRequest.sender, friendRequest.recipient], NotifyTopic.FRIEND_REQUESTS);
 
     res.status(200).json({ message: "Friend request accepted" });
   } catch (error) {
@@ -830,6 +834,7 @@ export async function blockUser(req, res) {
       }),
     ]);
 
+    notifyUsers([viewerId, targetId], NotifyTopic.FRIEND_REQUESTS);
     res.status(200).json({ success: true, message: "User blocked" });
   } catch (error) {
     console.error("Error blocking user", error.message);
@@ -900,6 +905,7 @@ export async function reportUser(req, res) {
       target: targetId,
       message,
     });
+    notifyAdmins(NotifyTopic.REPORTS);
 
     res.status(201).json({ success: true, message: "Report submitted" });
   } catch (error) {
@@ -932,6 +938,7 @@ export async function removeFriend(req, res) {
       ],
     });
 
+    notifyUsers([viewerId, targetId], NotifyTopic.FRIEND_REQUESTS);
     res.status(200).json({ success: true, message: "Friend removed" });
   } catch (error) {
     console.error("Error removing friend", error.message);
@@ -969,6 +976,7 @@ export async function deleteFriendRequest(req, res) {
     }
 
     await friendRequest.deleteOne();
+    notifyUsers([friendRequest.sender, friendRequest.recipient], NotifyTopic.FRIEND_REQUESTS);
     res.status(200).json({ success: true, message: "Request removed" });
   } catch (error) {
     console.error("Error deleting friend request", error.message);
@@ -994,6 +1002,7 @@ export async function declineFriendRequest(req, res) {
 
     friendRequest.status = "declined";
     await friendRequest.save();
+    notifyUsers([friendRequest.sender, friendRequest.recipient], NotifyTopic.FRIEND_REQUESTS);
 
     res.status(200).json({ success: true, message: "Request declined" });
   } catch (error) {

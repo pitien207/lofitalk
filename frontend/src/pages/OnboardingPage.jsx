@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -13,19 +13,7 @@ import {
 import LanguageSelector from "../components/LanguageSelector";
 import AvatarUploader from "../components/AvatarUploader";
 import { getRandomAvatar } from "../utils/avatarPool";
-
-const parseListField = (value) =>
-  value
-    ? value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-    : [];
-
-const sortOptionsByLabel = (options) =>
-  [...options].sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
-  );
+import { parseListField, useProfileOptions } from "../constants/profileOptions";
 
 const OnboardingPage = () => {
   const { authUser } = useAuthUser();
@@ -59,265 +47,22 @@ const OnboardingPage = () => {
     profilePic: authUser?.profilePic || "",
   });
 
+  const {
+    genderOptions: baseGenderOptions,
+    countryCityOptions,
+    birthCountryOptions,
+    educationOptions,
+    hobbyOptions,
+    petOptions,
+    hobbyLabelMap,
+    petLabelMap,
+    heightOptions,
+  } = useProfileOptions();
+
   const GENDER_OPTIONS = [
     { value: "", label: t("onboarding.genderPlaceholder") },
-    { value: "female", label: t("onboarding.genderOptions.female") },
-    { value: "male", label: t("onboarding.genderOptions.male") },
-    { value: "non-binary", label: t("onboarding.genderOptions.nonBinary") },
-    {
-      value: "prefer_not_say",
-      label: t("onboarding.genderOptions.preferNotSay"),
-    },
+    ...baseGenderOptions,
   ];
-
-  const countryCityOptions = useMemo(
-    () => [
-      {
-        value: "Vietnam",
-        label: t("onboarding.countryOptions.vietnam"),
-        cities: sortOptionsByLabel([
-          { value: "Can Tho", label: t("onboarding.cityOptions.vietnam.cantho") },
-          { value: "Da Lat", label: t("onboarding.cityOptions.vietnam.dalat") },
-          { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
-          {
-            value: "Hai Phong",
-            label: t("onboarding.cityOptions.vietnam.haiphong"),
-          },
-          { value: "Hanoi", label: t("onboarding.cityOptions.vietnam.hanoi") },
-          {
-            value: "Ho Chi Minh City",
-            label: t("onboarding.cityOptions.vietnam.hcmc"),
-          },
-          { value: "Hue", label: t("onboarding.cityOptions.vietnam.hue") },
-          { value: "Nam Dinh", label: t("onboarding.cityOptions.vietnam.namdinh") },
-          { value: "Nghe An", label: t("onboarding.cityOptions.vietnam.nghean") },
-          {
-            value: "Ninh Binh",
-            label: t("onboarding.cityOptions.vietnam.ninhbinh"),
-          },
-          { value: "Quy Nhon", label: t("onboarding.cityOptions.vietnam.quynhon") },
-          {
-            value: "Thanh Hoa",
-            label: t("onboarding.cityOptions.vietnam.thanhhoa"),
-          },
-          { value: "Vinh", label: t("onboarding.cityOptions.vietnam.vinh") },
-          { value: "Vung Tau", label: t("onboarding.cityOptions.vietnam.vungtau") },
-        ]),
-      },
-      {
-        value: "Germany",
-        label: t("onboarding.countryOptions.germany"),
-        cities: sortOptionsByLabel([
-          { value: "Berlin", label: t("onboarding.cityOptions.germany.berlin") },
-          { value: "Bonn", label: t("onboarding.cityOptions.germany.bonn") },
-          { value: "Bremen", label: t("onboarding.cityOptions.germany.bremen") },
-          { value: "Cologne", label: t("onboarding.cityOptions.germany.koln") },
-          {
-            value: "Dresden",
-            label: t("onboarding.cityOptions.germany.dresden"),
-          },
-          {
-            value: "Dusseldorf",
-            label: t("onboarding.cityOptions.germany.dusseldorf"),
-          },
-          {
-            value: "Frankfurt",
-            label: t("onboarding.cityOptions.germany.frankfurt"),
-          },
-          {
-            value: "Hanover",
-            label: t("onboarding.cityOptions.germany.hanover"),
-          },
-          {
-            value: "Hamburg",
-            label: t("onboarding.cityOptions.germany.hamburg"),
-          },
-          { value: "Leipzig", label: t("onboarding.cityOptions.germany.leipzig") },
-          { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
-          {
-            value: "Nuremberg",
-            label: t("onboarding.cityOptions.germany.nurnberg"),
-          },
-          {
-            value: "Stuttgart",
-            label: t("onboarding.cityOptions.germany.stuttgart"),
-          },
-          { value: "Essen", label: t("onboarding.cityOptions.germany.essen") },
-          { value: "Dortmund", label: t("onboarding.cityOptions.germany.dortmund") },
-          { value: "Bochum", label: t("onboarding.cityOptions.germany.bochum") },
-          { value: "Karlsruhe", label: t("onboarding.cityOptions.germany.karlsruhe") },
-          { value: "Aachen", label: t("onboarding.cityOptions.germany.aachen") },
-          { value: "Freiburg", label: t("onboarding.cityOptions.germany.freiburg") },
-          { value: "Regensburg", label: t("onboarding.cityOptions.germany.regensburg") },
-        ]),
-      },
-      {
-        value: "Japan",
-        label: t("onboarding.countryOptions.japan"),
-        cities: sortOptionsByLabel([
-          { value: "Fukuoka", label: t("onboarding.cityOptions.japan.fukuoka") },
-          {
-            value: "Hiroshima",
-            label: t("onboarding.cityOptions.japan.hiroshima"),
-          },
-          { value: "Kobe", label: t("onboarding.cityOptions.japan.kobe") },
-          { value: "Kyoto", label: t("onboarding.cityOptions.japan.kyoto") },
-          { value: "Nagoya", label: t("onboarding.cityOptions.japan.nagoya") },
-          { value: "Osaka", label: t("onboarding.cityOptions.japan.osaka") },
-          {
-            value: "Sapporo",
-            label: t("onboarding.cityOptions.japan.sapporo"),
-          },
-          { value: "Sendai", label: t("onboarding.cityOptions.japan.sendai") },
-          { value: "Tokyo", label: t("onboarding.cityOptions.japan.tokyo") },
-          {
-            value: "Yokohama",
-            label: t("onboarding.cityOptions.japan.yokohama"),
-          },
-        ]),
-      },
-      {
-        value: "Australia",
-        label: t("onboarding.countryOptions.australia"),
-        cities: sortOptionsByLabel([
-          {
-            value: "Adelaide",
-            label: t("onboarding.cityOptions.australia.adelaide"),
-          },
-          {
-            value: "Brisbane",
-            label: t("onboarding.cityOptions.australia.brisbane"),
-          },
-          {
-            value: "Canberra",
-            label: t("onboarding.cityOptions.australia.canberra"),
-          },
-          {
-            value: "Gold Coast",
-            label: t("onboarding.cityOptions.australia.goldcoast"),
-          },
-          {
-            value: "Melbourne",
-            label: t("onboarding.cityOptions.australia.melbourne"),
-          },
-          { value: "Perth", label: t("onboarding.cityOptions.australia.perth") },
-          { value: "Sydney", label: t("onboarding.cityOptions.australia.sydney") },
-        ]),
-      },
-    ],
-    [t]
-  );
-
-  const birthCountryOptions = useMemo(
-    () => [
-      {
-        value: "Vietnam",
-        label: t("onboarding.birthCountryOptions.vietnam"),
-        cities: sortOptionsByLabel([
-          { value: "Hanoi", label: t("onboarding.birthCityOptions.vietnam.hanoi") },
-          { value: "Ho Chi Minh City", label: t("onboarding.birthCityOptions.vietnam.hochiminh") },
-          { value: "Hai Phong", label: t("onboarding.birthCityOptions.vietnam.haiphong") },
-          { value: "Da Nang", label: t("onboarding.birthCityOptions.vietnam.danang") },
-          { value: "Can Tho", label: t("onboarding.birthCityOptions.vietnam.cantho") },
-          { value: "Thua Thien Hue", label: t("onboarding.birthCityOptions.vietnam.thuathienhue") },
-          { value: "Khanh Hoa", label: t("onboarding.birthCityOptions.vietnam.khanhhoa") },
-          { value: "Binh Dinh", label: t("onboarding.birthCityOptions.vietnam.binhdinh") },
-          { value: "Nghe An", label: t("onboarding.birthCityOptions.vietnam.nghean") },
-          { value: "Dak Lak", label: t("onboarding.birthCityOptions.vietnam.daklak") },
-          { value: "Lam Dong", label: t("onboarding.birthCityOptions.vietnam.lamdong") },
-          { value: "Dong Nai", label: t("onboarding.birthCityOptions.vietnam.dongnai") },
-          { value: "Binh Duong", label: t("onboarding.birthCityOptions.vietnam.binhduong") },
-          { value: "Quang Ninh", label: t("onboarding.birthCityOptions.vietnam.quangninh") },
-          { value: "Thanh Hoa", label: t("onboarding.birthCityOptions.vietnam.thanhhoa") },
-          { value: "Hai Duong", label: t("onboarding.birthCityOptions.vietnam.haiduong") },
-          { value: "Nam Dinh", label: t("onboarding.birthCityOptions.vietnam.namdinh") },
-          { value: "Thai Nguyen", label: t("onboarding.birthCityOptions.vietnam.thainguyen") },
-          { value: "Phu Tho", label: t("onboarding.birthCityOptions.vietnam.phutho") },
-          { value: "Kien Giang", label: t("onboarding.birthCityOptions.vietnam.kiengiang") },
-          { value: "Bac Ninh", label: t("onboarding.birthCityOptions.vietnam.bacninh") },
-          { value: "Bac Giang", label: t("onboarding.birthCityOptions.vietnam.bacgiang") },
-          { value: "Ha Nam", label: t("onboarding.birthCityOptions.vietnam.hanam") },
-          { value: "Ninh Binh", label: t("onboarding.birthCityOptions.vietnam.ninhbinh") },
-          { value: "Ha Tinh", label: t("onboarding.birthCityOptions.vietnam.hatinh") },
-          { value: "Quang Binh", label: t("onboarding.birthCityOptions.vietnam.quangbinh") },
-          { value: "Quang Tri", label: t("onboarding.birthCityOptions.vietnam.quangtri") },
-          { value: "Quang Ngai", label: t("onboarding.birthCityOptions.vietnam.quangngai") },
-          { value: "Binh Thuan", label: t("onboarding.birthCityOptions.vietnam.binhthuan") },
-          { value: "An Giang", label: t("onboarding.birthCityOptions.vietnam.angiang") },
-        ]),
-      },
-    ],
-    [t]
-  );
-
-  const educationOptions = useMemo(
-    () => [
-      {
-        value: "High school graduate",
-        label: t("onboarding.educationOptions.highSchool"),
-      },
-      { value: "University", label: t("onboarding.educationOptions.university") },
-      {
-        value: "Vocational training",
-        label: t("onboarding.educationOptions.vocational"),
-      },
-      {
-        value: "Working professional",
-        label: t("onboarding.educationOptions.working"),
-      },
-    ],
-    [t]
-  );
-
-  const hobbyOptions = useMemo(
-    () => [
-      { value: "Music & concerts", label: t("onboarding.hobbyOptions.music") },
-      { value: "Traveling", label: t("onboarding.hobbyOptions.travel") },
-      { value: "Cooking & baking", label: t("onboarding.hobbyOptions.cooking") },
-      { value: "Video games", label: t("onboarding.hobbyOptions.gaming") },
-      { value: "Reading", label: t("onboarding.hobbyOptions.reading") },
-      { value: "Fitness & gym", label: t("onboarding.hobbyOptions.fitness") },
-      { value: "Photography", label: t("onboarding.hobbyOptions.photography") },
-      { value: "Art & design", label: t("onboarding.hobbyOptions.art") },
-      { value: "Movies & series", label: t("onboarding.hobbyOptions.movies") },
-      { value: "Hiking & outdoors", label: t("onboarding.hobbyOptions.outdoors") },
-    ],
-    [t]
-  );
-
-  const petOptions = useMemo(
-    () => [
-      { value: "Dog", label: t("onboarding.petOptions.dog") },
-      { value: "Cat", label: t("onboarding.petOptions.cat") },
-      { value: "Hamster", label: t("onboarding.petOptions.hamster") },
-      { value: "Bird", label: t("onboarding.petOptions.bird") },
-      { value: "Fish", label: t("onboarding.petOptions.fish") },
-    ],
-    [t]
-  );
-
-  const heightOptions = useMemo(
-    () => Array.from({ length: 61 }, (_, idx) => `${140 + idx} cm`),
-    []
-  );
-
-  const hobbyLabelMap = useMemo(
-    () =>
-      hobbyOptions.reduce((acc, option) => {
-        acc[option.value] = option.label;
-        return acc;
-      }, {}),
-    [hobbyOptions]
-  );
-
-  const petLabelMap = useMemo(
-    () =>
-      petOptions.reduce((acc, option) => {
-        acc[option.value] = option.label;
-        return acc;
-      }, {}),
-    [petOptions]
-  );
 
   const selectedCountry = countryCityOptions.find(
     (country) => country.value === formState.country
@@ -417,9 +162,9 @@ const OnboardingPage = () => {
     });
   };
 
-  const handleRandomAvatar = () => {
+  const handleRandomAvatar = async () => {
     const genderForAvatar = formState.gender || authUser?.gender || "";
-    const randomAvatar = getRandomAvatar(genderForAvatar);
+    const randomAvatar = await getRandomAvatar(genderForAvatar);
 
     if (!randomAvatar) {
       toast.error("Không tìm thấy avatar phù hợp.");
@@ -478,10 +223,10 @@ const OnboardingPage = () => {
 
             {/* FULL NAME */}
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="onboarding-full-name">
                 <span className="label-text">{t("onboarding.fullName")}</span>
               </label>
-              <input
+              <input id="onboarding-full-name"
                 type="text"
                 name="fullName"
                 value={formState.fullName}
@@ -493,11 +238,12 @@ const OnboardingPage = () => {
 
             {/* BIO */}
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="onboarding-bio">
                 <span className="label-text">{t("onboarding.bio")}</span>
               </label>
-              <textarea
+              <textarea id="onboarding-bio"
                 name="bio"
+                maxLength={1000}
                 value={formState.bio}
                 onChange={(e) => updateFormField("bio", e.target.value)}
                 className="textarea textarea-bordered h-24"
@@ -508,12 +254,12 @@ const OnboardingPage = () => {
             {/* CORE INFO */}
             <div className="grid grid-cols-1 gap-4">
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-gender">
                   <span className="label-text">
                     {t("onboarding.gender")}
                   </span>
                 </label>
-                <select
+                <select id="onboarding-gender"
                   name="gender"
                   value={formState.gender}
                   onChange={(e) => updateFormField("gender", e.target.value)}
@@ -528,10 +274,10 @@ const OnboardingPage = () => {
               </div>
 
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-birth-date">
                   <span className="label-text">{t("onboarding.birthDate")}</span>
                 </label>
-              <input
+              <input id="onboarding-birth-date"
                 type="date"
                 name="birthDate"
                 value={formState.birthDate}
@@ -549,12 +295,12 @@ const OnboardingPage = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-birth-country">
                   <span className="label-text">
                     {t("onboarding.birthCountryLabel")}
                   </span>
                 </label>
-                <select
+                <select id="onboarding-birth-country"
                   name="birthCountry"
                   value={formState.birthCountry}
                   onChange={(e) => handleBirthCountryChange(e.target.value)}
@@ -576,12 +322,12 @@ const OnboardingPage = () => {
                 </select>
               </div>
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-birth-city">
                   <span className="label-text">
                     {t("onboarding.birthCityLabel")}
                   </span>
                 </label>
-                <select
+                <select id="onboarding-birth-city"
                   name="birthCity"
                   value={formState.birthCity}
                   onChange={(e) => updateFormField("birthCity", e.target.value)}
@@ -614,10 +360,10 @@ const OnboardingPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="onboarding-country">
                   <span className="label-text">{t("onboarding.country")}</span>
                 </label>
-                <select
+                <select id="onboarding-country"
                   name="country"
                   value={formState.country}
                   onChange={(e) => handleCountryChange(e.target.value)}
@@ -636,10 +382,10 @@ const OnboardingPage = () => {
                 </select>
               </div>
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-city">
                   <span className="label-text">{t("onboarding.city")}</span>
                 </label>
-                <select
+                <select id="onboarding-city"
                   name="city"
                   value={formState.city}
                   onChange={(e) => updateFormField("city", e.target.value)}
@@ -668,7 +414,7 @@ const OnboardingPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-height">
                   <span className="label-text">
                     {t("onboarding.height")}{" "}
                     <span className="text-xs opacity-60">
@@ -676,7 +422,7 @@ const OnboardingPage = () => {
                     </span>
                   </span>
                 </label>
-                <select
+                <select id="onboarding-height"
                   name="height"
                   value={formState.height}
                   onChange={(e) => updateFormField("height", e.target.value)}
@@ -694,7 +440,7 @@ const OnboardingPage = () => {
                 </select>
               </div>
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="onboarding-education">
                   <span className="label-text">
                     {t("onboarding.education")}{" "}
                     <span className="text-xs opacity-60">
@@ -702,7 +448,7 @@ const OnboardingPage = () => {
                     </span>
                   </span>
                 </label>
-                <select
+                <select id="onboarding-education"
                   name="education"
                   value={formState.education}
                   onChange={(e) => updateFormField("education", e.target.value)}
@@ -806,7 +552,7 @@ const OnboardingPage = () => {
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor="onboarding-favorite-perfume">
                 <span className="label-text">
                   {t("onboarding.favoritePerfume")}{" "}
                   <span className="text-xs opacity-60">
@@ -814,7 +560,7 @@ const OnboardingPage = () => {
                   </span>
                 </span>
               </label>
-              <input
+              <input id="onboarding-favorite-perfume"
                 type="text"
                 name="favoritePerfume"
                 value={formState.favoritePerfume}

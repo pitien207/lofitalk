@@ -212,6 +212,28 @@ export async function getTarotReading(payload) {
   return response.data;
 }
 
+export async function getPushConfig() {
+  const response = await axiosInstance.get("/push/config");
+  return response.data;
+}
+
+export async function savePushSubscription(subscription) {
+  const response = await axiosInstance.post("/push/subscriptions", subscription);
+  return response.data;
+}
+
+export async function deletePushSubscription(endpoint) {
+  const response = await axiosInstance.delete("/push/subscriptions", {
+    data: { endpoint },
+  });
+  return response.data;
+}
+
+export async function getPresetAvatars() {
+  const response = await axiosInstance.get("/meta/avatars");
+  return response.data;
+}
+
 export async function getTarotEnergy() {
   const response = await axiosInstance.get("/tarot/energy");
   return response.data;
@@ -279,6 +301,23 @@ export async function declineFriendRequest(requestId) {
 
 export async function getAdminUsers() {
   const response = await axiosInstance.get("/admin/users");
+  return response.data;
+}
+
+// payload: { days } or { permanent: true }, plus optional reason
+export async function banUser(userId, payload) {
+  const response = await axiosInstance.put(`/admin/users/${userId}/ban`, payload);
+  return response.data;
+}
+
+export async function unbanUser(userId) {
+  const response = await axiosInstance.delete(`/admin/users/${userId}/ban`);
+  return response.data;
+}
+
+// Permanently deletes the signed-in account (password confirmation required).
+export async function deleteMyAccount(password) {
+  const response = await axiosInstance.delete("/users/me", { data: { password } });
   return response.data;
 }
 

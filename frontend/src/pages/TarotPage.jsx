@@ -76,7 +76,8 @@ const { CARD_BACK_IMG, CARD_DECK } = (() => {
   };
 })();
 
-const ENERGY_MAX = 7;
+// Fallback until the server answers; the API returns the real maximum as `max`.
+const DEFAULT_ENERGY_MAX = 7;
 const QUESTIONS_FORM_ID = "tarot-questions-form";
 
 const TarotPage = () => {
@@ -111,15 +112,16 @@ const TarotPage = () => {
     queryFn: getTarotLatest,
   });
 
+  const energyMax = energyData?.max ?? DEFAULT_ENERGY_MAX;
   const energy = energyData?.energy ?? 0;
-  const normalizedEnergy = Math.max(0, Math.min(energy, ENERGY_MAX));
+  const normalizedEnergy = Math.max(0, Math.min(energy, energyMax));
   const lastRefill = energyData?.lastRefill;
   const lastRefillLabel = lastRefill
     ? new Date(lastRefill).toLocaleDateString()
     : t("tarot.energy.pendingDate");
   const energySummary = t("tarot.energy.summary", {
     current: isLoadingEnergy ? "..." : energy,
-    max: ENERGY_MAX,
+    max: energyMax,
   });
   const regenHint = t("tarot.energy.regenHint", { date: lastRefillLabel });
 
@@ -186,7 +188,7 @@ const TarotPage = () => {
         const match = deck.find((c) => c.name === card.name);
         return {
           ...card,
-          src: match?.src || cardBackImg,
+          src: match?.src || CARD_BACK_IMG,
         };
       });
       setDrawnCards(mapped);
@@ -221,9 +223,9 @@ const TarotPage = () => {
       return;
     }
 
-    if (!hasConsumedEnergyThisRound && energy < ENERGY_MAX) {
+    if (!hasConsumedEnergyThisRound && energy < energyMax) {
       toast.error(
-        t("tarot.errors.needEnergy", { required: ENERGY_MAX, current: energy })
+        t("tarot.errors.needEnergy", { required: energyMax, current: energy })
       );
       return;
     }
@@ -357,7 +359,7 @@ const TarotPage = () => {
               <div>
                 <h1 className="text-2xl font-bold">{t("tarot.title")}</h1>
                 <p className="text-sm opacity-70">
-                  {t("tarot.subtitle", { required: ENERGY_MAX })}
+                  {t("tarot.subtitle", { required: energyMax })}
                 </p>
               </div>
 
@@ -367,11 +369,11 @@ const TarotPage = () => {
                   <div
                     className="energy-bar__fill"
                     style={{
-                      width: `${(normalizedEnergy / ENERGY_MAX) * 100}%`,
+                      width: `${(normalizedEnergy / energyMax) * 100}%`,
                     }}
                   />
                   <div className="energy-bar__icons">
-                    {Array.from({ length: ENERGY_MAX }).map((_, idx) => (
+                    {Array.from({ length: energyMax }).map((_, idx) => (
                       <span
                         key={idx}
                         className={`energy-orb ${
@@ -592,6 +594,7 @@ const TarotPage = () => {
                     className="textarea textarea-bordered"
                     rows={3}
                     placeholder="Mô tả cảm xúc, vấn đề hoặc bối cảnh bạn đang trải qua..."
+                    maxLength={1000}
                     value={currentSituation}
                     onChange={(event) => setCurrentSituation(event.target.value)}
                   />
@@ -611,6 +614,7 @@ const TarotPage = () => {
                         placeholder={t("tarot.questions.placeholder", {
                           number: index + 1,
                         })}
+                        maxLength={300}
                         value={questions[index]}
                         onChange={(event) => {
                           const next = [...questions];

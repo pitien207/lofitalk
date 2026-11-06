@@ -4,10 +4,24 @@ import { Link } from "react-router";
 import useLogin from "../hooks/useLogin";
 import { useTranslation } from "../languages/useTranslation";
 import LanguageSelector from "../components/LanguageSelector";
+
+// Suspended accounts get the end date and the admin's reason; other errors show the server text.
+const describeLoginError = (error, t) => {
+  const data = error?.response?.data;
+  if (data?.code === "ACCOUNT_SUSPENDED") {
+    const base = data.permanent
+      ? t("suspension.permanent")
+      : t("suspension.message", { date: new Date(data.bannedUntil).toLocaleString() });
+    return data.reason ? `${base} ${t("suspension.reason", { reason: data.reason })}` : base;
+  }
+  return data?.message || error?.message || "Login failed";
+};
 import {
   requestPasswordReset,
   resetPasswordWithCode,
 } from "../lib/api";
+import PasswordInput from "../components/PasswordInput";
+import PasswordStrength from "../components/PasswordStrength";
 
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
@@ -130,8 +144,8 @@ const LoginPage = () => {
 
           {/* ERROR MESSAGE DISPLAY */}
           {error && (
-            <div className="alert alert-error mb-4">
-              <span>{error.response.data.message}</span>
+            <div className="alert alert-error mb-4" role="alert">
+              <span>{describeLoginError(error, t)}</span>
             </div>
           )}
 
@@ -149,10 +163,10 @@ const LoginPage = () => {
 
                 <div className="flex flex-col gap-3">
                   <div className="form-control w-full space-y-2">
-                    <label className="label">
+                    <label className="label" htmlFor="login-email">
                       <span className="label-text">{t("auth.email")}</span>
                     </label>
-                    <input
+                    <input id="login-email"
                       type="email"
                       placeholder="hello@example.com"
                       className="input input-bordered w-full"
@@ -165,11 +179,10 @@ const LoginPage = () => {
                   </div>
 
                   <div className="form-control w-full space-y-2">
-                    <label className="label">
+                    <label className="label" htmlFor="login-password">
                       <span className="label-text">{t("auth.password")}</span>
                     </label>
-                    <input
-                      type="password"
+                    <PasswordInput id="login-password"
                       placeholder="••••••••"
                       className="input input-bordered w-full"
                       value={loginData.password}
@@ -210,7 +223,7 @@ const LoginPage = () => {
                       {t("auth.dontHaveAccount")}
                       <Link
                         to="/signup"
-                        className="text-primary hover:underline"
+                        className="text-primary underline underline-offset-2 hover:no-underline"
                       >
                         {t("auth.createOne")}
                       </Link>
@@ -282,10 +295,10 @@ const LoginPage = () => {
                 className="space-y-4"
               >
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="login-reset-email">
                     <span className="label-text">Email</span>
                   </label>
-                  <input
+                  <input id="login-reset-email"
                     type="email"
                     className="input input-bordered"
                     value={resetForm.email}
@@ -300,10 +313,10 @@ const LoginPage = () => {
                 {forgotStep === "verify" && (
                   <>
                     <div className="form-control">
-                      <label className="label">
+                      <label className="label" htmlFor="login-code">
                         <span className="label-text">Verification code</span>
                       </label>
-                      <input
+                      <input id="login-code"
                         type="text"
                         className="input input-bordered"
                         value={resetForm.code}
@@ -314,11 +327,10 @@ const LoginPage = () => {
                       />
                     </div>
                     <div className="form-control">
-                      <label className="label">
+                      <label className="label" htmlFor="login-new-password">
                         <span className="label-text">New password</span>
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput id="login-new-password"
                         className="input input-bordered"
                         value={resetForm.newPassword}
                         onChange={(e) =>
@@ -328,8 +340,9 @@ const LoginPage = () => {
                           })
                         }
                         required
-                        minLength={6}
+                        minLength={8}
                       />
+                      <PasswordStrength password={resetForm.newPassword} />
                     </div>
                   </>
                 )}

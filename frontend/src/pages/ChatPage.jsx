@@ -137,6 +137,18 @@ const ChatPage = () => {
       socket.emit("chat:mark-read", { threadId });
     };
 
+    // The partner opened the thread: every message I sent is now read by them.
+    const handleRead = ({ threadId: readThreadId, userId } = {}) => {
+      if (readThreadId !== threadId || !userId || userId === authUser?._id) return;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.senderId === authUser?._id && !(msg.readBy || []).includes(userId)
+            ? { ...msg, readBy: [...(msg.readBy || []), userId] }
+            : msg
+        )
+      );
+    };
+
     const handleThreadUpdate = (thread) => {
       if (thread?.id === threadId) {
         queryClient.invalidateQueries({ queryKey: ["chatThreads"] });
@@ -145,12 +157,14 @@ const ChatPage = () => {
 
     socket.on("chat:message:new", handleNewMessage);
     socket.on("chat:thread:update", handleThreadUpdate);
+    socket.on("chat:read", handleRead);
 
     return () => {
       socket.off("chat:message:new", handleNewMessage);
       socket.off("chat:thread:update", handleThreadUpdate);
+      socket.off("chat:read", handleRead);
     };
-  }, [socket, threadId, upsertMessage, queryClient]);
+  }, [socket, threadId, upsertMessage, queryClient, authUser?._id]);
 
   useEffect(() => {
     if (!isMenuOpen) return undefined;
@@ -272,7 +286,7 @@ const ChatPage = () => {
         if (response?.message) {
           upsertMessage({ ...response.message, tempId });
         }
-      } catch (error) {
+      } catch {
         toast.error("Unable to send message");
       }
     }
@@ -324,7 +338,7 @@ const ChatPage = () => {
         const delta = newScrollHeight - prevScrollHeight;
         listEl.scrollTop = prevScrollTop + delta;
       });
-    } catch (_error) {
+    } catch {
       // swallow; optional toast could be added
     } finally {
       setLoadingMore(false);
@@ -351,6 +365,22 @@ const ChatPage = () => {
     return t("common.presence.offlineUnknown");
   }, [partner, language, t]);
 
+  // Delivery status shown under my most recent message only.
+  const lastOwnMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].senderId === authUser?._id) return messages[i];
+    }
+    return null;
+  }, [messages, authUser?._id]);
+  const lastOwnStatus = (() => {
+    if (!lastOwnMessage) return null;
+    if (lastOwnMessage.tempId && lastOwnMessage.id === lastOwnMessage.tempId) {
+      return "sending";
+    }
+    const seen = (lastOwnMessage.readBy || []).some((id) => id !== authUser?._id);
+    return seen ? "seen" : "sent";
+  })();
+
   const isLoadingThread = (isLoading || isFetching) && !threadData;
 
   const blockedError = error?.response?.status === 403;
@@ -361,7 +391,7 @@ const ChatPage = () => {
 
   if (blockedError) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-6 text-center">
+      <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] items-center justify-center px-6 text-center">
         <div className="rounded-3xl border border-base-300 bg-base-100/80 px-6 py-8 shadow max-w-lg space-y-3">
           <h2 className="text-2xl font-semibold text-base-content">
             {t("chatPage.blockedTitle")}
@@ -382,7 +412,7 @@ const ChatPage = () => {
 
   if (isError || !threadId) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center px-6 text-center">
+      <div className="flex h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] items-center justify-center px-6 text-center">
         <div className="rounded-3xl border border-base-300 bg-base-100/80 px-6 py-8 shadow">
           <p className="text-lg font-semibold text-base-content">
             {t("common.error") || "Unable to open chat"}
@@ -401,8 +431,8 @@ const ChatPage = () => {
   const partnerName = partner?.fullName || t("common.loading");
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden">
-      <header className="flex items-center justify-between gap-3 border-b border-base-200 bg-base-100/90 px-4 py-3">
+    <div className="flex flex-col h-[calc(100vh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] max-h-[calc(100vh-4rem)] supports-[height:100dvh]:max-h-[calc(100dvh-4rem)] supports-[height:100dvh]:h-[calc(100dvh-4rem)] overflow-hidden">
+      <header className="flex items-center justify-between gap-3 border-b border-base-200 bg-base-100/90 px-3 sm:px-4 py-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative">
             {partner?.profilePic ? (
@@ -433,6 +463,10 @@ const ChatPage = () => {
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="btn btn-ghost btn-sm px-2"
+              aria-label={t("a11y.chatOptions")}
+              title={t("a11y.chatOptions")}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
               disabled={!threadId || isClearing}
             >
               <MoreVerticalIcon className="size-5" />
@@ -459,7 +493,7 @@ const ChatPage = () => {
       <div
         ref={messageListRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto bg-base-200/40 px-4 py-6 space-y-4"
+        className="flex-1 overflow-y-auto bg-base-200/40 px-3 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4"
       >
         {loadingMore && (
           <div className="flex justify-center text-xs text-base-content/60">
@@ -486,13 +520,22 @@ const ChatPage = () => {
               onClick={() => toggleTimestampVisibility(messageKey)}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2 shadow ${bubbleClasses}`}
+                className={`max-w-[85%] sm:max-w-[75%] min-w-0 rounded-2xl px-4 py-2 shadow ${bubbleClasses}`}
               >
-                <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{message.text}</p>
               </div>
               {showTimestamp && (
                 <span className="text-[11px] text-base-content/60">
                   {timestamp || ""}
+                </span>
+              )}
+              {message === lastOwnMessage && lastOwnStatus && (
+                <span
+                  className="text-[11px] text-base-content/60"
+                  data-testid="message-status"
+                  data-status={lastOwnStatus}
+                >
+                  {t(`chatStatus.${lastOwnStatus}`)}
                 </span>
               )}
             </div>
@@ -500,23 +543,26 @@ const ChatPage = () => {
         })}
       </div>
 
-      <footer className="border-t border-base-200 bg-base-100 px-4 py-3">
-        <form onSubmit={handleSendMessage} className="flex items-center gap-3">
+      <footer className="border-t border-base-200 bg-base-100 px-3 sm:px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2 sm:gap-3">
           <input
             type="text"
+            maxLength={1000}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             placeholder={t("common.messagePlaceholder") || "Type a message..."}
-            className="input input-bordered flex-1"
+            aria-label={t("a11y.messageInput")}
+            className="input input-bordered flex-1 min-w-0"
           />
           <EmojiPickerButton onSelect={(emoji) => setMessageText((prev) => `${prev}${emoji}`)} />
           <button
             type="submit"
             className="btn btn-primary text-white gap-2"
             disabled={!messageText.trim()}
+            aria-label={t("common.send") || "Send"}
           >
-            <SendIcon className="size-4" />
-            {t("common.send") || "Send"}
+            <SendIcon className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">{t("common.send") || "Send"}</span>
           </button>
         </form>
       </footer>

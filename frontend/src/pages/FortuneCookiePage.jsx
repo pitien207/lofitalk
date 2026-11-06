@@ -1,13 +1,10 @@
 import FortuneCookie from "../components/FortuneCookie";
 import { useTranslation } from "../languages/useTranslation";
-import useAuthUser from "../hooks/useAuthUser";
 
 const FortuneCookiePage = () => {
   const { t } = useTranslation();
-  const { authUser } = useAuthUser();
   const stepsRaw = t("sidebar.fortune.ritualSteps");
   const steps = Array.isArray(stepsRaw) ? stepsRaw : [];
-  const isAdmin = authUser?.accountType === "admin";
 
   // if (!isAdmin) {
   //   return (

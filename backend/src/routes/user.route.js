@@ -1,6 +1,17 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import {
+  requireObjectIdParam,
+  requireScalarFields,
+  validate,
+} from "../middleware/validate.middleware.js";
+import * as S from "../validation/schemas.js";
+import {
+  accountDeletionLimiter,
+  reportLimiter,
+} from "../middleware/rateLimit.middleware.js";
+import { deleteMyAccount } from "../controllers/account.controller.js";
+import {
   acceptFriendRequest,
   cancelFriendRequest,
   declineFriendRequest,
@@ -29,22 +40,40 @@ import {
 
 const router = express.Router();
 
+router.param("id", requireObjectIdParam);
+
 // apply auth middleware to all routes
 router.use(protectRoute);
 
-router.get("/", getRecommendedUsers);
+router.get("/", validate({ query: S.recommendedUsersQuery }), getRecommendedUsers);
 router.get("/friend-filter-status", getFriendFilterStatus);
 router.get("/online-count", getOnlineUsersCount);
-router.get("/friends", getMyFriends);
+router.get("/friends", validate({ query: S.listPageQuery }), getMyFriends);
 router.get("/blocked", getBlockedUsers);
 router.get("/me", getCurrentUser);
 router.get("/profile/:id", getUserProfile);
 router.get("/fortune-cookie", getFortuneCookie);
-router.post("/fortune-cookie", openFortuneCookie);
+router.post(
+  "/fortune-cookie",
+  validate({ body: S.fortuneCookieBody }),
+  openFortuneCookie
+);
 router.delete("/friends/:id", removeFriend);
 router.post("/block/:id", blockUser);
 router.delete("/block/:id", unblockUser);
-router.post("/report/:id", reportUser);
+router.post(
+  "/report/:id",
+  reportLimiter,
+  validate({ body: S.reportBody }),
+  reportUser
+);
+router.delete(
+  "/me",
+  requireScalarFields("password"),
+  accountDeletionLimiter,
+  validate({ body: S.deleteAccountBody }),
+  deleteMyAccount
+);
 router.delete("/friend-request/:id/cancel", cancelFriendRequest);
 router.delete("/friend-request/:id", deleteFriendRequest);
 

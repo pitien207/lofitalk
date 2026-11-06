@@ -137,7 +137,7 @@ const Navbar = () => {
         <button
           type="button"
           aria-label={label}
-          className={`btn btn-ghost btn-circle ${
+          className={`btn btn-ghost btn-circle btn-sm sm:btn-md ${
             parentActive ? "btn-active" : ""
           }`}
           onClick={(event) => {
@@ -163,7 +163,7 @@ const Navbar = () => {
                   key={path}
                   to={path}
                   aria-label={childLabel}
-                  className={`btn btn-ghost btn-circle ${
+                  className={`btn btn-ghost btn-circle btn-sm sm:btn-md ${
                     isActive ? "btn-active" : ""
                   }`}
                   onClick={() => setOpenMobileGroup(null)}
@@ -186,9 +186,9 @@ const Navbar = () => {
   return (
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between w-full gap-4">
+        <div className="flex items-center justify-between w-full gap-2 sm:gap-4">
           <div
-            className="flex items-center gap-2 lg:hidden"
+            className="flex items-center gap-1 sm:gap-2 lg:hidden"
             ref={mobileNavRef}
           >
             {baseMobileNavItems.map(({ path, icon: Icon, label }) => (
@@ -196,7 +196,7 @@ const Navbar = () => {
                 key={path}
                 to={path}
                 aria-label={label}
-                className={`btn btn-ghost btn-circle ${
+                className={`btn btn-ghost btn-circle btn-sm sm:btn-md ${
                   currentPath === path ? "btn-active" : ""
                 }`}
                 onClick={() => setOpenMobileGroup(null)}
@@ -219,17 +219,17 @@ const Navbar = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-            <Link to={"/notifications"}>
-              <button
-                className="btn btn-ghost btn-circle relative"
-                title={t("nav.notifications")}
-              >
-                <BellIcon className="h-6 w-6 text-base-content opacity-70" />
-                {hasPending && (
-                  <span className="absolute top-2 right-2 block size-2 rounded-full bg-error" />
-                )}
-              </button>
+          <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+            <Link
+              to={"/notifications"}
+              className="btn btn-ghost btn-circle btn-sm sm:btn-md relative"
+              title={t("nav.notifications")}
+              aria-label={t("nav.notifications")}
+            >
+              <BellIcon className="size-5 sm:size-6 text-base-content opacity-70" aria-hidden="true" />
+              {hasPending && (
+                <span className="absolute top-2 right-2 block size-2 rounded-full bg-error" />
+              )}
             </Link>
           </div>
           <div
@@ -238,8 +238,13 @@ const Navbar = () => {
             }`}
           >
             <button
+              type="button"
               tabIndex={0}
-              className="btn btn-ghost btn-circle"
+              className="btn btn-ghost btn-circle btn-sm sm:btn-md"
+              aria-label={t("a11y.settings")}
+              title={t("a11y.settings")}
+              aria-haspopup="menu"
+              aria-expanded={settingsOpen}
               onClick={() => {
                 setSettingsOpen((prev) => !prev);
                 if (settingsOpen) {
@@ -247,7 +252,7 @@ const Navbar = () => {
                 }
               }}
             >
-              <Settings2Icon className="h-5 w-5 text-base-content opacity-70" />
+              <Settings2Icon className="h-5 w-5 text-base-content opacity-70" aria-hidden="true" />
             </button>
             <div
               tabIndex={0}
@@ -342,22 +347,39 @@ const Navbar = () => {
                   </div>
                 )}
               </div>
+              <div className="sm:hidden border-t border-base-content/10 pt-2">
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-base-content/5 text-error"
+                  onClick={() => logoutMutation()}
+                >
+                  <LogOutIcon className="size-4" aria-hidden="true" />
+                  <span className="text-sm font-semibold">{t("a11y.logout")}</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          <Link to="/" className="avatar">
-            <div className="w-9 rounded-full ring ring-primary/20">
+          <Link to="/" className="avatar" aria-label={t("a11y.myProfile")}>
+            <div className="w-8 sm:w-9 rounded-full ring ring-primary/20">
               <img
                 src={authUser?.profilePic}
-                alt="User Avatar"
+                alt=""
                 rel="noreferrer"
               />
             </div>
           </Link>
 
           {/* Logout button */}
-          <button className="btn btn-ghost btn-circle" onClick={logoutMutation}>
-            <LogOutIcon className="h-6 w-6 text-base-content opacity-70" />
+          {/* On phones the logout action lives in the settings menu (saves space). */}
+          <button
+            type="button"
+            className="btn btn-ghost btn-circle btn-sm sm:btn-md hidden sm:inline-flex"
+            onClick={() => logoutMutation()}
+            aria-label={t("a11y.logout")}
+            title={t("a11y.logout")}
+          >
+            <LogOutIcon className="h-6 w-6 text-base-content opacity-70" aria-hidden="true" />
           </button>
         </div>
       </div>

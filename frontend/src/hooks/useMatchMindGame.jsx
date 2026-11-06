@@ -802,7 +802,7 @@ const defaultState = {
 const safeParse = (value) => {
   try {
     return JSON.parse(value);
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -1202,6 +1202,8 @@ export const MatchMindGameProvider = ({ children }) => {
   );
 };
 
+// The hook lives next to its provider on purpose (dev-only fast-refresh rule).
+// eslint-disable-next-line react-refresh/only-export-components
 export const useMatchMindGame = () => {
   const context = useContext(MatchMindGameContext);
   if (!context) {

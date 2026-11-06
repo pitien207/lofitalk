@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import useAuthUser from "./useAuthUser";
-import { connectChatSocket, getChatSocket, disconnectChatSocket } from "../lib/chatSocket";
+import { connectChatSocket, disconnectChatSocket } from "../lib/chatSocket";
 
 const useChatSocket = (enabled = true) => {
   const { authUser } = useAuthUser();

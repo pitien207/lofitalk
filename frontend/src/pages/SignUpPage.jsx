@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ShipWheelIcon, MailCheckIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 
@@ -6,6 +6,10 @@ import useSignUp from "../hooks/useSignup.js";
 import useVerifySignup from "../hooks/useVerifySignup.js";
 import { useTranslation } from "../languages/useTranslation";
 import LanguageSelector from "../components/LanguageSelector";
+import PasswordInput from "../components/PasswordInput";
+import PasswordStrength from "../components/PasswordStrength";
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 const SignUpPage = () => {
   const [signupData, setSignupData] = useState({
@@ -18,11 +22,22 @@ const SignUpPage = () => {
   const [pendingEmail, setPendingEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
+  // Resending is allowed RESEND_COOLDOWN_SECONDS after the last code was sent.
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   const { isPending, error, signupMutation } = useSignUp();
   const { verifySignupMutation, isVerifying, verifyError } = useVerifySignup();
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const resendSecondsLeft = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
+
+  useEffect(() => {
+    if (step !== "verify" || resendSecondsLeft === 0) return undefined;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [step, resendSecondsLeft]);
 
   const handleSignup = (e) => {
     e.preventDefault();
@@ -33,6 +48,21 @@ const SignUpPage = () => {
         setVerificationCode("");
         setStep("verify");
         setInfoMessage(t("auth.verificationEmailSent"));
+        setNow(Date.now());
+        setResendAvailableAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
+      },
+    });
+  };
+
+  // Submitting the signup again issues a fresh code (the old one stops working).
+  const handleResend = () => {
+    if (resendSecondsLeft > 0 || isPending) return;
+    signupMutation(signupData, {
+      onSuccess: () => {
+        setVerificationCode("");
+        setInfoMessage(t("verification.resent", { email: pendingEmail }));
+        setNow(Date.now());
+        setResendAvailableAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
       },
     });
   };
@@ -101,10 +131,10 @@ const SignUpPage = () => {
 
                   <div className="space-y-3">
                     <div className="form-control w-full">
-                      <label className="label">
+                      <label className="label" htmlFor="signup-full-name">
                         <span className="label-text">{t("auth.fullName")}</span>
                       </label>
-                      <input
+                      <input id="signup-full-name"
                         type="text"
                         placeholder="John Doe"
                         className="input input-bordered w-full"
@@ -119,10 +149,10 @@ const SignUpPage = () => {
                       />
                     </div>
                     <div className="form-control w-full">
-                      <label className="label">
+                      <label className="label" htmlFor="signup-email">
                         <span className="label-text">{t("auth.email")}</span>
                       </label>
-                      <input
+                      <input id="signup-email"
                         type="email"
                         placeholder="john@gmail.com"
                         className="input input-bordered w-full"
@@ -137,13 +167,13 @@ const SignUpPage = () => {
                       />
                     </div>
                     <div className="form-control w-full">
-                      <label className="label">
+                      <label className="label" htmlFor="signup-password">
                         <span className="label-text">{t("auth.password")}</span>
                       </label>
-                      <input
-                        type="password"
+                      <PasswordInput id="signup-password"
                         placeholder="********"
                         className="input input-bordered w-full"
+                        minLength={8}
                         value={signupData.password}
                         onChange={(e) =>
                           setSignupData({
@@ -153,6 +183,7 @@ const SignUpPage = () => {
                         }
                         required
                       />
+                      <PasswordStrength password={signupData.password} />
                       <p className="text-xs opacity-70 mt-1">
                         {t("auth.passwordHint")}
                       </p>
@@ -193,7 +224,7 @@ const SignUpPage = () => {
                   <div className="text-center mt-4">
                     <p className="text-sm">
                       {t("auth.alreadyHaveAccount")}
-                      <Link to="/login" className="text-primary hover:underline">
+                      <Link to="/login" className="text-primary underline underline-offset-2 hover:no-underline">
                         {t("auth.signIn")}
                       </Link>
                     </p>
@@ -219,6 +250,11 @@ const SignUpPage = () => {
                 <span>{verifyError.response?.data?.message}</span>
               </div>
             )}
+            {error && (
+              <div className="alert alert-error">
+                <span>{error.response?.data?.message}</span>
+              </div>
+            )}
             <div>
               <h2 className="text-xl font-semibold">
                 {t("auth.verificationTitle")}
@@ -229,12 +265,12 @@ const SignUpPage = () => {
             </div>
             <form onSubmit={handleVerification} className="space-y-3">
               <div className="form-control">
-                <label className="label">
+                <label className="label" htmlFor="signup-verification-code">
                   <span className="label-text">
                     {t("auth.verificationCodeLabel")}
                   </span>
                 </label>
-                <input
+                <input id="signup-verification-code"
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
@@ -262,16 +298,27 @@ const SignUpPage = () => {
                 )}
               </button>
             </form>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm w-fit"
-              onClick={handleBackToForm}
-            >
-              {t("auth.verificationBack")}
-            </button>
-            <p className="text-xs opacity-70">
-              {t("auth.verificationResendHint")}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm w-fit"
+                onClick={handleBackToForm}
+              >
+                {t("auth.verificationBack")}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={handleResend}
+                disabled={resendSecondsLeft > 0 || isPending}
+                data-testid="resend-code"
+              >
+                {isPending && <span className="loading loading-spinner loading-xs"></span>}
+                {resendSecondsLeft > 0
+                  ? t("verification.resendIn", { seconds: resendSecondsLeft })
+                  : t("verification.resend")}
+              </button>
+            </div>
           </div>
           )}
         </div>

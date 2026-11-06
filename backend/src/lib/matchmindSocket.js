@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { incrementUsageCounter } from "../services/usageStats.service.js";
+import { inviteLimiter } from "./socketRateLimiter.js";
 
 const MATCHMIND_INVITE_TTL_MS = parseInt(
   process.env.MATCHMIND_INVITE_TTL_MS || "30000",
@@ -74,7 +76,12 @@ export const attachMatchMindHandlers = (io, socket, user, toUserRoom) => {
 
   socket.on("matchmind:invite", async ({ toUserId } = {}, callback = () => {}) => {
     try {
-      if (!toUserId) return callback({ error: "toUserId is required" });
+      if (!inviteLimiter.allow(userId)) {
+        return callback({ error: "Too many invites. Please wait a minute.", code: "RATE_LIMITED" });
+      }
+      if (!toUserId || !mongoose.isValidObjectId(toUserId)) {
+        return callback({ error: "toUserId is required" });
+      }
       if (toUserId === userId) return callback({ error: "Cannot invite yourself" });
 
       const inviteId = buildInviteId();

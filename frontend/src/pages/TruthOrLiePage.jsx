@@ -355,6 +355,7 @@ const TruthOrLiePage = () => {
     setFriendAnswer,
     setInviteId,
     stage,
+    isInSession,
     exitGame,
     removeTruthInvite,
     clearTruthInvites,

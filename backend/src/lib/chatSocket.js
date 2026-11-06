@@ -1,21 +1,24 @@
 ﻿import { Server as SocketIOServer } from "socket.io";
 import cookie from "cookie";
-import jwt from "jsonwebtoken";
 
 import User from "../models/User.js";
-import { getChatConversationModel } from "../models/ChatConversation.js";
 import {
   MAX_MESSAGE_LENGTH,
   buildThreadSummary,
-  ensureConversation,
+  findConversationForParticipant,
   formatMessage,
   loadUserMap,
   markConversationRead,
+  resolveConversationForSender,
   saveChatMessage,
 } from "./chatService.js";
+import { isTokenCurrent, verifyAuthToken } from "./authToken.js";
+import { getActiveBan } from "./accountStatus.js";
+import { messageLimiter } from "./socketRateLimiter.js";
 import { loadBlockStatus } from "./blockService.js";
 import { attachMatchMindHandlers } from "./matchmindSocket.js";
 import { attachTruthOrLieHandlers } from "./truthOrLieSocket.js";
+import { sendChatMessagePush } from "./pushService.js";
 
 const USER_MAP_CACHE_TTL_MS = parseInt(
   process.env.CHAT_USERMAP_TTL_MS || "120000",
@@ -55,6 +58,51 @@ const getAuthToken = (socket) => {
 const toRoomName = (threadId) => `thread:${threadId}`;
 const toUserRoom = (userId) => `user:${userId}`;
 
+let ioInstance = null;
+
+// Closes every realtime connection of a user (e.g. after a password reset).
+export const disconnectUserSockets = (userId) => {
+  if (ioInstance && userId) {
+    ioInstance.in(toUserRoom(userId.toString())).disconnectSockets(true);
+  }
+};
+
+// "Something changed, refetch it" hints that replace client polling. The payload
+// carries only a topic; clients reload the data through the normal (authorized) API.
+const ADMIN_ROOM = "admins";
+export const NOTIFY_EVENT = "notify:changed";
+export const NotifyTopic = Object.freeze({
+  FRIEND_REQUESTS: "friendRequests",
+  ADMIN_NOTIFICATIONS: "adminNotifications",
+  REPORTS: "reports",
+});
+
+export const notifyUsers = (userIds = [], topic) => {
+  if (!ioInstance) return;
+  const rooms = [
+    ...new Set(userIds.filter(Boolean).map((id) => toUserRoom(id.toString()))),
+  ];
+  if (rooms.length) ioInstance.to(rooms).emit(NOTIFY_EVENT, { topic });
+};
+
+export const notifyAdmins = (topic) => {
+  ioInstance?.to(ADMIN_ROOM).emit(NOTIFY_EVENT, { topic });
+};
+
+// True while the user has LofiTalk open somewhere (at least one live socket).
+export const isUserConnected = (userId) =>
+  Boolean(userId && ioInstance?.sockets.adapter.rooms.get(toUserRoom(userId.toString()))?.size);
+
+// Browser notification for a new message, only if the recipient has the app closed.
+export const pushIfOffline = ({ recipientId, senderId, senderName, text, threadId }) => {
+  if (isUserConnected(recipientId)) return;
+  sendChatMessagePush({ recipientId, senderId, senderName, text, threadId }).catch(() => {});
+};
+
+export const notifyEveryone = (topic) => {
+  ioInstance?.emit(NOTIFY_EVENT, { topic });
+};
+
 export const setupChatSocket = (httpServer, allowedOrigins = []) => {
   const io = new SocketIOServer(httpServer, {
     cors: {
@@ -62,6 +110,7 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
       credentials: true,
     },
   });
+  ioInstance = io;
 
   io.use(async (socket, next) => {
     try {
@@ -70,17 +119,26 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
         return next(new Error("Missing auth token"));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-      if (!decoded?.userId) {
+      const decoded = verifyAuthToken(token);
+      if (!decoded) {
         return next(new Error("Invalid token"));
       }
 
       const user = await User.findById(decoded.userId).select(
-        "_id fullName profilePic isOnline lastActiveAt accountType"
+        "_id fullName profilePic isOnline lastActiveAt accountType tokenVersion bannedUntil"
       );
 
       if (!user) {
         return next(new Error("User not found"));
+      }
+
+      // Token issued before the last password change/reset.
+      if (!isTokenCurrent(decoded, user)) {
+        return next(new Error("Session expired"));
+      }
+
+      if (getActiveBan(user)) {
+        return next(new Error("Account suspended"));
       }
 
       socket.data.user = user;
@@ -101,16 +159,34 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
     const userId = user._id.toString();
 
     socket.join(toUserRoom(userId));
+    if (user.accountType === "admin") socket.join(ADMIN_ROOM);
     socket.emit("chat:ready", { userId });
 
-    socket.on("chat:join", ({ threadId }) => {
-      if (threadId) {
-        socket.join(toRoomName(threadId));
+    // Only participants may subscribe to a thread's realtime events.
+    socket.on("chat:join", async ({ threadId } = {}) => {
+      try {
+        const conversation = await findConversationForParticipant(
+          threadId,
+          userId,
+          "participants"
+        );
+        if (conversation) {
+          socket.join(toRoomName(conversation._id.toString()));
+        }
+      } catch (error) {
+        console.error("Error joining chat thread:", error.message);
       }
     });
 
     socket.on("chat:send-message", async (payload = {}, callback = () => {}) => {
       try {
+        if (!messageLimiter.allow(userId)) {
+          return callback({
+            error: "You are sending messages too quickly. Please slow down.",
+            code: "RATE_LIMITED",
+          });
+        }
+
         const { text, toUserId, threadId, tempId } = payload;
         const normalizedText = text?.toString().trim();
 
@@ -123,28 +199,16 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
           });
         }
 
-        const Conversation = getChatConversationModel();
-        let conversation = null;
-
-        if (threadId) {
-          conversation = await Conversation.findById(threadId);
-        } else if (toUserId) {
-          conversation = await ensureConversation(userId, toUserId);
+        // The sender must belong to the thread; the recipient is derived from it.
+        const destination = await resolveConversationForSender({
+          senderId: userId,
+          threadId,
+          toUserId,
+        });
+        if (destination.error) {
+          return callback({ error: destination.error });
         }
-
-        if (!conversation) {
-          return callback({ error: "Conversation not found" });
-        }
-
-        const recipientId =
-          toUserId ||
-          conversation.participants.find(
-            (participant) => participant.toString() !== userId
-          );
-
-        if (!recipientId) {
-          return callback({ error: "Recipient not found" });
-        }
+        const { conversation, recipientId } = destination;
 
         const blockStatus = await loadBlockStatus(userId, recipientId, {
           viewerSelect: "blockedUsers",
@@ -189,6 +253,14 @@ export const setupChatSocket = (httpServer, allowedOrigins = []) => {
             "chat:thread:update",
             buildThreadSummary(conversation, participantId, userMap)
           );
+        });
+
+        pushIfOffline({
+          recipientId: recipientIdStr,
+          senderId: userId,
+          senderName: user.fullName,
+          text: normalizedText,
+          threadId: conversation._id.toString(),
         });
 
         return callback({

@@ -47,6 +47,56 @@ const normalizePresence = (userDoc) => {
   };
 };
 
+export const isConversationParticipant = (conversation, userId) =>
+  Boolean(userId) &&
+  (conversation?.participants || []).some(
+    (participantId) => participantId?.toString() === userId.toString()
+  );
+
+// Loads a thread the user belongs to (null for unknown ids or non-participants).
+export const findConversationForParticipant = async (threadId, userId, select) => {
+  if (!mongoose.isValidObjectId(threadId)) return null;
+  const Conversation = getChatConversationModel();
+  const query = Conversation.findById(threadId);
+  if (select) query.select(select);
+  const conversation = await query;
+  return isConversationParticipant(conversation, userId) ? conversation : null;
+};
+
+// Decides where a message goes. With a threadId the sender must be a participant and the
+// recipient is the other participant (a different toUserId is rejected). Without one,
+// a conversation with toUserId is created or reused.
+export const resolveConversationForSender = async ({ senderId, threadId, toUserId }) => {
+  const senderStr = senderId.toString();
+
+  if (threadId) {
+    const conversation = await findConversationForParticipant(threadId, senderStr);
+    if (!conversation) {
+      return { status: 404, error: "Conversation not found" };
+    }
+    const recipientId = conversation.participants.find(
+      (participant) => participant.toString() !== senderStr
+    );
+    if (!recipientId) {
+      return { status: 400, error: "Recipient not found" };
+    }
+    if (toUserId && toUserId.toString() !== recipientId.toString()) {
+      return { status: 400, error: "Recipient does not match the conversation" };
+    }
+    return { conversation, recipientId };
+  }
+
+  if (toUserId) {
+    if (!mongoose.isValidObjectId(toUserId) || toUserId.toString() === senderStr) {
+      return { status: 400, error: "Recipient not found" };
+    }
+    const conversation = await ensureConversation(senderId, toUserId);
+    return { conversation, recipientId: toUserId };
+  }
+
+  return { status: 400, error: "Destination thread or user is required" };
+};
+
 export const ensureConversation = async (userId, peerId) => {
   const Conversation = getChatConversationModel();
   const roomKey = buildRoomKey(userId, peerId);
@@ -175,8 +225,10 @@ export const markConversationRead = async (conversationId, userId) => {
   const Message = getChatMessageModel();
   const userIdStr = userId.toString();
 
+  if (!mongoose.isValidObjectId(conversationId)) return null;
   const conversation = await Conversation.findById(conversationId);
-  if (!conversation) return null;
+  // Only participants may mark a thread as read.
+  if (!conversation || !isConversationParticipant(conversation, userIdStr)) return null;
 
   if (conversation.unreadByUser?.set) {
     conversation.unreadByUser.set(userIdStr, 0);

@@ -42,8 +42,6 @@ const Sidebar = () => {
   const hasAnyGameInvite = hasMatchMindInvites || hasTruthOrLieInvites;
   const isChatRoute =
     currentPath === "/chats" || currentPath.startsWith("/chat/");
-  const isPlusOrAdmin =
-    authUser?.accountType === "plus" || authUser?.accountType === "admin";
   const [openMystic, setOpenMystic] = useState(
     currentPath === "/tarot" || currentPath === "/fortune"
   );

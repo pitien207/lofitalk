@@ -7,6 +7,10 @@ export const HIDDEN_TAB_DISCONNECT_MS = 10 * 60 * 1000; // 10 minutes
 // No mouse / keyboard / touch / scroll activity for this long -> pause, even if visible.
 export const INACTIVITY_DISCONNECT_MS = 30 * 60 * 1000; // 30 minutes
 
+// Friend requests, admin notifications and reports are pushed as socket events
+// (notify:changed). This slow refetch is only a safety net for missed events.
+export const FALLBACK_REFETCH_MS = 5 * 60 * 1000; // 5 minutes
+
 // Activity is recorded at most once per this interval (cheap event handling).
 export const ACTIVITY_THROTTLE_MS = 1000;
 

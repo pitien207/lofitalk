@@ -65,6 +65,8 @@ const FortuneCookie = () => {
       index,
       text: fortunes[index],
     };
+    // fortuneSeed is intentional: bumping it draws a new random fortune.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fortunes, fortuneSeed, fallbackFortune]);
 
   const confettiPieces = useMemo(() => {
@@ -120,9 +122,10 @@ const FortuneCookie = () => {
   }, [fortuneData?.canOpen]);
 
   useEffect(() => {
+    const timers = timersRef.current; // same object the handlers write into
     return () => {
-      if (timersRef.current.crack) clearTimeout(timersRef.current.crack);
-      if (timersRef.current.confetti) clearTimeout(timersRef.current.confetti);
+      if (timers.crack) clearTimeout(timers.crack);
+      if (timers.confetti) clearTimeout(timers.confetti);
     };
   }, []);
 

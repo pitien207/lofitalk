@@ -1,5 +1,6 @@
 import { AdminNotification } from "../models/AdminNotification.js";
 import User from "../models/User.js";
+import { notifyEveryone, notifyUsers, NotifyTopic } from "../lib/chatSocket.js";
 
 const DEFAULT_EXPIRE_DAYS = 3;
 const MAX_MESSAGE_LENGTH = 500;
@@ -47,6 +48,11 @@ export const sendAdminNotification = async (req, res) => {
       createdAt: new Date(),
       expireAt,
     });
+    if (targetUserId) {
+      notifyUsers([targetUserId], NotifyTopic.ADMIN_NOTIFICATIONS);
+    } else {
+      notifyEveryone(NotifyTopic.ADMIN_NOTIFICATIONS);
+    }
 
     res.status(201).json({
       notification: {

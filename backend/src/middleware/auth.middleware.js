@@ -1,24 +1,24 @@
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { isTokenCurrent, verifyAuthToken } from "../lib/authToken.js";
+import { getActiveBan, suspendedResponse } from "../lib/accountStatus.js";
+import { DAILY_ENERGY_GAIN, ENERGY_MAX } from "../lib/energy.js";
 
-const ENERGY_MAX = 7;
-const DAILY_ENERGY_GAIN = 1;
 const PRESENCE_TOUCH_INTERVAL_MS = parseInt(
   process.env.USER_PRESENCE_TOUCH_MS || "60000",
   10
 );
 
-const refreshDailyEnergy = (user) => {
-  if (typeof user.energy !== "number" || user.energy > ENERGY_MAX) {
-    user.energy = Math.min(Math.max(user.energy ?? ENERGY_MAX, 0), ENERGY_MAX);
+// Daily energy regeneration (same rules as before): returns the fields to write, or null.
+const computeEnergyUpdate = (user) => {
+  let energy = user.energy;
+  if (typeof energy !== "number" || energy > ENERGY_MAX) {
+    energy = Math.min(Math.max(energy ?? ENERGY_MAX, 0), ENERGY_MAX);
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const lastRefillDate = user.lastEnergyRefill
-    ? new Date(user.lastEnergyRefill)
-    : today;
+  const lastRefillDate = user.lastEnergyRefill ? new Date(user.lastEnergyRefill) : today;
   lastRefillDate.setHours(0, 0, 0, 0);
 
   const diffDays = Math.floor(
@@ -26,13 +26,59 @@ const refreshDailyEnergy = (user) => {
   );
 
   if (diffDays > 0) {
-    const gainedEnergy = diffDays * DAILY_ENERGY_GAIN;
-    user.energy = Math.min(ENERGY_MAX, user.energy + gainedEnergy);
-    user.lastEnergyRefill = today;
-    return true;
+    return {
+      energy: Math.min(ENERGY_MAX, energy + diffDays * DAILY_ENERGY_GAIN),
+      lastEnergyRefill: today,
+    };
+  }
+  return energy !== user.energy ? { energy } : null;
+};
+
+// Applies already-persisted values to the loaded document without marking them dirty,
+// so a later req.user.save() in a controller does not write them again.
+const applyPersisted = (user, values) => {
+  user.set(values);
+  Object.keys(values).forEach((key) => user.unmarkModified(key));
+};
+
+// Presence + daily energy, written with atomic updates instead of saving the whole document.
+const touchUser = async (user) => {
+  const now = new Date();
+  const lastActiveAt = user.lastActiveAt ? new Date(user.lastActiveAt) : null;
+  const shouldTouchPresence =
+    !user.isOnline ||
+    !lastActiveAt ||
+    now.getTime() - lastActiveAt.getTime() >= PRESENCE_TOUCH_INTERVAL_MS;
+
+  const presence = shouldTouchPresence ? { isOnline: true, lastActiveAt: now } : null;
+  const energyUpdate = computeEnergyUpdate(user);
+  const gainsEnergy = Boolean(energyUpdate?.lastEnergyRefill);
+
+  if (!presence && !gainsEnergy) {
+    // Out-of-range energy is only corrected together with a write, as before.
+    return;
   }
 
-  return false;
+  if (gainsEnergy) {
+    // Conditional on the old refill date: parallel requests grant the daily gain only once.
+    const result = await User.updateOne(
+      { _id: user._id, lastEnergyRefill: user.lastEnergyRefill ?? null },
+      { $set: { ...energyUpdate, ...(presence || {}) } }
+    );
+    if (result.matchedCount === 1) {
+      applyPersisted(user, { ...energyUpdate, ...(presence || {}) });
+      return;
+    }
+    // Another request already applied today's gain: reload those fields.
+    const fresh = await User.findById(user._id).select("energy lastEnergyRefill").lean();
+    if (fresh) applyPersisted(user, { energy: fresh.energy, lastEnergyRefill: fresh.lastEnergyRefill });
+  }
+
+  if (presence) {
+    const values = { ...presence, ...(energyUpdate && !gainsEnergy ? energyUpdate : {}) };
+    await User.updateOne({ _id: user._id }, { $set: values });
+    applyPersisted(user, values);
+  }
 };
 
 export const protectRoute = async (req, res, next) => {
@@ -51,7 +97,8 @@ export const protectRoute = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    // Malformed, forged or expired tokens are an auth failure (401), not a server error.
+    const decoded = verifyAuthToken(token);
     if (!decoded) {
       return res
         .status(401)
@@ -65,22 +112,19 @@ export const protectRoute = async (req, res, next) => {
         .json({ message: "Not authorized, user not found" });
     }
 
-    const now = new Date();
-    const lastActiveAt = user.lastActiveAt ? new Date(user.lastActiveAt) : null;
-    const shouldTouchPresence =
-      !user.isOnline ||
-      !lastActiveAt ||
-      now.getTime() - lastActiveAt.getTime() >= PRESENCE_TOUCH_INTERVAL_MS;
-
-    if (shouldTouchPresence) {
-      user.isOnline = true;
-      user.lastActiveAt = now;
+    // Issued before the last password change/reset.
+    if (!isTokenCurrent(decoded, user)) {
+      return res
+        .status(401)
+        .json({ message: "Session expired, please log in again" });
     }
 
-    const shouldSave = refreshDailyEnergy(user) || shouldTouchPresence;
-    if (shouldSave) {
-      await user.save();
+    const ban = getActiveBan(user);
+    if (ban) {
+      return res.status(403).json(suspendedResponse(ban));
     }
+
+    await touchUser(user);
 
     req.user = user;
 

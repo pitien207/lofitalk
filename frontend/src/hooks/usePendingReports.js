@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getPendingReportCount } from "../lib/api";
 import useAuthUser from "./useAuthUser";
 import { useRealtimeStore } from "../store/useRealtimeStore";
+import { FALLBACK_REFETCH_MS } from "../constants/realtime";
 
 const usePendingReports = () => {
   const { authUser } = useAuthUser();
@@ -13,8 +14,8 @@ const usePendingReports = () => {
     queryFn: getPendingReportCount,
     enabled: isAdmin,
     staleTime: 60 * 1000,
-    refetchInterval: paused ? false : 60 * 1000,
-    refetchIntervalInBackground: true,
+    // New/resolved reports arrive as socket events; this is only a safety net.
+    refetchInterval: paused ? false : FALLBACK_REFETCH_MS,
   });
 
   return { pendingReportCount: data?.count || 0 };

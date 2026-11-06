@@ -1,33 +1,36 @@
 import { Navigate, Route, Routes } from "react-router";
-
-import HomePage from "./pages/HomePage.jsx";
-import FriendsPage from "./pages/FriendsPage.jsx";
-import SignUpPage from "./pages/SignUpPage.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
-import NotificationsPage from "./pages/NotificationsPage.jsx";
-import CallPage from "./pages/CallPage.jsx";
-import ChatPage from "./pages/ChatPage.jsx";
-import ChatHomePage from "./pages/ChatHomePage.jsx";
-import OnboardingPage from "./pages/OnboardingPage.jsx";
-import TarotPage from "./pages/TarotPage.jsx";
-import UserProfilePage from "./pages/UserProfilePage.jsx";
-import AdminPage from "./pages/AdminPage.jsx";
-import FortuneCookiePage from "./pages/FortuneCookiePage.jsx";
-import MobileAppPage from "./pages/MobileAppPage.jsx";
-import MatchMindPage from "./pages/MatchMindPage.jsx";
-import TruthOrLiePage from "./pages/TruthOrLiePage.jsx";
-
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 
 import PageLoader from "./components/PageLoader.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import ConnectionStatus from "./components/ConnectionStatus.jsx";
 import useAuthUser from "./hooks/useAuthUser.js";
 import Layout from "./components/Layout.jsx";
 import GameInviteListener from "./components/GameInviteListener.jsx";
 import MatchMindSocketBridge from "./components/MatchMindSocketBridge.jsx";
 import RealtimeIdleManager from "./components/RealtimeIdleManager.jsx";
+import RealtimeNotificationsBridge from "./components/RealtimeNotificationsBridge.jsx";
 import { useThemeStore } from "./store/useThemeStore.js";
 import { MatchMindGameProvider } from "./hooks/useMatchMindGame.jsx";
+
+// Each page is its own chunk, downloaded the first time it is opened.
+const HomePage = lazy(() => import("./pages/HomePage.jsx"));
+const FriendsPage = lazy(() => import("./pages/FriendsPage.jsx"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage.jsx"));
+const LoginPage = lazy(() => import("./pages/LoginPage.jsx"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage.jsx"));
+const ChatPage = lazy(() => import("./pages/ChatPage.jsx"));
+const ChatHomePage = lazy(() => import("./pages/ChatHomePage.jsx"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage.jsx"));
+const TarotPage = lazy(() => import("./pages/TarotPage.jsx"));
+const UserProfilePage = lazy(() => import("./pages/UserProfilePage.jsx"));
+const AdminPage = lazy(() => import("./pages/AdminPage.jsx"));
+const FortuneCookiePage = lazy(() => import("./pages/FortuneCookiePage.jsx"));
+const MobileAppPage = lazy(() => import("./pages/MobileAppPage.jsx"));
+const MatchMindPage = lazy(() => import("./pages/MatchMindPage.jsx"));
+const TruthOrLiePage = lazy(() => import("./pages/TruthOrLiePage.jsx"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
 
 const App = () => {
   const { isLoading, authUser } = useAuthUser();
@@ -46,8 +49,10 @@ const App = () => {
   if (isLoading) return <PageLoader />;
 
   return (
+    <ErrorBoundary>
     <MatchMindGameProvider>
       <div className="min-h-screen bg-base-100" data-theme={theme}>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
         <Route
           path="/"
@@ -190,17 +195,6 @@ const App = () => {
           }
         />
         <Route
-          path="/call/:id"
-          element={
-            isAuthenticated && isOnboarded ? (
-              <CallPage />
-            ) : (
-              <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />
-            )
-          }
-        />
-
-        <Route
           path="/chat/:id"
           element={
             isAuthenticated && isOnboarded ? (
@@ -239,20 +233,37 @@ const App = () => {
             )
           }
         />
+
+        <Route
+          path="*"
+          element={
+            isAuthenticated && isOnboarded ? (
+              <Layout showSidebar={true}>
+                <NotFoundPage />
+              </Layout>
+            ) : (
+              <NotFoundPage />
+            )
+          }
+        />
       </Routes>
+        </Suspense>
 
       {isAuthenticated && <RealtimeIdleManager />}
+      {isAuthenticated && isOnboarded && <ConnectionStatus />}
 
       {isAuthenticated && isOnboarded && (
         <>
           <GameInviteListener />
           <MatchMindSocketBridge />
+          <RealtimeNotificationsBridge />
         </>
       )}
 
       <Toaster />
     </div>
     </MatchMindGameProvider>
+    </ErrorBoundary>
   );
 };
 export default App;

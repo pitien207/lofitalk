@@ -28,6 +28,7 @@ import NoFriendsFound from "../components/NoFriendsFound";
 import { useTranslation } from "../languages/useTranslation";
 import toast from "react-hot-toast";
 import ReportUserModal from "../components/ReportUserModal";
+import { useProfileOptions } from "../constants/profileOptions";
 
 const createEmptyFilters = () => ({
   gender: "",
@@ -55,11 +56,6 @@ const buildFilterParams = (filterState) => {
   return params;
 };
 
-const sortOptionsByLabel = (options) =>
-  [...options].sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
-  );
-
 const FriendsPage = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -75,166 +71,14 @@ const FriendsPage = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const REPORT_WORD_LIMIT = 120;
 
-  const genderOptions = useMemo(
-    () => [
-      { value: "female", label: t("onboarding.genderOptions.female") },
-      { value: "male", label: t("onboarding.genderOptions.male") },
-      { value: "non-binary", label: t("onboarding.genderOptions.nonBinary") },
-      { value: "prefer_not_say", label: t("onboarding.genderOptions.preferNotSay") },
-    ],
-    [t]
-  );
-
-  const countryCityOptions = useMemo(
-    () => [
-      {
-        value: "Vietnam",
-        label: t("onboarding.countryOptions.vietnam"),
-        cities: sortOptionsByLabel([
-          { value: "Da Nang", label: t("onboarding.cityOptions.vietnam.danang") },
-          { value: "Hai Phong", label: t("onboarding.cityOptions.vietnam.haiphong") },
-          { value: "Hanoi", label: t("onboarding.cityOptions.vietnam.hanoi") },
-          { value: "Ho Chi Minh City", label: t("onboarding.cityOptions.vietnam.hcmc") },
-          { value: "Hue", label: t("onboarding.cityOptions.vietnam.hue") },
-          { value: "Nghe An", label: t("onboarding.cityOptions.vietnam.nghean") },
-          { value: "Ninh Binh", label: t("onboarding.cityOptions.vietnam.ninhbinh") },
-          { value: "Thanh Hoa", label: t("onboarding.cityOptions.vietnam.thanhhoa") },
-        ]),
-      },
-      {
-        value: "Germany",
-        label: t("onboarding.countryOptions.germany"),
-        cities: sortOptionsByLabel([
-          { value: "Berlin", label: t("onboarding.cityOptions.germany.berlin") },
-          { value: "Bremen", label: t("onboarding.cityOptions.germany.bremen") },
-          { value: "Cologne", label: t("onboarding.cityOptions.germany.koln") },
-          { value: "Dresden", label: t("onboarding.cityOptions.germany.dresden") },
-          { value: "Frankfurt", label: t("onboarding.cityOptions.germany.frankfurt") },
-          { value: "Hamburg", label: t("onboarding.cityOptions.germany.hamburg") },
-          { value: "Leipzig", label: t("onboarding.cityOptions.germany.leipzig") },
-          { value: "Munich", label: t("onboarding.cityOptions.germany.munich") },
-          { value: "Nuremberg", label: t("onboarding.cityOptions.germany.nurnberg") },
-          { value: "Stuttgart", label: t("onboarding.cityOptions.germany.stuttgart") },
-          { value: "Essen", label: t("onboarding.cityOptions.germany.essen") },
-          { value: "Dortmund", label: t("onboarding.cityOptions.germany.dortmund") },
-          { value: "Bochum", label: t("onboarding.cityOptions.germany.bochum") },
-          { value: "Karlsruhe", label: t("onboarding.cityOptions.germany.karlsruhe") },
-          { value: "Aachen", label: t("onboarding.cityOptions.germany.aachen") },
-          { value: "Freiburg", label: t("onboarding.cityOptions.germany.freiburg") },
-          { value: "Regensburg", label: t("onboarding.cityOptions.germany.regensburg") },
-        ]),
-      },
-      {
-        value: "Japan",
-        label: t("onboarding.countryOptions.japan"),
-        cities: sortOptionsByLabel([
-          { value: "Fukuoka", label: t("onboarding.cityOptions.japan.fukuoka") },
-          { value: "Hiroshima", label: t("onboarding.cityOptions.japan.hiroshima") },
-          { value: "Kobe", label: t("onboarding.cityOptions.japan.kobe") },
-          { value: "Kyoto", label: t("onboarding.cityOptions.japan.kyoto") },
-          { value: "Nagoya", label: t("onboarding.cityOptions.japan.nagoya") },
-          { value: "Osaka", label: t("onboarding.cityOptions.japan.osaka") },
-          { value: "Sapporo", label: t("onboarding.cityOptions.japan.sapporo") },
-          { value: "Sendai", label: t("onboarding.cityOptions.japan.sendai") },
-          { value: "Tokyo", label: t("onboarding.cityOptions.japan.tokyo") },
-          { value: "Yokohama", label: t("onboarding.cityOptions.japan.yokohama") },
-        ]),
-      },
-      {
-        value: "Australia",
-        label: t("onboarding.countryOptions.australia"),
-        cities: sortOptionsByLabel([
-          { value: "Adelaide", label: t("onboarding.cityOptions.australia.adelaide") },
-          { value: "Brisbane", label: t("onboarding.cityOptions.australia.brisbane") },
-          { value: "Canberra", label: t("onboarding.cityOptions.australia.canberra") },
-          { value: "Gold Coast", label: t("onboarding.cityOptions.australia.goldcoast") },
-          { value: "Melbourne", label: t("onboarding.cityOptions.australia.melbourne") },
-          { value: "Perth", label: t("onboarding.cityOptions.australia.perth") },
-          { value: "Sydney", label: t("onboarding.cityOptions.australia.sydney") },
-        ]),
-      },
-    ],
-    [t]
-  );
-
-  const birthCountryOptions = useMemo(
-    () => [
-      {
-        value: "Vietnam",
-        label: t("onboarding.birthCountryOptions.vietnam"),
-        cities: sortOptionsByLabel([
-          { value: "Hanoi", label: t("onboarding.birthCityOptions.vietnam.hanoi") },
-          { value: "Ho Chi Minh City", label: t("onboarding.birthCityOptions.vietnam.hochiminh") },
-          { value: "Hai Phong", label: t("onboarding.birthCityOptions.vietnam.haiphong") },
-          { value: "Da Nang", label: t("onboarding.birthCityOptions.vietnam.danang") },
-          { value: "Can Tho", label: t("onboarding.birthCityOptions.vietnam.cantho") },
-          { value: "Thua Thien Hue", label: t("onboarding.birthCityOptions.vietnam.thuathienhue") },
-          { value: "Khanh Hoa", label: t("onboarding.birthCityOptions.vietnam.khanhhoa") },
-          { value: "Binh Dinh", label: t("onboarding.birthCityOptions.vietnam.binhdinh") },
-          { value: "Nghe An", label: t("onboarding.birthCityOptions.vietnam.nghean") },
-          { value: "Dak Lak", label: t("onboarding.birthCityOptions.vietnam.daklak") },
-          { value: "Lam Dong", label: t("onboarding.birthCityOptions.vietnam.lamdong") },
-          { value: "Dong Nai", label: t("onboarding.birthCityOptions.vietnam.dongnai") },
-          { value: "Binh Duong", label: t("onboarding.birthCityOptions.vietnam.binhduong") },
-          { value: "Quang Ninh", label: t("onboarding.birthCityOptions.vietnam.quangninh") },
-          { value: "Thanh Hoa", label: t("onboarding.birthCityOptions.vietnam.thanhhoa") },
-          { value: "Hai Duong", label: t("onboarding.birthCityOptions.vietnam.haiduong") },
-          { value: "Nam Dinh", label: t("onboarding.birthCityOptions.vietnam.namdinh") },
-          { value: "Thai Nguyen", label: t("onboarding.birthCityOptions.vietnam.thainguyen") },
-          { value: "Phu Tho", label: t("onboarding.birthCityOptions.vietnam.phutho") },
-          { value: "Kien Giang", label: t("onboarding.birthCityOptions.vietnam.kiengiang") },
-          { value: "Bac Ninh", label: t("onboarding.birthCityOptions.vietnam.bacninh") },
-          { value: "Bac Giang", label: t("onboarding.birthCityOptions.vietnam.bacgiang") },
-          { value: "Ha Nam", label: t("onboarding.birthCityOptions.vietnam.hanam") },
-          { value: "Ninh Binh", label: t("onboarding.birthCityOptions.vietnam.ninhbinh") },
-          { value: "Ha Tinh", label: t("onboarding.birthCityOptions.vietnam.hatinh") },
-          { value: "Quang Binh", label: t("onboarding.birthCityOptions.vietnam.quangbinh") },
-          { value: "Quang Tri", label: t("onboarding.birthCityOptions.vietnam.quangtri") },
-          { value: "Quang Ngai", label: t("onboarding.birthCityOptions.vietnam.quangngai") },
-          { value: "Binh Thuan", label: t("onboarding.birthCityOptions.vietnam.binhthuan") },
-          { value: "An Giang", label: t("onboarding.birthCityOptions.vietnam.angiang") },
-        ]),
-      },
-    ],
-    [t]
-  );
-
-  const educationOptions = useMemo(
-    () => [
-      { value: "High school graduate", label: t("onboarding.educationOptions.highSchool") },
-      { value: "University", label: t("onboarding.educationOptions.university") },
-      { value: "Vocational training", label: t("onboarding.educationOptions.vocational") },
-      { value: "Working professional", label: t("onboarding.educationOptions.working") },
-    ],
-    [t]
-  );
-
-  const hobbyOptions = useMemo(
-    () => [
-      { value: "Music & concerts", label: t("onboarding.hobbyOptions.music") },
-      { value: "Traveling", label: t("onboarding.hobbyOptions.travel") },
-      { value: "Cooking & baking", label: t("onboarding.hobbyOptions.cooking") },
-      { value: "Video games", label: t("onboarding.hobbyOptions.gaming") },
-      { value: "Reading", label: t("onboarding.hobbyOptions.reading") },
-      { value: "Fitness & gym", label: t("onboarding.hobbyOptions.fitness") },
-      { value: "Photography", label: t("onboarding.hobbyOptions.photography") },
-      { value: "Art & design", label: t("onboarding.hobbyOptions.art") },
-      { value: "Movies & series", label: t("onboarding.hobbyOptions.movies") },
-      { value: "Hiking & outdoors", label: t("onboarding.hobbyOptions.outdoors") },
-    ],
-    [t]
-  );
-
-  const petOptions = useMemo(
-    () => [
-      { value: "Dog", label: t("onboarding.petOptions.dog") },
-      { value: "Cat", label: t("onboarding.petOptions.cat") },
-      { value: "Hamster", label: t("onboarding.petOptions.hamster") },
-      { value: "Bird", label: t("onboarding.petOptions.bird") },
-      { value: "Fish", label: t("onboarding.petOptions.fish") },
-    ],
-    [t]
-  );
+  const {
+    genderOptions,
+    countryCityOptions,
+    birthCountryOptions,
+    educationOptions,
+    hobbyOptions,
+    petOptions,
+  } = useProfileOptions();
 
   const selectedCountry = countryCityOptions.find((country) => country.value === filters.country);
   const availableCities = selectedCountry?.cities || [];
@@ -601,10 +445,10 @@ const FriendsPage = () => {
             <form className="p-4 sm:p-6 space-y-4" onSubmit={handleApplyFilters}>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-gender">
                     <span className="label-text font-semibold">{t("friends.filters.genderLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-gender"
                     className="select select-bordered lofitalk-select"
                     value={filters.gender}
                     onChange={(e) => updateFilterField("gender", e.target.value)}
@@ -619,10 +463,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-country">
                     <span className="label-text font-semibold">{t("friends.filters.countryLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-country"
                     className="select select-bordered lofitalk-select"
                     value={filters.country}
                     onChange={(e) => updateFilterField("country", e.target.value)}
@@ -637,10 +481,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-city">
                     <span className="label-text font-semibold">{t("friends.filters.cityLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-city"
                     className="select select-bordered lofitalk-select"
                     value={filters.city}
                     onChange={(e) => updateFilterField("city", e.target.value)}
@@ -656,12 +500,12 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-birth-country">
                     <span className="label-text font-semibold">
                       {t("friends.filters.birthCountryLabel")}
                     </span>
                   </label>
-                  <select
+                  <select id="filter-birth-country"
                     className="select select-bordered lofitalk-select"
                     value={filters.birthCountry}
                     onChange={(e) => updateFilterField("birthCountry", e.target.value)}
@@ -676,12 +520,12 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-birth-city">
                     <span className="label-text font-semibold">
                       {t("friends.filters.birthCityLabel")}
                     </span>
                   </label>
-                  <select
+                  <select id="filter-birth-city"
                     className="select select-bordered lofitalk-select"
                     value={filters.birthCity}
                     onChange={(e) => updateFilterField("birthCity", e.target.value)}
@@ -697,10 +541,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-height-min">
                     <span className="label-text font-semibold">{t("friends.filters.heightLabel")}</span>
                   </label>
-                  <input
+                  <input id="filter-height-min"
                     type="number"
                     min="0"
                     className="input input-bordered"
@@ -711,10 +555,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-education">
                     <span className="label-text font-semibold">{t("friends.filters.educationLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-education"
                     className="select select-bordered lofitalk-select"
                     value={filters.education}
                     onChange={(e) => updateFilterField("education", e.target.value)}
@@ -729,10 +573,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-hobby">
                     <span className="label-text font-semibold">{t("friends.filters.hobbyLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-hobby"
                     className="select select-bordered lofitalk-select"
                     value={filters.hobby}
                     onChange={(e) => updateFilterField("hobby", e.target.value)}
@@ -747,10 +591,10 @@ const FriendsPage = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label">
+                  <label className="label" htmlFor="filter-pet">
                     <span className="label-text font-semibold">{t("friends.filters.petLabel")}</span>
                   </label>
-                  <select
+                  <select id="filter-pet"
                     className="select select-bordered lofitalk-select"
                     value={filters.pet}
                     onChange={(e) => updateFilterField("pet", e.target.value)}

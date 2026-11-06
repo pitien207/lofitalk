@@ -1,13 +1,21 @@
 import User from "../models/User.js";
 import UserReport from "../models/UserReport.js";
 import { loadUsageStats } from "../services/usageStats.service.js";
+import { PERMANENT_BAN_DATE } from "../lib/accountStatus.js";
+import {
+  disconnectUserSockets,
+  notifyAdmins,
+  NotifyTopic,
+} from "../lib/chatSocket.js";
+import { removeAllPushSubscriptions } from "../lib/pushService.js";
 
 const ALLOWED_ACCOUNT_TYPES = ["standard", "plus", "admin"];
+const MAX_BAN_DAYS = 3650;
 
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find()
-      .select("fullName email accountType isOnboarded createdAt")
+      .select("fullName email accountType isOnboarded createdAt bannedUntil banReason")
       .sort({ createdAt: -1 });
     res.status(200).json({ users });
   } catch (error) {
@@ -121,6 +129,7 @@ export const resolveUserReport = async (req, res) => {
     report.resolvedAt = new Date();
     report.resolvedBy = req.user._id;
     await report.save();
+    notifyAdmins(NotifyTopic.REPORTS);
 
     res.status(200).json({
       success: true,
@@ -154,6 +163,7 @@ export const deleteUserReport = async (req, res) => {
     }
 
     await report.deleteOne();
+    notifyAdmins(NotifyTopic.REPORTS);
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -169,5 +179,73 @@ export const getUsageStatsSummary = async (_req, res) => {
   } catch (error) {
     console.error("Error fetching usage stats:", error.message);
     res.status(500).json({ message: "Failed to load usage stats" });
+  }
+};
+
+// PUT /api/admin/users/:id/ban  body: { days?: 1..3650, permanent?: boolean, reason?: string }
+// Suspends an account: it cannot log in or use the API, and every session is ended now.
+export const banUser = async (req, res) => {
+  const { id } = req.params;
+  const permanent = req.body?.permanent === true;
+  const days = Number(req.body?.days);
+  const reason = typeof req.body?.reason === "string" ? req.body.reason.trim().slice(0, 500) : "";
+
+  if (!permanent && (!Number.isInteger(days) || days < 1 || days > MAX_BAN_DAYS)) {
+    return res
+      .status(400)
+      .json({ message: `Choose a duration of 1-${MAX_BAN_DAYS} days or a permanent suspension.` });
+  }
+  if (req.user._id.toString() === id) {
+    return res.status(400).json({ message: "You cannot suspend your own account." });
+  }
+
+  try {
+    const target = await User.findById(id).select("accountType tokenVersion");
+    if (!target) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (target.accountType === "admin") {
+      return res.status(403).json({ message: "Admin accounts cannot be suspended." });
+    }
+
+    const bannedUntil = permanent
+      ? PERMANENT_BAN_DATE
+      : new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+    const updated = await User.findByIdAndUpdate(
+      id,
+      {
+        $set: { bannedUntil, banReason: reason, bannedBy: req.user._id, isOnline: false },
+        $inc: { tokenVersion: 1 }, // ends every existing session
+      },
+      { new: true }
+    ).select("fullName email accountType bannedUntil banReason");
+
+    disconnectUserSockets(id);
+    await removeAllPushSubscriptions(id); // no notifications while suspended
+
+    return res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    console.error("Error suspending user:", error.message);
+    return res.status(500).json({ message: "Failed to suspend user" });
+  }
+};
+
+// DELETE /api/admin/users/:id/ban
+export const unbanUser = async (req, res) => {
+  try {
+    const updated = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: { bannedUntil: null, banReason: "", bannedBy: null } },
+      { new: true }
+    ).select("fullName email accountType bannedUntil banReason");
+
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.status(200).json({ success: true, user: updated });
+  } catch (error) {
+    console.error("Error lifting suspension:", error.message);
+    return res.status(500).json({ message: "Failed to lift suspension" });
   }
 };

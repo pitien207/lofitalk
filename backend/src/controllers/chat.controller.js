@@ -8,9 +8,11 @@ import {
   getUserClearedAt,
   loadUserMap,
   markConversationRead,
+  resolveConversationForSender,
   saveChatMessage,
 } from "../lib/chatService.js";
 import { loadBlockStatus } from "../lib/blockService.js";
+import { pushIfOffline } from "../lib/chatSocket.js";
 import { getChatConversationModel } from "../models/ChatConversation.js";
 
 const normalizeLimit = (value, fallback = 20) => {
@@ -310,36 +312,16 @@ export async function sendMessage(req, res) {
       });
     }
 
-    const targetUserId = toUserId || null;
-
-    if (!threadId && !targetUserId) {
-      return res
-        .status(400)
-        .json({ message: "Destination thread or user is required" });
+    // The sender must belong to the thread; the recipient is derived from it.
+    const destination = await resolveConversationForSender({
+      senderId,
+      threadId,
+      toUserId,
+    });
+    if (destination.error) {
+      return res.status(destination.status).json({ message: destination.error });
     }
-
-    let conversation = null;
-
-    if (threadId) {
-      const Conversation = getChatConversationModel();
-      conversation = await Conversation.findById(threadId);
-    } else if (targetUserId) {
-      conversation = await ensureConversation(senderId, targetUserId);
-    }
-
-    if (!conversation) {
-      return res.status(404).json({ message: "Conversation not found" });
-    }
-
-    const recipientId =
-      toUserId ||
-      conversation.participants.find(
-        (participant) => participant.toString() !== senderId.toString()
-      );
-
-    if (!recipientId) {
-      return res.status(400).json({ message: "Recipient not found" });
-    }
+    const { conversation, recipientId } = destination;
 
     const blockStatus = await loadBlockStatus(senderId, recipientId);
     if (!blockStatus.targetExists) {
@@ -363,6 +345,14 @@ export async function sendMessage(req, res) {
       senderId,
       recipientId,
       text: normalizedText,
+    });
+
+    pushIfOffline({
+      recipientId,
+      senderId,
+      senderName: req.user.fullName,
+      text: normalizedText,
+      threadId: conversation._id.toString(),
     });
 
     res.status(201).json({

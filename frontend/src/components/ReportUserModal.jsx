@@ -59,6 +59,7 @@ const ReportUserModal = ({
           <textarea
             className="textarea textarea-bordered w-full h-32"
             placeholder={t("friends.reportPlaceholder")}
+            maxLength={500}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
           />

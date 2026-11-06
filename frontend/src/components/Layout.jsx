@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
+import { LoaderIcon } from "lucide-react";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import usePendingNotifications from "../hooks/usePendingNotifications";
@@ -29,10 +30,22 @@ const Layout = ({ children, showSidebar = false }) => {
       <div className="flex">
         {showSidebar && <Sidebar />}
 
-        <div className="flex-1 flex flex-col">
+        {/* min-w-0: wide content (long links, tables) must not stretch the page */}
+        <div className="flex-1 flex flex-col min-w-0">
           <Navbar />
 
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <main className="flex-1 overflow-y-auto">
+            {/* Pages are loaded on demand: keep sidebar/navbar while a page chunk loads. */}
+            <Suspense
+              fallback={
+                <div className="min-h-[60vh] flex items-center justify-center">
+                  <LoaderIcon className="animate-spin size-8 text-primary" />
+                </div>
+              }
+            >
+              {children}
+            </Suspense>
+          </main>
         </div>
       </div>
     </div>

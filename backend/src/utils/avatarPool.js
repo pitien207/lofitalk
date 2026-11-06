@@ -115,6 +115,12 @@ export const getRandomAvatar = (gender, source = "mobile") => {
   return pickFromPool(pool, gender);
 };
 
+// Relative paths of the preset avatars, grouped like the folders (boy/girl).
+export const listAvatarPaths = (source = "web") => {
+  const pool = source === "web" ? webPool : mobilePool;
+  return { boy: [...pool.boy], girl: [...pool.girl] };
+};
+
 export const getRandomWebAvatar = (gender) => getRandomAvatar(gender, "web");
 export const getRandomMobileAvatar = (gender) => getRandomAvatar(gender, "mobile");
 

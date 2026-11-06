@@ -48,7 +48,6 @@ const MatchMindPage = () => {
     currentAnswers,
     chooseAnswer,
     history,
-    difficulty,
     matches,
     liveScore,
     activeSession,
@@ -60,7 +59,6 @@ const MatchMindPage = () => {
     setHasSharedAnswers,
     markAcceptedByFriend,
     markDeclinedByFriend,
-    markInviteExpired,
   } = useMatchMindGame();
   const incomingInvites = useGameInvitesStore(
     (state) => state.invites.matchmind
@@ -127,9 +125,6 @@ const MatchMindPage = () => {
     const friend = sortedFriends.find((item) => item._id === selectedId);
     setSelectedFriend(friend || null);
   };
-
-  const difficultyLabel =
-    difficulty === "hard" ? t("matchMind.hardMode") : t("matchMind.easyMode");
 
   const handleIncomingRespond = (invite, accepted) => {
     if (!socket) {
@@ -260,7 +255,7 @@ const MatchMindPage = () => {
         toast.success(t("matchMind.shareAnswersToast", { name: friendLabel }));
       }
     );
-  }, [socket, activeSession, history, t, friendLabel]);
+  }, [socket, activeSession, history, t, friendLabel, setHasSharedAnswers]);
 
   const handleExitGame = () => {
     const session = activeSession;

@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import NoNotificationsFound from "../components/NoNotificationsFound";
 import { useTranslation } from "../languages/useTranslation";
 import { useRealtimeStore } from "../store/useRealtimeStore";
+import { FALLBACK_REFETCH_MS } from "../constants/realtime";
 import datingConfessionImage from "../../../backend/src/assets/logo/dating_confession.jpg";
 
 const ADMIN_EXPIRE_DAYS = 3;
@@ -54,7 +55,7 @@ const NotificationsPage = () => {
         }
       },
       staleTime: 30 * 1000,
-      refetchInterval: realtimePaused ? false : 60 * 1000,
+      refetchInterval: realtimePaused ? false : FALLBACK_REFETCH_MS,
       retry: 1,
       onError: (error) => {
         toast.error(
@@ -158,7 +159,7 @@ const NotificationsPage = () => {
                 />
               </div>
               <div className="space-y-1">
-                <span className="badge badge-secondary badge-outline">
+                <span className="badge badge-secondary">
                   {t("notifications.datingConfession.badge")}
                 </span>
                 <h2 className="text-xl font-semibold">

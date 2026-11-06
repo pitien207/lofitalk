@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import "./Avatar.js"; // registers the Avatar model used by the delete hooks below
+import { ENERGY_MAX } from "../lib/energy.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -93,6 +94,31 @@ const userSchema = new mongoose.Schema(
     passwordResetCodeExpiresAt: {
       type: Date,
     },
+    // Wrong reset codes entered for the current code; the code is voided at the limit.
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+    },
+    // Bumped on password change/reset: JWTs carrying an older version are rejected.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+    // Admin suspension: the account cannot log in or use the API until this date.
+    bannedUntil: {
+      type: Date,
+      default: null,
+    },
+    banReason: {
+      type: String,
+      default: "",
+      maxlength: 500,
+    },
+    bannedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     location: {
       type: String,
       default: "",
@@ -129,8 +155,8 @@ const userSchema = new mongoose.Schema(
     energy: {
       type: Number,
       min: 0,
-      max: 7,
-      default: 7,
+      max: ENERGY_MAX,
+      default: ENERGY_MAX,
     },
     lastEnergyRefill: {
       type: Date,
@@ -187,6 +213,8 @@ const stripSensitiveFields = (ret = {}) => {
   delete ret.verificationCodeExpiresAt;
   delete ret.passwordResetCode;
   delete ret.passwordResetCodeExpiresAt;
+  delete ret.passwordResetAttempts;
+  delete ret.tokenVersion;
   delete ret.__v;
   return ret;
 };

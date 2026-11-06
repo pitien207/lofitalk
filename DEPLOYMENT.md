@@ -207,6 +207,8 @@ Package được tạo ở lần push đầu tiên (mục 7) và mặc định l
    ```
 4. Mở lần chạy workflow bị lỗi trong tab **Actions** → **Re-run failed jobs**. Từ đó trở đi, mọi lần push đều deploy bình thường.
 
+**Tự dọn image cũ:** sau mỗi lần deploy thành công, workflow chỉ giữ **10 image mới nhất** trên ghcr.io (đủ để quay về 10 lần deploy gần nhất, xem mục 7). Bước này lỗi cũng không làm hỏng deploy. Nếu log báo thiếu quyền xóa, vào **Package settings → Manage Actions access**, cấp cho repo `lofitalk` quyền **Admin**.
+
 ⚠️ **Không đổi lại được:** GitHub không cho chuyển package public về private. Đừng bao giờ đưa secret vào image. `.dockerignore` đã loại mọi file `.env` và `.env.*`; secret chỉ đặt trong Container App (mục 6).
 
 ---
@@ -224,6 +226,7 @@ Trên Portal: **Settings → Secrets → Add**. Tên secret chỉ gồm chữ th
 | `jwt-secret-key` | Chuỗi ngẫu nhiên dài, tạo bằng `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `anthropic-api-key` | API key Anthropic |
 | `mail-pass` | **Bắt buộc**: mật khẩu SMTP (Gmail App Password hoặc SMTP key). Không có thì không đăng ký được và không đặt lại mật khẩu được. |
+| `vapid-private-key` | Không bắt buộc: khóa riêng cho thông báo đẩy (mục 6.5) |
 
 Nên nhập `mongo-uri` trên **Portal**: chuỗi có ký tự `&`, dễ bị PowerShell và `az.cmd` cắt sai. Các secret còn lại có thể dùng CLI:
 
@@ -245,6 +248,8 @@ Trên Portal: **Application → Containers → Edit and deploy → Environment v
 | `ASSET_BASE_URL` | Manual | `https://lofitalk.nghiapham.org` |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_SECURE`, `MAIL_USER`, `MAIL_FROM` | Manual | **Bắt buộc**: dùng để gửi mã xác nhận đăng ký và mã đặt lại mật khẩu. Gmail: `smtp.gmail.com`, `465`, `true`. |
 | `MAIL_PASS` | Reference a secret | `mail-pass` |
+| `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` | Manual | Không bắt buộc, xem mục 6.5 |
+| `VAPID_PRIVATE_KEY` | Reference a secret | `vapid-private-key` |
 
 `NODE_ENV=production` và `PORT=8080` đã có sẵn trong image, không cần đặt.
 
@@ -274,11 +279,46 @@ az containerapp ingress update --name $APP --resource-group $RG --target-port 80
 
 Khi đổi target port sang 8080, image quickstart hiện tại sẽ ngừng phản hồi cho tới khi image mới được deploy. Đây là bình thường, vì quickstart chỉ là trang giữ chỗ.
 
+### 6.4 Health probe (không bắt buộc, miễn phí)
+Backend có hai endpoint:
+
+| Endpoint | Ý nghĩa |
+|---|---|
+| `GET /api/health` | Process còn sống (không chạm database). Dùng cho **liveness** và **startup** probe. |
+| `GET /api/health/ready` | Ping database (timeout 3 giây): 200 khi DB sẵn sàng, 503 khi không. Dùng cho **readiness** probe. |
+
+Trên Portal: **Application → Containers → Edit and deploy → chọn container → Health probes**:
+
+| Probe | Path | Port | Gợi ý |
+|---|---|---|---|
+| Startup | `/api/health` | 8080 | period 5 s, failure threshold 12 (cho phép khởi động tới 60 s) |
+| Liveness | `/api/health` | 8080 | period 30 s, failure threshold 3 |
+| Readiness | `/api/health/ready` | 8080 | period 15 s, failure threshold 3 |
+
+Không nên dùng `/api/health/ready` cho liveness: DB chậm một lúc sẽ khiến container bị khởi động lại vô ích.
+
+### 6.5 Thông báo đẩy (Web Push, miễn phí, không bắt buộc)
+Người dùng bật **Thông báo tin nhắn** ở trang Hồ sơ thì sẽ nhận thông báo của trình duyệt khi có tin nhắn mới lúc đã đóng LofiTalk. Server chỉ gửi khi người nhận không mở app. Nếu không đặt 3 biến dưới đây thì tính năng tắt và mục cài đặt bị ẩn.
+
+1. Tạo cặp khóa **một lần** trên máy bạn (không commit, không dán vào chat):
+   ```powershell
+   cd backend
+   npx web-push generate-vapid-keys
+   ```
+2. Lưu khóa riêng thành secret `vapid-private-key` (mục 6.1), rồi đặt biến môi trường `VAPID_PRIVATE_KEY=secretref:vapid-private-key`, `VAPID_PUBLIC_KEY=<khóa công khai>` và `VAPID_SUBJECT=mailto:<email của bạn>`.
+3. **Không đổi khóa** sau khi đã dùng: đổi khóa thì mọi trình duyệt đã bật phải bật lại.
+
+Ghi chú: trên iPhone/iPad, thông báo đẩy chỉ chạy khi người dùng **Thêm vào màn hình chính** rồi mở LofiTalk từ đó (app có manifest và icon nên cài được như PWA).
+
+### 6.6 Proxy và rate limit
+App đặt `trust proxy` = 1 hop (ingress của Container Apps) để lấy đúng IP người dùng cho rate limit. Chỉ đổi khi có thêm proxy phía trước (ví dụ Cloudflare proxy bật) bằng biến `TRUST_PROXY_HOPS`. Bộ đếm rate limit nằm trong RAM, reset mỗi khi container khởi động lại.
+
 ---
 
 ## 7. Deploy
 
 1. Commit và push lên `main`. Workflow **Build and deploy to Azure Container Apps** sẽ:
+   - Chạy test backend (`npm test` với một MongoDB 7 tạm trong CI). Test lỗi thì **không** deploy.
    - Build image và push lên `ghcr.io/pitien207/lofitalk` với tag `latest` và tag `<commit-sha>`.
    - Đăng nhập Azure bằng OIDC.
    - Chạy `az containerapp update --image ghcr.io/pitien207/lofitalk:<commit-sha>`.
@@ -289,7 +329,7 @@ Khi đổi target port sang 8080, image quickstart hiện tại sẽ ngừng ph�
    az containerapp logs show --name $APP --resource-group $RG --follow --tail 50
    az containerapp logs show --name $APP --resource-group $RG --type system --tail 50
    ```
-   Log khởi động đúng gồm `MongoDB connected: ...`, `Server is running on 0.0.0.0:8080` và `Indexes ensured for 10/10 models`.
+   Log khởi động đúng gồm `MongoDB connected: ...`, `Server is running on 0.0.0.0:8080` và `Indexes ensured for 11/11 models`.
 4. **Quay về bản cũ:**
    ```powershell
    az containerapp update --name $APP --resource-group $RG --image ghcr.io/pitien207/lofitalk:<sha-cu>
@@ -299,6 +339,7 @@ Khi đổi target port sang 8080, image quickstart hiện tại sẽ ngừng ph�
 | Kiểm tra | Kết quả đúng |
 |---|---|
 | `https://lofitalk.nghiapham.org/api/meta/version` | HTTP 200 |
+| `https://lofitalk.nghiapham.org/api/health/ready` | HTTP 200, `"database":"up"` |
 | Mở `https://lofitalk.nghiapham.org/login` rồi tải lại trang | Không bị lỗi 404 |
 | DevTools → Network | Mọi request đi tới `lofitalk.nghiapham.org` |
 | Đăng ký tài khoản đầu tiên (database đang rỗng), đăng nhập, tải lại trang | Vẫn giữ đăng nhập |
@@ -316,7 +357,7 @@ DocumentDB bắt đầu **rỗng**, không chuyển dữ liệu cũ.
 - **Không cần dữ liệu khởi tạo:** collection được tạo tự động khi có dữ liệu đầu tiên. Thống kê lượt dùng tự tạo khi cần; avatar và lời bánh may mắn nằm sẵn trong image.
 - **Index tự tạo khi khởi động:** mỗi lần container khởi động, backend tạo đầy đủ index (unique `email`, `roomKey`, `key`; compound cho chat; TTL cho thông báo admin và announcement). Việc này an toàn khi chạy lặp lại. Trong log phải thấy:
   ```
-  Indexes ensured for 10/10 models
+  Indexes ensured for 11/11 models
   ```
   Nếu có dòng `Index creation failed: ...`, hãy gửi lại nội dung lỗi.
 - **Admin đầu tiên (chỉ cần nếu dùng trang quản trị):** app không cho tạo admin từ giao diện. Cách tạo:

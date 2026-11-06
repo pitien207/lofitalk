@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import {
   getAdminUsers,
@@ -9,6 +10,8 @@ import {
   resolveUserReport,
   deleteUserReport,
   getFeatureUsageStats,
+  banUser,
+  unbanUser,
 } from "../lib/api";
 import { useTranslation } from "../languages/useTranslation";
 import useAuthUser from "../hooks/useAuthUser";
@@ -72,13 +75,6 @@ const AdminPage = () => {
 
   const getSelectedAccountType = (user) => pendingAccountTypes[user._id] ?? user.accountType;
 
-  const clearPendingAccountType = (userId) => {
-    setPendingAccountTypes((previous) => {
-      const { [userId]: _removed, ...rest } = previous;
-      return rest;
-    });
-  };
-
   const handleSaveAllAccountChanges = async () => {
     if (!hasPendingAccountChanges) return;
     setSavingAccounts(true);
@@ -86,7 +82,6 @@ const AdminPage = () => {
       for (const user of users) {
         const nextType = getSelectedAccountType(user);
         if (nextType && nextType !== user.accountType) {
-          // eslint-disable-next-line no-await-in-loop
           await mutateAsync({ userId: user._id, accountType: nextType });
         }
       }
@@ -171,7 +166,7 @@ const AdminPage = () => {
     return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
   };
 
-  const users = data?.users ?? [];
+  const users = useMemo(() => data?.users ?? [], [data]);
 
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -198,12 +193,41 @@ const AdminPage = () => {
 
   const hasPendingAccountChanges = useMemo(
     () =>
-      users.some((user) => {
-        const selected = getSelectedAccountType(user);
-        return selected !== user.accountType;
-      }),
+      users.some(
+        (user) => (pendingAccountTypes[user._id] ?? user.accountType) !== user.accountType
+      ),
     [users, pendingAccountTypes]
   );
+
+  // --- account suspension ---
+  const [banTarget, setBanTarget] = useState(null); // user being suspended (dialog open)
+  const [banDuration, setBanDuration] = useState("7");
+  const [banReason, setBanReason] = useState("");
+
+  const isSuspended = (user) =>
+    Boolean(user.bannedUntil) && new Date(user.bannedUntil).getTime() > Date.now();
+  const isPermanentBan = (user) => new Date(user.bannedUntil).getFullYear() >= 9999;
+
+  const banMutation = useMutation({
+    mutationFn: ({ userId, duration, reason }) =>
+      banUser(userId, duration === "permanent" ? { permanent: true, reason } : { days: Number(duration), reason }),
+    onSuccess: () => {
+      toast.success(t("adminBan.suspendedToast"));
+      setBanTarget(null);
+      setBanReason("");
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: (error) => toast.error(error?.response?.data?.message || t("adminBan.error")),
+  });
+
+  const unbanMutation = useMutation({
+    mutationFn: (userId) => unbanUser(userId),
+    onSuccess: () => {
+      toast.success(t("adminBan.liftedToast"));
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+    },
+    onError: (error) => toast.error(error?.response?.data?.message || t("adminBan.error")),
+  });
 
   const handleSendNotification = async (event) => {
     event.preventDefault();
@@ -306,18 +330,19 @@ const AdminPage = () => {
                   <th>{t("admin.users.name")}</th>
                   <th className="hidden md:table-cell">{t("admin.users.email")}</th>
                   <th>{t("admin.users.accountType")}</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="text-center py-6 text-base-content/70">
+                    <td colSpan={4} className="text-center py-6 text-base-content/70">
                       {t("admin.users.empty")}
                     </td>
                   </tr>
                 ) : visibleUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="text-center py-6 text-base-content/70">
+                    <td colSpan={4} className="text-center py-6 text-base-content/70">
                       {t("admin.users.noResults")}
                     </td>
                   </tr>
@@ -328,6 +353,15 @@ const AdminPage = () => {
                         <div>
                           <p className="font-semibold">{user.fullName}</p>
                           <p className="text-xs text-base-content/60 md:hidden">{user.email}</p>
+                          {isSuspended(user) && (
+                            <span className="badge badge-error badge-sm mt-1" title={user.banReason || ""}>
+                              {isPermanentBan(user)
+                                ? t("adminBan.suspendedPermanent")
+                                : t("adminBan.suspendedUntil", {
+                                    date: formatDateTime(user.bannedUntil),
+                                  })}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="hidden md:table-cell">{user.email}</td>
@@ -348,6 +382,7 @@ const AdminPage = () => {
                           return (
                             <select
                               className="select select-sm select-bordered w-full max-w-xs"
+                              aria-label={t("a11y.accountTypeFor", { name: user.fullName || user.email })}
                               value={selectedAccountType}
                               onChange={(event) =>
                                 handleAccountTypeChange(user._id, event.target.value)
@@ -363,12 +398,97 @@ const AdminPage = () => {
                           );
                         })()}
                       </td>
+                      <td className="text-right">
+                        {authUser?._id !== user._id && user.accountType !== "admin" && (
+                          isSuspended(user) ? (
+                            <button
+                              type="button"
+                              className="btn btn-xs btn-outline"
+                              onClick={() => unbanMutation.mutate(user._id)}
+                              disabled={unbanMutation.isPending}
+                            >
+                              {t("adminBan.lift")}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="btn btn-xs btn-error btn-outline"
+                              onClick={() => {
+                                setBanTarget(user);
+                                setBanDuration("7");
+                                setBanReason("");
+                              }}
+                            >
+                              {t("adminBan.suspend")}
+                            </button>
+                          )
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
+
+          {banTarget && createPortal(
+            <div className="modal modal-open" role="dialog" aria-modal="true">
+              <div className="modal-box max-w-md">
+                <h3 className="font-semibold text-lg">
+                  {t("adminBan.dialogTitle", { name: banTarget.fullName })}
+                </h3>
+                <label className="form-control mt-4">
+                  <span className="label-text mb-1">{t("adminBan.duration")}</span>
+                  <select
+                    className="select select-bordered select-sm"
+                    value={banDuration}
+                    onChange={(event) => setBanDuration(event.target.value)}
+                  >
+                    <option value="1">{t("adminBan.days1")}</option>
+                    <option value="7">{t("adminBan.days7")}</option>
+                    <option value="30">{t("adminBan.days30")}</option>
+                    <option value="permanent">{t("adminBan.permanent")}</option>
+                  </select>
+                </label>
+                <label className="form-control mt-3">
+                  <span className="label-text mb-1">{t("adminBan.reasonLabel")}</span>
+                  <textarea
+                    className="textarea textarea-bordered"
+                    rows={3}
+                    maxLength={500}
+                    value={banReason}
+                    onChange={(event) => setBanReason(event.target.value)}
+                  />
+                </label>
+                <div className="modal-action">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setBanTarget(null)}
+                    disabled={banMutation.isPending}
+                  >
+                    {t("adminBan.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-error"
+                    disabled={banMutation.isPending}
+                    onClick={() =>
+                      banMutation.mutate({
+                        userId: banTarget._id,
+                        duration: banDuration,
+                        reason: banReason.trim(),
+                      })
+                    }
+                  >
+                    {t("adminBan.confirm")}
+                  </button>
+                </div>
+              </div>
+              <div className="modal-backdrop" onClick={() => setBanTarget(null)} />
+            </div>,
+            document.body
+          )}
 
           {filteredUsers.length > USERS_PER_PAGE && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-base-300 pt-4">

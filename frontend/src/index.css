@@ -125,3 +125,21 @@ body {
     transform: rotate(var(--fortune-rotation, 0deg)) translateY(140px);
   }
 }
+
+/* Accessibility (WCAG AA 4.5:1): the muted text shades were slightly too faint on
+   the dark themes. Same look, a bit more contrast, for every daisyUI theme. */
+:root .text-base-content\/60 {
+  color: var(--fallback-bc, oklch(var(--bc) / 0.78));
+}
+:root .text-base-content\/70 {
+  color: var(--fallback-bc, oklch(var(--bc) / 0.82));
+}
+:root .opacity-60 {
+  opacity: 0.78;
+}
+:root .opacity-70 {
+  opacity: 0.82;
+}
+:root .table :where(thead, tfoot) {
+  color: var(--fallback-bc, oklch(var(--bc) / 0.78));
+}

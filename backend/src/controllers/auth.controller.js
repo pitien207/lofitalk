@@ -1,7 +1,9 @@
 import User from "../models/User.js";
 import PendingSignup from "../models/PendingSignup.js";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import { signAuthToken, verifyAuthToken } from "../lib/authToken.js";
+import { disconnectUserSockets } from "../lib/chatSocket.js";
+import { getActiveBan, suspendedResponse } from "../lib/accountStatus.js";
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -12,11 +14,45 @@ import { deleteAvatarForUser, isUploadedAvatarUrl } from "../lib/avatarStore.js"
 
 const CODE_EXPIRATION_MINUTES = 15;
 const MAX_VERIFICATION_ATTEMPTS = 5;
+export const MIN_PASSWORD_LENGTH = 8;
+const PASSWORD_TOO_SHORT = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
 
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Emails are stored and compared lower-case and trimmed ("A@x.com" == "a@x.com").
+export const normalizeEmail = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Finds a user by normalized email; falls back to a case-insensitive match for accounts
+// created before emails were normalized.
+const findUserByEmail = async (email) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+  const exact = await User.findOne({ email: normalized });
+  if (exact) return exact;
+  return User.findOne({ email: { $regex: `^${escapeRegex(normalized)}$`, $options: "i" } });
+};
+
+// Rewrites a legacy mixed-case email to lower case unless another account already uses it.
+const normalizeStoredEmail = async (user) => {
+  const normalized = normalizeEmail(user.email);
+  if (!normalized || user.email === normalized) return;
+  const clash = await User.exists({ email: normalized, _id: { $ne: user._id } });
+  if (!clash) {
+    await User.updateOne({ _id: user._id }, { $set: { email: normalized } });
+    user.email = normalized;
+  }
+};
+
+// The web app authenticates with the httpOnly cookie only; the mobile app (Bearer token)
+// also needs the token in the response body.
+const wantsTokenInBody = (req) =>
+  req.headers["x-client-platform"]?.toString().toLowerCase() === "mobile";
 
 const setAuthCookie = (res, token) => {
   res.cookie("jwt", token, {
@@ -74,24 +110,23 @@ const toPublicUser = (userDoc) => {
 };
 
 export async function signup(req, res) {
-  const { email, password, fullName } = req.body;
+  const { password, fullName } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   try {
     if (!email || !password || !fullName) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
+    if (String(password).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ message: PASSWORD_TOO_SHORT });
     }
 
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await findUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({
         message: existingUser.isEmailVerified
@@ -158,7 +193,7 @@ export async function login(req, res) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
     if (!user)
       return res.status(401).json({ message: "Invalid email or password" });
 
@@ -168,21 +203,31 @@ export async function login(req, res) {
         .json({ message: "Please verify your email before logging in." });
     }
 
-    const isPasswordCorrect = await user.matchPassword(password);
+    const isPasswordCorrect = await user.matchPassword(String(password));
     if (!isPasswordCorrect)
       return res.status(401).json({ message: "Invalid email or password" });
+
+    // Only revealed after a correct password.
+    const ban = getActiveBan(user);
+    if (ban) {
+      return res.status(403).json(suspendedResponse(ban));
+    }
+
+    await normalizeStoredEmail(user);
 
     user.isOnline = true;
     user.lastActiveAt = new Date();
     await user.save();
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
+    const token = signAuthToken(user);
 
     setAuthCookie(res, token);
 
-    res.status(200).json({ success: true, token, user: toPublicUser(user) });
+    res.status(200).json({
+      success: true,
+      ...(wantsTokenInBody(req) ? { token } : {}),
+      user: toPublicUser(user),
+    });
   } catch (error) {
     console.log("Error in login controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
@@ -194,7 +239,7 @@ export async function logout(req, res) {
     const token = req.cookies?.jwt;
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+        const decoded = verifyAuthToken(token);
         if (decoded?.userId) {
           await User.findByIdAndUpdate(decoded.userId, {
             $set: {
@@ -214,7 +259,8 @@ export async function logout(req, res) {
 }
 
 export async function verifySignupCode(req, res) {
-  const { email, code } = req.body;
+  const { code } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   try {
     if (!email || !code) {
@@ -223,7 +269,7 @@ export async function verifySignupCode(req, res) {
 
     const normalizedCode = String(code).trim();
 
-    let user = await User.findOne({ email });
+    let user = await findUserByEmail(email);
     let pendingSignup = null;
 
     if (!user) {
@@ -295,13 +341,15 @@ export async function verifySignupCode(req, res) {
       await user.save();
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "7d",
-    });
+    const token = signAuthToken(user);
 
     setAuthCookie(res, token);
 
-    res.status(200).json({ success: true, user: toPublicUser(user) });
+    res.status(200).json({
+      success: true,
+      ...(wantsTokenInBody(req) ? { token } : {}),
+      user: toPublicUser(user),
+    });
   } catch (error) {
     console.log("Error verifying signup code:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -318,10 +366,8 @@ export async function updatePassword(req, res) {
         .json({ message: "Both current and new passwords are required" });
     }
 
-    if (newPassword.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 6 characters" });
+    if (String(newPassword).length < MIN_PASSWORD_LENGTH) {
+      return res.status(400).json({ message: PASSWORD_TOO_SHORT });
     }
 
     const user = await User.findById(req.user._id);
@@ -329,17 +375,24 @@ export async function updatePassword(req, res) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const isMatch = await user.matchPassword(currentPassword);
+    const isMatch = await user.matchPassword(String(currentPassword));
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
     user.password = newPassword;
+    // Log out every other session; this one gets a fresh token below.
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
-    res
-      .status(200)
-      .json({ success: true, message: "Password updated successfully" });
+    const token = signAuthToken(user);
+    setAuthCookie(res, token);
+
+    res.status(200).json({
+      success: true,
+      ...(wantsTokenInBody(req) ? { token } : {}),
+      message: "Password updated successfully",
+    });
   } catch (error) {
     console.log("Error updating password:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -347,14 +400,14 @@ export async function updatePassword(req, res) {
 }
 
 export async function requestPasswordReset(req, res) {
-  const { email } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
 
     // Do not reveal whether the email exists to avoid enumeration
     if (!user || !user.isEmailVerified) {
@@ -371,6 +424,7 @@ export async function requestPasswordReset(req, res) {
 
     user.passwordResetCode = resetCode;
     user.passwordResetCodeExpiresAt = resetExpiresAt;
+    user.passwordResetAttempts = 0;
     await user.save();
 
     await sendPasswordResetEmail(email, resetCode);
@@ -386,7 +440,8 @@ export async function requestPasswordReset(req, res) {
 }
 
 export async function resetPassword(req, res) {
-  const { email, code, newPassword } = req.body;
+  const { code, newPassword } = req.body;
+  const email = normalizeEmail(req.body.email);
 
   if (!email || !code || !newPassword) {
     return res
@@ -394,14 +449,12 @@ export async function resetPassword(req, res) {
       .json({ message: "Email, verification code, and new password are required" });
   }
 
-  if (newPassword.length < 6) {
-    return res
-      .status(400)
-      .json({ message: "New password must be at least 6 characters" });
+  if (String(newPassword).length < MIN_PASSWORD_LENGTH) {
+    return res.status(400).json({ message: PASSWORD_TOO_SHORT });
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await findUserByEmail(email);
     if (!user) {
       return res
         .status(400)
@@ -411,7 +464,6 @@ export async function resetPassword(req, res) {
     const normalizedCode = String(code).trim();
     if (
       !user.passwordResetCode ||
-      user.passwordResetCode !== normalizedCode ||
       !user.passwordResetCodeExpiresAt ||
       user.passwordResetCodeExpiresAt < new Date()
     ) {
@@ -420,10 +472,33 @@ export async function resetPassword(req, res) {
         .json({ message: "Invalid or expired verification code" });
     }
 
+    if (user.passwordResetCode !== normalizedCode) {
+      // Limit guesses on the 6-digit code; afterwards a new code must be requested.
+      const attempts = (user.passwordResetAttempts || 0) + 1;
+      if (attempts >= MAX_VERIFICATION_ATTEMPTS) {
+        user.passwordResetCode = undefined;
+        user.passwordResetCodeExpiresAt = undefined;
+        user.passwordResetAttempts = 0;
+        await user.save();
+        return res.status(400).json({
+          message: "Too many incorrect codes. Please request a new reset code.",
+        });
+      }
+      user.passwordResetAttempts = attempts;
+      await user.save();
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired verification code" });
+    }
+
     user.password = newPassword;
     user.passwordResetCode = undefined;
     user.passwordResetCodeExpiresAt = undefined;
+    user.passwordResetAttempts = 0;
+    // Log out every existing session (web, mobile, open sockets).
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
+    disconnectUserSockets(user._id);
 
     res
       .status(200)

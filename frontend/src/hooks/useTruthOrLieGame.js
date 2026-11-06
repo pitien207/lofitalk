@@ -55,7 +55,7 @@ const defaultState = {
 const safeParse = (value) => {
   try {
     return JSON.parse(value);
-  } catch (error) {
+  } catch {
     return null;
   }
 };

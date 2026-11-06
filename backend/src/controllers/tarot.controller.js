@@ -1,8 +1,7 @@
 import "dotenv/config";
 import Anthropic from "@anthropic-ai/sdk";
 import { incrementUsageCounter } from "../services/usageStats.service.js";
-
-const ENERGY_COST = 7;
+import { TAROT_ENERGY_COST as ENERGY_COST } from "../lib/energy.js";
 
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-5-5";
 const TAROT_UNAVAILABLE_MESSAGE =
