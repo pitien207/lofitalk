@@ -32,7 +32,7 @@ const Layout = ({ children, showSidebar = false }) => {
 
         {/* min-w-0: wide content (long links, tables) must not stretch the page */}
         <div className="flex-1 flex flex-col min-w-0">
-          <Navbar />
+          <Navbar showSidebarToggle={showSidebar} />
 
           <main className="flex-1 overflow-y-auto">
             {/* Pages are loaded on demand: keep sidebar/navbar while a page chunk loads. */}

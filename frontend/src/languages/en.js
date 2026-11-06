@@ -1454,6 +1454,11 @@ const english = {
     accountTypeFor: "Account type for {name}",
     sendMessage: "Send message",
     messageInput: "Message",
+    mainMenu: "Main menu",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
+    hideSidebar: "Hide sidebar",
+    showSidebar: "Show sidebar",
   },
 };
 

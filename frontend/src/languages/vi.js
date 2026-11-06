@@ -1462,6 +1462,11 @@ const vietnamese = {
     accountTypeFor: "Loại tài khoản của {name}",
     sendMessage: "Gửi tin nhắn",
     messageInput: "Tin nhắn",
+    mainMenu: "Menu chính",
+    openMenu: "Mở menu",
+    closeMenu: "Đóng menu",
+    hideSidebar: "Ẩn thanh bên",
+    showSidebar: "Hiện thanh bên",
   },
 };
 
