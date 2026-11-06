@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -9,9 +9,9 @@ import {
   LoaderIcon,
   ShipWheelIcon,
   ShuffleIcon,
-  UploadIcon,
 } from "lucide-react";
 import LanguageSelector from "../components/LanguageSelector";
+import AvatarUploader from "../components/AvatarUploader";
 import { getRandomAvatar } from "../utils/avatarPool";
 
 const parseListField = (value) =>
@@ -31,7 +31,6 @@ const OnboardingPage = () => {
   const { authUser } = useAuthUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const canUploadAvatar = authUser?.accountType === "admin";
 
   const parsedBirthDate = authUser?.birthDate
     ? new Date(authUser.birthDate)
@@ -71,7 +70,6 @@ const OnboardingPage = () => {
     },
   ];
 
-  const fileInputRef = useRef(null);
   const countryCityOptions = useMemo(
     () => [
       {
@@ -432,39 +430,6 @@ const OnboardingPage = () => {
     toast.success(t("language.randomAvatarToast"));
   };
 
-  const handleUploadClick = () => {
-    if (!canUploadAvatar) return;
-    fileInputRef.current?.click();
-  };
-
-  const handleProfilePicUpload = (event) => {
-    if (!canUploadAvatar) {
-      event.target.value = "";
-      return;
-    }
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      toast.error(t("language.uploadError"));
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 200 * 1024) {
-      toast.error(t("language.uploadSizeError"));
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormState((prev) => ({ ...prev, profilePic: reader.result }));
-        toast.success(t("language.uploadSuccess"));
-      };
-    reader.readAsDataURL(file);
-  };
-
   return (
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="card bg-base-200 w-full max-w-3xl shadow-xl">
@@ -504,25 +469,10 @@ const OnboardingPage = () => {
                     <ShuffleIcon className="size-4 mr-2" />
                     {t("onboarding.randomAvatar")}
                   </button>
-                  {canUploadAvatar && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleUploadClick}
-                        className="btn btn-outline"
-                      >
-                        <UploadIcon className="size-4 mr-2" />
-                        {t("onboarding.uploadPhoto")}
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleProfilePicUpload}
-                        className="hidden"
-                      />
-                    </>
-                  )}
+                  <AvatarUploader
+                    buttonClassName="btn btn-outline"
+                    onUploaded={(url) => updateFormField("profilePic", url)}
+                  />
                 </div>
             </div>
 

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import "./Avatar.js"; // registers the Avatar model used by the delete hooks below
 
 const userSchema = new mongoose.Schema(
   {
@@ -215,6 +216,31 @@ userSchema.pre("save", async function (next) {
   } catch (error) {
     return next(error);
   }
+});
+
+// Uploaded avatars live in their own collection: remove them whenever users are deleted.
+// Covers doc.deleteOne(), Model.deleteOne/deleteMany() and findOneAndDelete/findByIdAndDelete().
+const deleteAvatarsOf = async (userIds) => {
+  const ids = (userIds || []).filter(Boolean);
+  if (!ids.length) return;
+  await mongoose.model("Avatar").deleteMany({ userId: { $in: ids } });
+};
+
+userSchema.post("deleteOne", { document: true, query: false }, async function () {
+  await deleteAvatarsOf([this._id]);
+});
+
+userSchema.pre(["deleteOne", "deleteMany"], { document: false, query: true }, async function () {
+  const users = await this.model.find(this.getFilter()).select("_id").lean();
+  this._deletedUserIds = users.map((user) => user._id);
+});
+
+userSchema.post(["deleteOne", "deleteMany"], { document: false, query: true }, async function () {
+  await deleteAvatarsOf(this._deletedUserIds);
+});
+
+userSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) await deleteAvatarsOf([doc._id]);
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {

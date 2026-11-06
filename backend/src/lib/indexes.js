@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 // Import every model so its schema (and indexes) is registered.
 import "../models/AdminNotification.js";
+import "../models/Avatar.js";
 import "../models/Announcement.js";
 import "../models/FriendRequest.js";
 import "../models/PendingSignup.js";

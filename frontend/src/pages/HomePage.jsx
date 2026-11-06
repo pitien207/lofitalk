@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import useAuthUser from "../hooks/useAuthUser";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -10,7 +10,6 @@ import {
   MapPinIcon,
   ShipWheelIcon,
   ShuffleIcon,
-  UploadIcon,
   CalendarIcon,
   HeartIcon,
   BookOpenIcon,
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { getCountryFlag } from "../utils/flags";
 import { getRandomAvatar } from "../utils/avatarPool";
+import AvatarUploader from "../components/AvatarUploader";
 
 const parseListField = (value) =>
   value
@@ -53,8 +53,6 @@ const HomePage = () => {
   const { authUser, isLoading } = useAuthUser();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const fileInputRef = useRef(null);
-  const canUploadAvatar = authUser?.accountType === "admin";
 
   const [formState, setFormState] = useState({
     fullName: "",
@@ -668,36 +666,6 @@ const HomePage = () => {
     toast.success(t("language.randomAvatarToast"));
   };
 
-  const handleUploadClick = () => {
-    if (!canUploadAvatar) return;
-    fileInputRef.current?.click();
-  };
-
-  const handleProfilePicUpload = (event) => {
-    if (!canUploadAvatar) {
-      event.target.value = "";
-      return;
-    }
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error(t("language.uploadError"));
-      event.target.value = "";
-      return;
-    }
-    if (file.size > 200 * 1024) {
-      toast.error(t("language.uploadSizeError"));
-      event.target.value = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      updateFormField("profilePic", reader.result);
-      toast.success(t("language.uploadSuccess"));
-    };
-    reader.readAsDataURL(file);
-  };
-
   const age = authUser?.birthDate
     ? Math.max(
         18,
@@ -853,25 +821,9 @@ const HomePage = () => {
                     <ShuffleIcon className="size-4 mr-1.5" />
                     {t("onboarding.randomAvatar")}
                   </button>
-                  {canUploadAvatar && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleUploadClick}
-                        className="btn btn-outline btn-sm"
-                      >
-                        <UploadIcon className="size-4 mr-1.5" />
-                        {t("onboarding.uploadPhoto")}
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        className="hidden"
-                        onChange={handleProfilePicUpload}
-                      />
-                    </>
-                  )}
+                  <AvatarUploader
+                    onUploaded={(url) => updateFormField("profilePic", url)}
+                  />
                 </div>
 
                 <div className="form-control">

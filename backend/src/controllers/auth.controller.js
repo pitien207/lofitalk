@@ -7,34 +7,14 @@ import {
   sendVerificationEmail,
 } from "../utils/email.js";
 import { getRandomAvatar, resolveAvatarPath } from "../utils/avatarPool.js";
+import { buildAssetUrl, withAvatarVersion } from "../utils/assetUrl.js";
+import { deleteAvatarForUser, isUploadedAvatarUrl } from "../lib/avatarStore.js";
 
 const CODE_EXPIRATION_MINUTES = 15;
 const MAX_VERIFICATION_ATTEMPTS = 5;
 
 const generateVerificationCode = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
-
-const buildAssetUrl = (relativePath) => {
-  if (!relativePath) return "";
-
-  const defaultBase =
-    process.env.NODE_ENV === "production"
-      ? "https://lofitalk.nghiapham.org"
-      : `http://localhost:${process.env.PORT || 5001}`;
-
-  const base =
-    process.env.ASSET_BASE_URL ||
-    process.env.APP_BASE_URL ||
-    process.env.SERVER_URL ||
-    process.env.API_BASE_URL ||
-    defaultBase;
-
-  try {
-    return new URL(relativePath, base).toString();
-  } catch (error) {
-    return `${base.replace(/\/$/, "")}${relativePath}`;
-  }
-};
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -91,21 +71,6 @@ const toPublicUser = (userDoc) => {
   safe.id = raw._id?.toString?.() ?? raw._id;
 
   return safe;
-};
-
-const withAvatarVersion = (url, version) => {
-  if (!url || url.startsWith("data:")) return url;
-  const versionValue = version || Date.now();
-  try {
-    const parsed = new URL(url);
-    parsed.searchParams.set("v", versionValue);
-    return parsed.toString();
-  } catch (_err) {
-    const [base, query = ""] = url.split("?");
-    const params = new URLSearchParams(query);
-    params.set("v", versionValue);
-    return `${base}?${params.toString()}`;
-  }
 };
 
 export async function signup(req, res) {
@@ -531,9 +496,19 @@ export async function onboard(req, res) {
     };
 
     const resolvedStaticAvatarPath = resolveAvatarPath(profilePic);
+    const isInlineImage =
+      typeof profilePic === "string" && profilePic.trim().startsWith("data:");
+    // Uploaded photos are set via POST /api/avatars; resubmitting that URL here keeps it as is.
+    const keepsUploadedAvatar = isUploadedAvatarUrl(profilePic);
 
-    // Allow admins to upload custom avatars, but let everyone pick from the curated pool
-    if (profilePic && (isAdmin || resolvedStaticAvatarPath)) {
+    // Everyone may pick from the curated pool; admins may also link an external image URL.
+    // Image data (data: URLs) is never stored in the user document.
+    if (
+      profilePic &&
+      !isInlineImage &&
+      !keepsUploadedAvatar &&
+      (isAdmin || resolvedStaticAvatarPath)
+    ) {
       const version = Date.now();
       const avatarSource = resolvedStaticAvatarPath
         ? buildAssetUrl(resolvedStaticAvatarPath)
@@ -548,6 +523,11 @@ export async function onboard(req, res) {
 
     if (!updatedUser)
       return res.status(404).json({ message: "User not found" });
+
+    // Switched from an uploaded photo to another picture: remove the stored image (no orphans).
+    if (updatePayload.profilePic && !isUploadedAvatarUrl(updatePayload.profilePic)) {
+      await deleteAvatarForUser(userId);
+    }
 
     res.status(200).json({ success: true, user: updatedUser });
   } catch (error) {

@@ -1104,12 +1104,32 @@ const english = {
 
   language: {
     randomAvatarToast: "Random profile picture generated!",
+  },
 
-    uploadError: "Please upload an image file",
-
-    uploadSizeError: "Payload must be under 100 KB",
-
-    uploadSuccess: "Profile picture updated!",
+  avatarUpload: {
+    button: "Upload photo",
+    hint: "JPEG, PNG, WebP or HEIC",
+    previewTitle: "New profile picture",
+    previewNote: "This is how your photo will look. It is cropped to a square from the center.",
+    noPreview: "This browser can't preview this photo (e.g. HEIC). It will be checked and converted after upload.",
+    preparing: "Preparing photo...",
+    save: "Use this photo",
+    saving: "Uploading...",
+    cancel: "Cancel",
+    success: "Profile picture updated!",
+    errors: {
+      unsupportedType: "Please choose a JPEG, PNG, WebP or HEIC image.",
+      sourceTooLarge: "This file is too large ({max} MB max).",
+      tooLargeUndecodable: "This HEIC photo is larger than 5 MB. Please choose a JPEG/PNG or a smaller photo.",
+      FILE_TOO_LARGE: "The image must be 5 MB or smaller.",
+      UNSUPPORTED_TYPE: "This file is not a valid JPEG, PNG, WebP or HEIC image.",
+      TOO_LARGE_DIMENSIONS: "The photo dimensions are too large. Please choose a smaller photo.",
+      UNREADABLE_IMAGE: "The image is damaged or can't be read. Please try another photo.",
+      RATE_LIMITED: "Too many uploads. Please wait a few minutes and try again.",
+      SERVER_BUSY: "The server is busy. Please try again in a few seconds.",
+      network: "Upload failed. Please check your connection and try again.",
+      generic: "Could not upload the photo. Please try again.",
+    },
   },
 
   tarot: {
@@ -2442,12 +2462,32 @@ const vietnamese = {
 
   language: {
     randomAvatarToast: "Đã tạo ảnh đại diện ngẫu nhiên!",
+  },
 
-    uploadError: "Vui lòng tải lên một tệp hình ảnh",
-
-    uploadSizeError: "Dung lượng tệp phải dưới 100 KB",
-
-    uploadSuccess: "Ảnh đại diện đã được cập nhật!",
+  avatarUpload: {
+    button: "Tải ảnh lên",
+    hint: "JPEG, PNG, WebP hoặc HEIC",
+    previewTitle: "Ảnh đại diện mới",
+    previewNote: "Ảnh sẽ hiển thị như thế này, được cắt vuông từ chính giữa.",
+    noPreview: "Trình duyệt không xem trước được ảnh này (ví dụ ảnh HEIC). Ảnh sẽ được kiểm tra và chuyển đổi sau khi tải lên.",
+    preparing: "Đang chuẩn bị ảnh...",
+    save: "Dùng ảnh này",
+    saving: "Đang tải lên...",
+    cancel: "Huỷ",
+    success: "Ảnh đại diện đã được cập nhật!",
+    errors: {
+      unsupportedType: "Vui lòng chọn ảnh JPEG, PNG, WebP hoặc HEIC.",
+      sourceTooLarge: "Tệp quá lớn (tối đa {max} MB).",
+      tooLargeUndecodable: "Ảnh HEIC này lớn hơn 5 MB. Hãy chọn ảnh JPEG/PNG hoặc ảnh nhỏ hơn.",
+      FILE_TOO_LARGE: "Ảnh phải nhỏ hơn hoặc bằng 5 MB.",
+      UNSUPPORTED_TYPE: "Tệp này không phải ảnh JPEG, PNG, WebP hoặc HEIC hợp lệ.",
+      TOO_LARGE_DIMENSIONS: "Kích thước ảnh quá lớn. Hãy chọn ảnh nhỏ hơn.",
+      UNREADABLE_IMAGE: "Ảnh bị lỗi hoặc không đọc được. Hãy thử ảnh khác.",
+      RATE_LIMITED: "Bạn tải ảnh lên quá nhiều lần. Vui lòng đợi vài phút rồi thử lại.",
+      SERVER_BUSY: "Máy chủ đang bận. Vui lòng thử lại sau vài giây.",
+      network: "Tải ảnh lên thất bại. Hãy kiểm tra kết nối mạng và thử lại.",
+      generic: "Không tải được ảnh lên. Vui lòng thử lại.",
+    },
   },
 
   tarot: {

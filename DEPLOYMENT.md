@@ -289,7 +289,7 @@ Khi đổi target port sang 8080, image quickstart hiện tại sẽ ngừng ph�
    az containerapp logs show --name $APP --resource-group $RG --follow --tail 50
    az containerapp logs show --name $APP --resource-group $RG --type system --tail 50
    ```
-   Log khởi động đúng gồm `MongoDB connected: ...`, `Server is running on 0.0.0.0:8080` và `Indexes ensured for 9/9 models`.
+   Log khởi động đúng gồm `MongoDB connected: ...`, `Server is running on 0.0.0.0:8080` và `Indexes ensured for 10/10 models`.
 4. **Quay về bản cũ:**
    ```powershell
    az containerapp update --name $APP --resource-group $RG --image ghcr.io/pitien207/lofitalk:<sha-cu>
@@ -316,7 +316,7 @@ DocumentDB bắt đầu **rỗng**, không chuyển dữ liệu cũ.
 - **Không cần dữ liệu khởi tạo:** collection được tạo tự động khi có dữ liệu đầu tiên. Thống kê lượt dùng tự tạo khi cần; avatar và lời bánh may mắn nằm sẵn trong image.
 - **Index tự tạo khi khởi động:** mỗi lần container khởi động, backend tạo đầy đủ index (unique `email`, `roomKey`, `key`; compound cho chat; TTL cho thông báo admin và announcement). Việc này an toàn khi chạy lặp lại. Trong log phải thấy:
   ```
-  Indexes ensured for 9/9 models
+  Indexes ensured for 10/10 models
   ```
   Nếu có dòng `Index creation failed: ...`, hãy gửi lại nội dung lỗi.
 - **Admin đầu tiên (chỉ cần nếu dùng trang quản trị):** app không cho tạo admin từ giao diện. Cách tạo:

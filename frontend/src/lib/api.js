@@ -39,6 +39,14 @@ export const getAuthUser = async () => {
   }
 };
 
+// Uploads a profile picture (multipart field "avatar"); returns { profilePic, avatarVersion, avatar }.
+export const uploadAvatar = async ({ blob, fileName }) => {
+  const formData = new FormData();
+  formData.append("avatar", blob, fileName);
+  const response = await axiosInstance.post("/avatars", formData);
+  return response.data;
+};
+
 export const completeOnboarding = async (userData) => {
   const response = await axiosInstance.post("/auth/onboarding", userData);
   return response.data;
