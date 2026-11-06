@@ -4,13 +4,15 @@
 
 ### 1. Cấu hình
 
-Tạo file `mobile/.env`:
+Mọi URL server nằm ở một chỗ: [src/config.js](src/config.js). Mặc định app dùng backend production `https://lofitalk.nghiapham.org`.
+
+Để chạy với backend trên máy tính, tạo file `mobile/.env`:
 
 ```
-EXPO_PUBLIC_API_BASE_URL=http://<IP-máy-tính>:5001/api
+EXPO_PUBLIC_SERVER_URL=http://<IP-máy-tính>:5001
 ```
 
-Điện thoại và máy tính phải chung Wi-Fi. Thay `<IP-máy-tính>` bằng địa chỉ LAN (ví dụ `192.168.1.15`).
+Điện thoại và máy tính phải chung Wi-Fi. Thay `<IP-máy-tính>` bằng địa chỉ LAN (ví dụ `192.168.1.15`). API (`/api`), Socket.IO và ảnh avatar đều tự lấy từ địa chỉ này.
 
 ### 2. Cài đặt & chạy
 

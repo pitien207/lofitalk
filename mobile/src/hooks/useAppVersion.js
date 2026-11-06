@@ -1,16 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Constants from "expo-constants";
 import { fetchMobileAppVersion } from "../services/metaService";
+import { APP_VERSION, UPDATE_URL } from "../config";
 
-const CURRENT_APP_VERSION =
-  process.env.EXPO_PUBLIC_MOBILE_APP_VERSION ||
-  Constants.expoConfig?.version ||
-  null;
-
-const UPDATE_URL =
-  process.env.EXPO_PUBLIC_MOBILE_UPDATE_URL ||
-  Constants.expoConfig?.extra?.mobileUpdateUrl ||
-  null;
+const CURRENT_APP_VERSION = APP_VERSION;
 
 const useAppVersion = () => {
   const [status, setStatus] = useState("checking");

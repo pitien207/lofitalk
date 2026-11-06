@@ -1,7 +1,6 @@
-import { API_BASE_URL } from "../services/api";
+import { STATIC_BASE_URL } from "../config";
 
-const stripApiSuffix = (url) => url.replace(/\/api\/?$/, "");
-const STATIC_BASE = stripApiSuffix(API_BASE_URL);
+const STATIC_BASE = STATIC_BASE_URL;
 
 const buildUrl = (folder, file) =>
   `${STATIC_BASE}/static/avatars/${folder}/${file}`;

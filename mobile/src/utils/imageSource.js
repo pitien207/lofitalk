@@ -1,7 +1,7 @@
 import Logo from "../../assets/LofiTalk_logo.png";
-import { API_BASE_URL } from "../services/api";
+import { STATIC_BASE_URL } from "../config";
 
-const STATIC_BASE = API_BASE_URL.replace(/\/api\/?$/, "");
+const STATIC_BASE = STATIC_BASE_URL;
 
 const buildAbsoluteUrl = (value) => {
   if (!value) return "";
